@@ -1,0 +1,123 @@
+\doxysection{include/\+Codroid/\+Codroid\+Define.h 文件参考}
+\label{CodroidDefine_8h}\index{include/Codroid/CodroidDefine.h@{include/Codroid/CodroidDefine.h}}
+
+
+定义文件  
+
+
+{\ttfamily \#include $<$string$>$}\newline
+{\ttfamily \#include $<$vector$>$}\newline
+{\ttfamily \#include $<$map$>$}\newline
+{\ttfamily \#include $<$nlohmann/json.\+hpp$>$}\newline
+{\ttfamily \#include \char`\"{}Codroid\+Export.\+h\char`\"{}}\newline
+{\ttfamily \#include $<$stdexcept$>$}\newline
+{\ttfamily \#include $<$functional$>$}\newline
+\doxysubsection*{类}
+\begin{DoxyCompactItemize}
+\item 
+struct \mbox{\hyperlink{structCodroid_1_1Response}{Codroid\+::\+Response}}
+\begin{DoxyCompactList}\small\item\em SDK 标准响应结构体 \end{DoxyCompactList}\item 
+class \mbox{\hyperlink{classCodroid_1_1CodroidException}{Codroid\+::\+Codroid\+Exception}}
+\begin{DoxyCompactList}\small\item\em Codroid SDK 专用异常类 \end{DoxyCompactList}\item 
+struct \mbox{\hyperlink{structCodroid_1_1MoveInstruction}{Codroid\+::\+Move\+Instruction}}
+\begin{DoxyCompactList}\small\item\em 单条运动指令详情 \end{DoxyCompactList}\item 
+struct \mbox{\hyperlink{structCodroid_1_1JogParams}{Codroid\+::\+Jog\+Params}}
+\begin{DoxyCompactList}\small\item\em 点动参数结构体 \end{DoxyCompactList}\item 
+struct \mbox{\hyperlink{structCodroid_1_1RelativePoseParams}{Codroid\+::\+Relative\+Pose\+Params}}
+\begin{DoxyCompactList}\small\item\em 相对位姿计算参数 \end{DoxyCompactList}\item 
+struct \mbox{\hyperlink{structCodroid_1_1Variable}{Codroid\+::\+Variable}}
+\begin{DoxyCompactList}\small\item\em 全局变量信息结构 \end{DoxyCompactList}\item 
+struct \mbox{\hyperlink{structCodroid_1_1FKParams}{Codroid\+::\+FKParams}}
+\begin{DoxyCompactList}\small\item\em 正解参数结构体 \end{DoxyCompactList}\item 
+struct \mbox{\hyperlink{structCodroid_1_1IKParams}{Codroid\+::\+IKParams}}
+\begin{DoxyCompactList}\small\item\em 逆解参数结构体 \end{DoxyCompactList}\item 
+struct \mbox{\hyperlink{structCodroid_1_1MoveToTarget}{Codroid\+::\+Move\+To\+Target}}
+\begin{DoxyCompactList}\small\item\em 运动目标位置 \end{DoxyCompactList}\item 
+struct \mbox{\hyperlink{structCodroid_1_1MoveToParams}{Codroid\+::\+Move\+To\+Params}}
+\begin{DoxyCompactList}\small\item\em 运动参数 \end{DoxyCompactList}\item 
+struct \mbox{\hyperlink{structCodroid_1_1RobotStatus}{Codroid\+::\+Robot\+Status}}
+\begin{DoxyCompactList}\small\item\em 机器人运行状态 \end{DoxyCompactList}\item 
+struct \mbox{\hyperlink{structCodroid_1_1RobotPosture}{Codroid\+::\+Robot\+Posture}}
+\begin{DoxyCompactList}\small\item\em 机器人实时位姿 \end{DoxyCompactList}\item 
+struct \mbox{\hyperlink{structCodroid_1_1ProjectState}{Codroid\+::\+Project\+State}}
+\begin{DoxyCompactList}\small\item\em 工程执行状态 \end{DoxyCompactList}\item 
+struct \mbox{\hyperlink{structCodroid_1_1IOInfo}{Codroid\+::\+IOInfo}}
+\begin{DoxyCompactList}\small\item\em IO 信息结构体 \end{DoxyCompactList}\item 
+struct \mbox{\hyperlink{structCodroid_1_1RegisterInfo}{Codroid\+::\+Register\+Info}}
+\begin{DoxyCompactList}\small\item\em 寄存器信息结构体 \end{DoxyCompactList}\end{DoxyCompactItemize}
+\doxysubsection*{类型定义}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\label{CodroidDefine_8h_a3a39897ec020abfe1b713a5ddcf63780}} 
+using {\bfseries Codroid\+::json} = nlohmann\+::json
+\item 
+\mbox{\label{CodroidDefine_8h_afb1cde97cc5daf5b0c51d60c60008660}} 
+using {\bfseries Codroid\+::\+Topic\+Callback} = std\+::function$<$ void(const std\+::string \&, const nlohmann\+::json \&)$>$
+\end{DoxyCompactItemize}
+\doxysubsection*{枚举}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\label{CodroidDefine_8h_acedc9f3a5c0ffca11a6d162ccd5c363b}} 
+enum class \mbox{\hyperlink{CodroidDefine_8h_acedc9f3a5c0ffca11a6d162ccd5c363b}{Codroid\+::\+RS485\+Parity}} \+: int \{ {\bfseries None} = 0
+, {\bfseries Odd} = 1
+, {\bfseries Even} = 2
+ \}
+\begin{DoxyCompactList}\small\item\em RS485 校验位 \end{DoxyCompactList}\item 
+\mbox{\label{CodroidDefine_8h_acf3deee1f267030949fbf777cc7e486b}} 
+enum class \mbox{\hyperlink{CodroidDefine_8h_acf3deee1f267030949fbf777cc7e486b}{Codroid\+::\+RS485\+Stop\+Bits}} \+: int \{ {\bfseries One} = 1
+, {\bfseries Two} = 2
+ \}
+\begin{DoxyCompactList}\small\item\em RS485 停止位 \end{DoxyCompactList}\item 
+\mbox{\label{CodroidDefine_8h_a63900b0ba168ad4575dfb695b59f9b6c}} 
+enum class \mbox{\hyperlink{CodroidDefine_8h_a63900b0ba168ad4575dfb695b59f9b6c}{Codroid\+::\+Coor\+Type}} \{ {\bfseries Tool}
+, {\bfseries User}
+ \}
+\begin{DoxyCompactList}\small\item\em 坐标系类型 \end{DoxyCompactList}\end{DoxyCompactItemize}
+\doxysubsection*{函数}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\label{CodroidDefine_8h_aea02669e659cf7f8375ae72fdc81fe6f}} 
+\mbox{\hyperlink{CodroidDefine_8h_aea02669e659cf7f8375ae72fdc81fe6f}{Codroid\+::\+NLOHMANN\+\_\+\+JSON\+\_\+\+SERIALIZE\+\_\+\+ENUM}} (Coor\+Type, \{ \{Coor\+Type\+::\+Tool, \char`\"{}tool\char`\"{}\}, \{Coor\+Type\+::\+User, \char`\"{}user\char`\"{}\} \}) enum class Move\+Type
+\begin{DoxyCompactList}\small\item\em 运动插补类型 \end{DoxyCompactList}\item 
+NLOHMANN\+\_\+\+JSON\+\_\+\+SERIALIZE\+\_\+\+ENUM(Move\+Type, \{ \{Move\+Type\+::movJ, \char`\"{}movJ\char`\"{}\}, \{Move\+Type\+::movL, \char`\"{}movL\char`\"{}\}, \{Move\+Type\+::movC, \char`\"{}movC\char`\"{}\}, \{Move\+Type\+::mov\+Circle, \char`\"{}mov\+Circle\char`\"{}\} \}) enum class Move\+To\+Type \mbox{\hyperlink{CodroidDefine_8h_a9addddf24767c407e345b8cbbb5270f7}{Codroid\+::\+NLOHMANN\+\_\+\+JSON\+\_\+\+SERIALIZE\+\_\+\+ENUM}} (Move\+To\+Type, \{ \{Move\+To\+Type\+::\+Home, 0\}, \{Move\+To\+Type\+::\+Safe, 1\}, \{Move\+To\+Type\+::\+Candle, 2\}, \{Move\+To\+Type\+::\+Packing, 3\}, \{Move\+To\+Type\+::\+Joint, 4\}, \{Move\+To\+Type\+::\+Line, 5\}, \{Move\+To\+Type\+::\+Resume\+Point, 6\} \}) enum class Extend\+Array\+Type
+\begin{DoxyCompactList}\small\item\em 运动类型 \end{DoxyCompactList}\item 
+\mbox{\label{CodroidDefine_8h_a670f1e4077b5807792125f0fcded21c9}} 
+{\bfseries Codroid\+::\+NLOHMANN\+\_\+\+JSON\+\_\+\+SERIALIZE\+\_\+\+ENUM} (Extend\+Array\+Type, \{ \{Extend\+Array\+Type\+::\+Bool, \char`\"{}Bool\char`\"{}\}, \{Extend\+Array\+Type\+::\+UInt8, \char`\"{}UInt8\char`\"{}\}, \{Extend\+Array\+Type\+::\+Int8, \char`\"{}Int8\char`\"{}\}, \{Extend\+Array\+Type\+::\+UInt16, \char`\"{}UInt16\char`\"{}\}, \{Extend\+Array\+Type\+::\+Int16, \char`\"{}Int16\char`\"{}\}, \{Extend\+Array\+Type\+::\+UInt32, \char`\"{}UInt32\char`\"{}\}, \{Extend\+Array\+Type\+::\+Int32, \char`\"{}Int32\char`\"{}\}, \{Extend\+Array\+Type\+::\+Float32, \char`\"{}Float32\char`\"{}\} \}) enum class Jog\+Mode
+\item 
+\mbox{\hyperlink{CodroidDefine_8h_adbf884eaf354fe93834de316438c4324}{Codroid\+::\+NLOHMANN\+\_\+\+JSON\+\_\+\+SERIALIZE\+\_\+\+ENUM}} (Jog\+Mode, \{ \{Jog\+Mode\+::\+Joint, 1\}, \{Jog\+Mode\+::\+Line, 2\} \}) struct Move\+Point
+\begin{DoxyCompactList}\small\item\em 运动位姿点定义 \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\doxysubsection{详细描述}
+定义文件 
+
+
+
+\doxysubsection{函数说明}
+\mbox{\label{CodroidDefine_8h_adbf884eaf354fe93834de316438c4324}} 
+\index{CodroidDefine.h@{CodroidDefine.h}!NLOHMANN\_JSON\_SERIALIZE\_ENUM@{NLOHMANN\_JSON\_SERIALIZE\_ENUM}}
+\index{NLOHMANN\_JSON\_SERIALIZE\_ENUM@{NLOHMANN\_JSON\_SERIALIZE\_ENUM}!CodroidDefine.h@{CodroidDefine.h}}
+\doxysubsubsection{\texorpdfstring{NLOHMANN\_JSON\_SERIALIZE\_ENUM()}{NLOHMANN\_JSON\_SERIALIZE\_ENUM()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily Codroid\+::\+NLOHMANN\+\_\+\+JSON\+\_\+\+SERIALIZE\+\_\+\+ENUM (\begin{DoxyParamCaption}\item[{Jog\+Mode}]{,  }\item[{\{ \{Jog\+Mode\+::\+Joint, 1\}, \{Jog\+Mode\+::\+Line, 2\} \}}]{ }\end{DoxyParamCaption})}
+
+
+
+运动位姿点定义 
+
+$<$ 关节角 (单位\+:度)
+
+$<$ 笛卡尔坐标 (单位\+:mm, 度)
+
+$<$ 逆解参考关节角
+
+$<$ 附加轴位置\mbox{\label{CodroidDefine_8h_a9addddf24767c407e345b8cbbb5270f7}} 
+\index{CodroidDefine.h@{CodroidDefine.h}!NLOHMANN\_JSON\_SERIALIZE\_ENUM@{NLOHMANN\_JSON\_SERIALIZE\_ENUM}}
+\index{NLOHMANN\_JSON\_SERIALIZE\_ENUM@{NLOHMANN\_JSON\_SERIALIZE\_ENUM}!CodroidDefine.h@{CodroidDefine.h}}
+\doxysubsubsection{\texorpdfstring{NLOHMANN\_JSON\_SERIALIZE\_ENUM()}{NLOHMANN\_JSON\_SERIALIZE\_ENUM()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily NLOHMANN\+\_\+\+JSON\+\_\+\+SERIALIZE\+\_\+\+ENUM (Move\+Type, \{ \{Move\+Type\+::movJ, \char`\"{}movJ\char`\"{}\}, \{Move\+Type\+::movL, \char`\"{}movL\char`\"{}\}, \{Move\+Type\+::movC, \char`\"{}movC\char`\"{}\}, \{Move\+Type\+::mov\+Circle, \char`\"{}mov\+Circle\char`\"{}\} \}) enum class Move\+To\+Type Codroid\+::\+NLOHMANN\+\_\+\+JSON\+\_\+\+SERIALIZE\+\_\+\+ENUM (\begin{DoxyParamCaption}\item[{Move\+To\+Type}]{,  }\item[{\{ \{Move\+To\+Type\+::\+Home, 0\}, \{Move\+To\+Type\+::\+Safe, 1\}, \{Move\+To\+Type\+::\+Candle, 2\}, \{Move\+To\+Type\+::\+Packing, 3\}, \{Move\+To\+Type\+::\+Joint, 4\}, \{Move\+To\+Type\+::\+Line, 5\}, \{Move\+To\+Type\+::\+Resume\+Point, 6\} \}}]{ }\end{DoxyParamCaption})}
+
+
+
+运动类型 
+
+扩展数组支持的数据类型 

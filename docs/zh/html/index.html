@@ -1,0 +1,180 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=9"/>
+<meta name="generator" content="Doxygen 1.9.1"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Codroid SDK: Codroid SDK</title>
+<link href="tabs.css" rel="stylesheet" type="text/css"/>
+<script type="text/javascript" src="jquery.js"></script>
+<script type="text/javascript" src="dynsections.js"></script>
+<link href="search/search.css" rel="stylesheet" type="text/css"/>
+<script type="text/javascript" src="search/searchdata.js"></script>
+<script type="text/javascript" src="search/search.js"></script>
+<link href="doxygen.css" rel="stylesheet" type="text/css" />
+</head>
+<body>
+<div id="top"><!-- do not remove this div, it is closed by doxygen! -->
+<div id="titlearea">
+<table cellspacing="0" cellpadding="0">
+ <tbody>
+ <tr style="height: 56px;">
+  <td id="projectalign" style="padding-left: 0.5em;">
+   <div id="projectname">Codroid SDK
+   &#160;<span id="projectnumber">1.0.0</span>
+   </div>
+   <div id="projectbrief">跨平台机械臂远程控制 C++ SDK</div>
+  </td>
+ </tr>
+ </tbody>
+</table>
+</div>
+<!-- end header part -->
+<!-- 制作者 Doxygen 1.9.1 -->
+<script type="text/javascript">
+/* @license magnet:?xt=urn:btih:cf05388f2679ee054f2beb29a391d25f4e673ac3&amp;dn=gpl-2.0.txt GPL-v2 */
+var searchBox = new SearchBox("searchBox", "search",false,'搜索','.html');
+/* @license-end */
+</script>
+<script type="text/javascript" src="menudata.js"></script>
+<script type="text/javascript" src="menu.js"></script>
+<script type="text/javascript">
+/* @license magnet:?xt=urn:btih:cf05388f2679ee054f2beb29a391d25f4e673ac3&amp;dn=gpl-2.0.txt GPL-v2 */
+$(function() {
+  initMenu('',true,false,'search.php','搜索');
+  $(document).ready(function() { init_search(); });
+});
+/* @license-end */</script>
+<div id="main-nav"></div>
+</div><!-- top -->
+<!-- window showing the filter options -->
+<div id="MSearchSelectWindow"
+     onmouseover="return searchBox.OnSearchSelectShow()"
+     onmouseout="return searchBox.OnSearchSelectHide()"
+     onkeydown="return searchBox.OnSearchSelectKey(event)">
+</div>
+
+<!-- iframe showing the search results (closed by default) -->
+<div id="MSearchResultsWindow">
+<iframe src="javascript:void(0)" frameborder="0" 
+        name="MSearchResults" id="MSearchResults">
+</iframe>
+</div>
+
+<div class="PageDoc"><div class="header">
+  <div class="headertitle">
+<div class="title">Codroid SDK </div>  </div>
+</div><!--header-->
+<div class="contents">
+<div class="textblock"><p><a class="anchor" id="md_README"></a> Codroid SDK 是一个用于机械臂远程控制的跨平台 C++ 开发工具包。它通过 TCP 通信协议实现与机器人的交互，涵盖了运动控制（movJ/movL/movC）、IO 管理、寄存器操作、数据流订阅及实时控制等核心功能。</p>
+<h1><a class="anchor" id="autotoc_md1"></a>
+🌟 特点</h1>
+<ul>
+<li>**开箱即用**：底层依赖库（Asio 和 nlohmann/json）已内置于 <code>third_party</code> 文件夹中，克隆仓库后无需额外安装系统依赖即可直接编译。</li>
+<li>**双通道架构**：支持独立的指令通道与状态订阅通道，确保高频运动指令下发与实时状态反馈互不干扰。</li>
+<li>**单位标准化**：SDK 内部已自动完成单位换算。<ul>
+<li>**长度单位**：毫米 (mm)</li>
+<li>**角度单位**：角度 (deg)（机器人返回的弧度数据已在内部自动转换为角度，并保留 3 位小数）。</li>
+</ul>
+</li>
+<li>**跨平台兼容**：完美支持 Linux (GCC) 与 Windows (Visual Studio / MSVC) 编译环境。</li>
+</ul>
+<h1><a class="anchor" id="autotoc_md2"></a>
+📁 项目结构</h1>
+<ul>
+<li><code>include/Codroid/</code> - SDK 对外公开接口头文件。</li>
+<li><code>src/</code> - SDK 核心逻辑实现源代码。</li>
+<li><code>third_party/</code> - 内置依赖库（Asio Standalone, nlohmann/json）。</li>
+<li><code>examples/</code> - 功能测试示例（点动、路径运动、IO 测试、寄存器测试等）。</li>
+<li><code>build_linux.sh</code> - Linux 一键构建脚本。</li>
+<li><code>build_msvc.bat</code> - Windows MSVC 一键构建脚本。</li>
+</ul>
+<h1><a class="anchor" id="autotoc_md3"></a>
+🛠️ 构建指南</h1>
+<h2><a class="anchor" id="autotoc_md4"></a>
+1. Linux (Ubuntu) 编译</h2>
+<p>在项目根目录下执行以下命令：</p>
+<div class="fragment"><div class="line">chmod +x build_linux.sh</div>
+<div class="line">./build_linux.sh</div>
+</div><!-- fragment --><p> 构建产物：</p>
+<ul>
+<li>动态库：build_linux/libCodroid.so</li>
+<li>示例程序：位于 build_linux/ 目录下的各个可执行文件（如 move_test）。</li>
+</ul>
+<p>运行示例： </p><div class="fragment"><div class="line">cd build_linux</div>
+<div class="line">export LD_LIBRARY_PATH=.:$LD_LIBRARY_PATH</div>
+<div class="line">./move_test</div>
+</div><!-- fragment --> <h2><a class="anchor" id="autotoc_md5"></a>
+2. Windows (Visual Studio / MSVC) 编译</h2>
+<p>在 Windows 环境下，确保已安装 CMake 和 Visual Studio 2019/2022，双击运行： </p><div class="fragment"><div class="line">build_msvc.bat</div>
+</div><!-- fragment --><p> 构建产物：</p><ul>
+<li>build_msvc/Debug</li>
+<li>build_msvc/Release。</li>
+</ul>
+<p>关键文件：Codroid.dll (运行时必须), Codroid.lib (编译链接必须)。</p>
+<h1><a class="anchor" id="autotoc_md6"></a>
+💻 如何在您的项目中使用</h1>
+<p>由于本 SDK 未采用 PIMPL 模式隐藏底层依赖，在您的第三方 C++ 项目中引入本 SDK 时，请务必进行以下配置：</p>
+<p>1.包含目录 (Include Directories)</p>
+<p>将以下两个路径添加到您的项目包含路径（Include Path）中：</p><ul>
+<li>CodroidSDK/include</li>
+<li>CodroidSDK/third_party (由于头文件嵌套，必须包含此路径，否则找不到 asio.hpp)</li>
+</ul>
+<p>2.预处理器定义 (Preprocessor Definitions)</p>
+<p>必须添加以下宏定义：</p><ul>
+<li>ASIO_STANDALONE (告诉 Asio 使用标准版而非 Boost 版)</li>
+</ul>
+<p>3.Windows 环境额外配置</p>
+<ul>
+<li>链接库：将 Codroid.lib 添加到链接器的附加依赖项。</li>
+<li>字符编码：建议开启 /utf-8 编译选项，以确保中文注释不会引起编译语法错误。</li>
+<li>运行时：程序运行时必须将 Codroid.dll 放置在与 .exe 文件相同的目录下。</li>
+</ul>
+<h1><a class="anchor" id="autotoc_md7"></a>
+🚀 快速上手示例</h1>
+<div class="fragment"><div class="line"> {c++}</div>
+<div class="line">#include &lt;iostream&gt;</div>
+<div class="line">#include &lt;vector&gt;</div>
+<div class="line">#include &quot;Codroid/CodroidControlInterface.h&quot;</div>
+<div class="line"> </div>
+<div class="line">int main() {</div>
+<div class="line">    Codroid::CodroidControlInterface robot;</div>
+<div class="line"> </div>
+<div class="line">    // 1. 连接机器人 (默认端口 9001)</div>
+<div class="line">    if (robot.connect(&quot;192.168.1.136&quot;, 9001)) {</div>
+<div class="line">        std::cout &lt;&lt; &quot;Connected to Codroid Robot!&quot; &lt;&lt; std::endl;</div>
+<div class="line"> </div>
+<div class="line">        // 2. 获取当前笛卡尔位姿 (单位: mm, deg)</div>
+<div class="line">        // 内部已自动同步并跳过初始零位包</div>
+<div class="line">        std::vector&lt;double&gt; currentPos = robot.getCartesianPosition();</div>
+<div class="line">        std::cout &lt;&lt; &quot;Current X: &quot; &lt;&lt; currentPos[0] &lt;&lt; &quot; mm&quot; &lt;&lt; std::endl;</div>
+<div class="line"> </div>
+<div class="line">        // 3. 关节运动</div>
+<div class="line">        // 目标：关节角度 [j1..j6]</div>
+<div class="line">        std::vector&lt;double&gt; home = {0.0, 0.0, 90.0, 0.0, 90.0, 0.0};</div>
+<div class="line">        robot.movJ(home, 50.0, 100.0);</div>
+<div class="line"> </div>
+<div class="line">        // 4. 断开连接</div>
+<div class="line">        robot.disconnect();</div>
+<div class="line">    } else {</div>
+<div class="line">        std::cerr &lt;&lt; &quot;Connection failed!&quot; &lt;&lt; std::endl;</div>
+<div class="line">    }</div>
+<div class="line">    return 0;</div>
+<div class="line">}</div>
+</div><!-- fragment --> <h1><a class="anchor" id="autotoc_md8"></a>
+⚠️ 注意事项</h1>
+<ol type="1">
+<li>状态同步延迟：受限于机器人端状态推送固定为 1 秒/次，Wait 系列阻塞函数在判断机器人停止时可能会存在最高 1 秒的自然同步延迟。</li>
+<li>空数组崩溃预防：SDK 内部实现了防御性编程，发送指令时会自动剔除空的 coor 或 tool 数组字段，以规避机器人后端处理空数组时的崩溃 Bug。</li>
+<li>多线程安全：sendCommand 内部已通过 std::mutex 加锁。支持在多线程环境下并发调用非阻塞运动指令，但建议在同一时刻只由一个线程控制机器人运动。</li>
+<li>单位验证：请注意，机器人推送的 joint 数据在 SDK 内部被视为角度（Degrees）。若您的机器人固件返回的是弧度，SDK 将按照 1rad ≈ 57.295deg 进行自动转换。 </li>
+</ol>
+</div></div><!-- PageDoc -->
+</div><!-- contents -->
+<!-- start footer part -->
+<hr class="footer"/><address class="footer"><small>
+制作者&#160;<a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1
+</small></address>
+</body>
+</html>

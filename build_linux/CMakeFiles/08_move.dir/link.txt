@@ -1,0 +1,1 @@
+/usr/bin/c++ CMakeFiles/08_move.dir/examples/08_move.cpp.o -o 08_move   -L/home/ym/workspace/CodroidSDK/cpp/kinematics  -Wl,-rpath,/home/ym/workspace/CodroidSDK/cpp/kinematics libCodroid.so -lFk_Ik_so -lkdl 

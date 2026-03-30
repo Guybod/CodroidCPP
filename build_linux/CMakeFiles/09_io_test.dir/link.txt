@@ -1,0 +1,1 @@
+/usr/bin/c++ CMakeFiles/09_io_test.dir/examples/09_io_test.cpp.o -o 09_io_test   -L/home/ym/workspace/CodroidSDK/cpp/kinematics  -Wl,-rpath,/home/ym/workspace/CodroidSDK/cpp/kinematics libCodroid.so -lFk_Ik_so -lkdl 

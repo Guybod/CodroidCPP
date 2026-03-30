@@ -1,0 +1,1 @@
+/usr/bin/c++ CMakeFiles/05_rs485.dir/examples/05_rs485.cpp.o -o 05_rs485   -L/home/ym/workspace/CodroidSDK/cpp/kinematics  -Wl,-rpath,/home/ym/workspace/CodroidSDK/cpp/kinematics libCodroid.so -lFk_Ik_so -lkdl 

@@ -1,0 +1,65 @@
+# 项目信息
+PROJECT_NAME           = "Codroid SDK"
+PROJECT_NUMBER         = 1.0.0
+PROJECT_BRIEF          = "跨平台机械臂远程控制 C++ SDK"
+OUTPUT_DIRECTORY       = docs
+
+# 语言设置（非常重要：支持中文）
+# 默认语言先设为英文
+OUTPUT_LANGUAGE        = Chinese
+# 开启内部语言标签支持
+ENABLED_SECTIONS       = ENGLISH
+DOXYFILE_ENCODING      = UTF-8
+
+# 输入文件配置
+# 包含你的 README，这样主页就不会是空白
+INPUT                  = include/Codroid README.md
+FILE_PATTERNS          = *.h *.md
+RECURSIVE              = YES
+USE_MDRAPPER           = YES
+# 让 README.md 作为文档首页
+USE_MDFILE_AS_MAINPAGE = README.md
+# 排除第三方库，不生成它们的文档
+EXCLUDE                = third_party
+
+# HTML 生成配置
+GENERATE_HTML          = YES
+HTML_OUTPUT            = html
+# 开启搜索功能
+SEARCHENGINE           = YES
+
+# PDF (LaTeX) 生成配置
+GENERATE_LATEX         = YES
+LATEX_OUTPUT           = latex
+# 使用 pdflatex
+PDF_HYPERLINKS         = YES
+USE_PDFLATEX           = NO
+# 关键：指定使用 xelatex
+LATEX_CMD_NAME         = xelatex
+# 针对中文 PDF 的特殊处理
+LATEX_BATCHMODE        = YES
+
+# --- 图形化设置 (关闭所有复杂图表) ---
+HAVE_DOT               = NO
+CLASS_GRAPH            = NO
+COLLABORATION_GRAPH    = NO
+GROUP_GRAPHS           = NO
+INCLUDE_GRAPH          = NO
+INCLUDED_BY_GRAPH      = NO
+CALL_GRAPH             = NO
+CALLER_GRAPH           = NO
+DIRECTORY_GRAPH        = NO
+
+# --- 提取设置 ---
+# 设置为 NO，只提取你写了注释的接口，不提取没写注释的代码
+EXTRACT_ALL            = NO 
+# 建议设为 NO，SDK 用户通常不需要看你的私有成员（pimpl 等）
+EXTRACT_PRIVATE        = NO  
+EXTRACT_STATIC         = YES
+
+# 不要在这里设置 ENABLED_SECTIONS，让脚本动态注入
+# 确保开启了多语言分段处理
+DISTRIBUTE_GROUP_DOC   = YES
+# 这是一个隐藏技巧：如果某个字段没写对应的语言，是否显示另一种语言的？
+# 建议设为 YES，防止因为漏写中文导致文档出现空白
+MULTILINE_CPP_IS_BRIEF = YES

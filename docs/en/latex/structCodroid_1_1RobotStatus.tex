@@ -1,0 +1,80 @@
+\doxysection{Codroid\+::Robot\+Status结构体 参考}
+\label{structCodroid_1_1RobotStatus}\index{Codroid::RobotStatus@{Codroid::RobotStatus}}
+
+
+机器人运行状态  
+
+
+
+
+{\ttfamily \#include $<$Codroid\+Define.\+h$>$}
+
+\doxysubsection*{Public 属性}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\label{structCodroid_1_1RobotStatus_aacda59bd045022d164072d06c5c694a0}} 
+int \mbox{\hyperlink{structCodroid_1_1RobotStatus_aacda59bd045022d164072d06c5c694a0}{mode}}
+\begin{DoxyCompactList}\small\item\em 0\+:手动, 1\+:自动, 2\+:远程 \end{DoxyCompactList}\item 
+\mbox{\label{structCodroid_1_1RobotStatus_af3a6ce4bb77452305980f06e629b59b1}} 
+int \mbox{\hyperlink{structCodroid_1_1RobotStatus_af3a6ce4bb77452305980f06e629b59b1}{state}}
+\begin{DoxyCompactList}\small\item\em 0\+:未使能, 1\+:使能中, 2\+:空闲, 3\+:点动中, 4\+:Run\+To, 5\+:拖动中 \end{DoxyCompactList}\item 
+\mbox{\label{structCodroid_1_1RobotStatus_a1a7ace608f08da7aaf3fcb480c66d525}} 
+int \mbox{\hyperlink{structCodroid_1_1RobotStatus_a1a7ace608f08da7aaf3fcb480c66d525}{is\+Moving}}
+\begin{DoxyCompactList}\small\item\em 0\+:停止, 1\+:运动 \end{DoxyCompactList}\item 
+\mbox{\label{structCodroid_1_1RobotStatus_aa3cf3e8e05b9d3d42182fee7ee57f624}} 
+double \mbox{\hyperlink{structCodroid_1_1RobotStatus_aa3cf3e8e05b9d3d42182fee7ee57f624}{move\+Rate}}
+\begin{DoxyCompactList}\small\item\em 自动速度倍率 ~\newline
+ \end{DoxyCompactList}\item 
+\mbox{\label{structCodroid_1_1RobotStatus_a50e505499995daa88dcc3d0e0b77d66b}} 
+double \mbox{\hyperlink{structCodroid_1_1RobotStatus_a50e505499995daa88dcc3d0e0b77d66b}{manual\+Move\+Rate}}
+\begin{DoxyCompactList}\small\item\em 手动速度倍率 \end{DoxyCompactList}\item 
+\mbox{\label{structCodroid_1_1RobotStatus_aa779c70112def3e2550b0c6de2c9c08f}} 
+int {\bfseries recovery\+State}
+\item 
+\mbox{\label{structCodroid_1_1RobotStatus_af7bff10733426bdb28991be7594ff9e6}} 
+bool {\bfseries is\+Simulation}
+\item 
+\mbox{\label{structCodroid_1_1RobotStatus_a0769cbd0a286f85e1ff5b48661cf8a2e}} 
+int {\bfseries teaching\+Pendant}
+\item 
+\mbox{\label{structCodroid_1_1RobotStatus_ad72686ca80115bc0a7c26a7e468de400}} 
+int {\bfseries rescue\+Flag}
+\item 
+\mbox{\label{structCodroid_1_1RobotStatus_a398d1528e372ef5becf73bb14f034329}} 
+int {\bfseries mode\+Switch}
+\item 
+\mbox{\label{structCodroid_1_1RobotStatus_a61a59b3e786f4aff44371570f5eb58c6}} 
+int {\bfseries Tool\+Id}
+\item 
+\mbox{\label{structCodroid_1_1RobotStatus_a28792c359164e3ba8ee85e14b804260c}} 
+int {\bfseries Payload\+Id}
+\item 
+\mbox{\label{structCodroid_1_1RobotStatus_a19a80261d672357048136beb780f3f2f}} 
+int {\bfseries Coordinate\+Id}
+\item 
+\mbox{\label{structCodroid_1_1RobotStatus_a5d35779a906f647579415bab17218e69}} 
+int {\bfseries default\+Tool\+Id}
+\item 
+\mbox{\label{structCodroid_1_1RobotStatus_a87b79916a8d4e221dfabddcd5ff13a43}} 
+int {\bfseries default\+Payload\+Id}
+\item 
+\mbox{\label{structCodroid_1_1RobotStatus_ae10d4d15d7a5a93391e834b8bc77c0e7}} 
+int {\bfseries default\+User\+Coor\+Id}
+\item 
+\mbox{\label{structCodroid_1_1RobotStatus_a7ce365146e1566b6ee89b15fe28322c3}} 
+std\+::string \mbox{\hyperlink{structCodroid_1_1RobotStatus_a7ce365146e1566b6ee89b15fe28322c3}{type}}
+\begin{DoxyCompactList}\small\item\em 机器人型号 \end{DoxyCompactList}\item 
+\mbox{\label{structCodroid_1_1RobotStatus_a2274342ead91357327d7d9b40f8d2355}} 
+std\+::string \mbox{\hyperlink{structCodroid_1_1RobotStatus_a2274342ead91357327d7d9b40f8d2355}{state\+Name}}
+\begin{DoxyCompactList}\small\item\em 状态名称 \end{DoxyCompactList}\item 
+\mbox{\label{structCodroid_1_1RobotStatus_add988e6159c8cbb655394f9dceae26d4}} 
+long long \mbox{\hyperlink{structCodroid_1_1RobotStatus_add988e6159c8cbb655394f9dceae26d4}{timestamp}}
+\begin{DoxyCompactList}\small\item\em 推送时间戳 \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\doxysubsection{详细描述}
+机器人运行状态 
+
+该结构体的文档由以下文件生成\+:\begin{DoxyCompactItemize}
+\item 
+include/\+Codroid/\mbox{\hyperlink{CodroidDefine_8h}{Codroid\+Define.\+h}}\end{DoxyCompactItemize}

@@ -1,0 +1,1 @@
+/usr/bin/c++ CMakeFiles/13_kinematics.dir/examples/13_kinematics.cpp.o -o 13_kinematics   -L/home/ym/workspace/CodroidSDK/cpp/kinematics  -Wl,-rpath,/home/ym/workspace/CodroidSDK/cpp/kinematics libCodroid.so -lFk_Ik_so -lkdl 

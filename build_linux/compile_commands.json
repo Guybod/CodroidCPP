@@ -1,0 +1,98 @@
+[
+{
+  "directory": "/home/ym/workspace/CodroidSDK/cpp/build_linux",
+  "command": "/usr/bin/c++ -DASIO_STANDALONE -DCODROID_EXPORTS -DCodroid_EXPORTS -I/home/ym/workspace/CodroidSDK/cpp/include -I/home/ym/workspace/CodroidSDK/cpp -I/home/ym/workspace/CodroidSDK/cpp/kinematics -isystem /home/ym/workspace/CodroidSDK/cpp/third_party -std=gnu++17 -fPIC -o CMakeFiles/Codroid.dir/src/CodroidControlInterface.cpp.o -c /home/ym/workspace/CodroidSDK/cpp/src/CodroidControlInterface.cpp",
+  "file": "/home/ym/workspace/CodroidSDK/cpp/src/CodroidControlInterface.cpp",
+  "output": "CMakeFiles/Codroid.dir/src/CodroidControlInterface.cpp.o"
+},
+{
+  "directory": "/home/ym/workspace/CodroidSDK/cpp/build_linux",
+  "command": "/usr/bin/c++ -DASIO_STANDALONE -DCODROID_EXPORTS -DCodroid_EXPORTS -I/home/ym/workspace/CodroidSDK/cpp/include -I/home/ym/workspace/CodroidSDK/cpp -I/home/ym/workspace/CodroidSDK/cpp/kinematics -isystem /home/ym/workspace/CodroidSDK/cpp/third_party -std=gnu++17 -fPIC -o CMakeFiles/Codroid.dir/src/CodroidSubscriber.cpp.o -c /home/ym/workspace/CodroidSDK/cpp/src/CodroidSubscriber.cpp",
+  "file": "/home/ym/workspace/CodroidSDK/cpp/src/CodroidSubscriber.cpp",
+  "output": "CMakeFiles/Codroid.dir/src/CodroidSubscriber.cpp.o"
+},
+{
+  "directory": "/home/ym/workspace/CodroidSDK/cpp/build_linux",
+  "command": "/usr/bin/c++ -DASIO_STANDALONE -I/home/ym/workspace/CodroidSDK/cpp/include -I/home/ym/workspace/CodroidSDK/cpp -I/home/ym/workspace/CodroidSDK/cpp/kinematics -isystem /home/ym/workspace/CodroidSDK/cpp/third_party -std=gnu++17 -o CMakeFiles/01_basic_usage.dir/examples/01_basic_usage.cpp.o -c /home/ym/workspace/CodroidSDK/cpp/examples/01_basic_usage.cpp",
+  "file": "/home/ym/workspace/CodroidSDK/cpp/examples/01_basic_usage.cpp",
+  "output": "CMakeFiles/01_basic_usage.dir/examples/01_basic_usage.cpp.o"
+},
+{
+  "directory": "/home/ym/workspace/CodroidSDK/cpp/build_linux",
+  "command": "/usr/bin/c++ -DASIO_STANDALONE -I/home/ym/workspace/CodroidSDK/cpp/include -I/home/ym/workspace/CodroidSDK/cpp -I/home/ym/workspace/CodroidSDK/cpp/kinematics -isystem /home/ym/workspace/CodroidSDK/cpp/third_party -std=gnu++17 -o CMakeFiles/02_run_script.dir/examples/02_run_script.cpp.o -c /home/ym/workspace/CodroidSDK/cpp/examples/02_run_script.cpp",
+  "file": "/home/ym/workspace/CodroidSDK/cpp/examples/02_run_script.cpp",
+  "output": "CMakeFiles/02_run_script.dir/examples/02_run_script.cpp.o"
+},
+{
+  "directory": "/home/ym/workspace/CodroidSDK/cpp/build_linux",
+  "command": "/usr/bin/c++ -DASIO_STANDALONE -I/home/ym/workspace/CodroidSDK/cpp/include -I/home/ym/workspace/CodroidSDK/cpp -I/home/ym/workspace/CodroidSDK/cpp/kinematics -isystem /home/ym/workspace/CodroidSDK/cpp/third_party -std=gnu++17 -o CMakeFiles/03_run_project.dir/examples/03_run_project.cpp.o -c /home/ym/workspace/CodroidSDK/cpp/examples/03_run_project.cpp",
+  "file": "/home/ym/workspace/CodroidSDK/cpp/examples/03_run_project.cpp",
+  "output": "CMakeFiles/03_run_project.dir/examples/03_run_project.cpp.o"
+},
+{
+  "directory": "/home/ym/workspace/CodroidSDK/cpp/build_linux",
+  "command": "/usr/bin/c++ -DASIO_STANDALONE -I/home/ym/workspace/CodroidSDK/cpp/include -I/home/ym/workspace/CodroidSDK/cpp -I/home/ym/workspace/CodroidSDK/cpp/kinematics -isystem /home/ym/workspace/CodroidSDK/cpp/third_party -std=gnu++17 -o CMakeFiles/04_global_value.dir/examples/04_global_value.cpp.o -c /home/ym/workspace/CodroidSDK/cpp/examples/04_global_value.cpp",
+  "file": "/home/ym/workspace/CodroidSDK/cpp/examples/04_global_value.cpp",
+  "output": "CMakeFiles/04_global_value.dir/examples/04_global_value.cpp.o"
+},
+{
+  "directory": "/home/ym/workspace/CodroidSDK/cpp/build_linux",
+  "command": "/usr/bin/c++ -DASIO_STANDALONE -I/home/ym/workspace/CodroidSDK/cpp/include -I/home/ym/workspace/CodroidSDK/cpp -I/home/ym/workspace/CodroidSDK/cpp/kinematics -isystem /home/ym/workspace/CodroidSDK/cpp/third_party -std=gnu++17 -o CMakeFiles/05_rs485.dir/examples/05_rs485.cpp.o -c /home/ym/workspace/CodroidSDK/cpp/examples/05_rs485.cpp",
+  "file": "/home/ym/workspace/CodroidSDK/cpp/examples/05_rs485.cpp",
+  "output": "CMakeFiles/05_rs485.dir/examples/05_rs485.cpp.o"
+},
+{
+  "directory": "/home/ym/workspace/CodroidSDK/cpp/build_linux",
+  "command": "/usr/bin/c++ -DASIO_STANDALONE -I/home/ym/workspace/CodroidSDK/cpp/include -I/home/ym/workspace/CodroidSDK/cpp -I/home/ym/workspace/CodroidSDK/cpp/kinematics -isystem /home/ym/workspace/CodroidSDK/cpp/third_party -std=gnu++17 -o CMakeFiles/06_jog_mode.dir/examples/06_jog_mode.cpp.o -c /home/ym/workspace/CodroidSDK/cpp/examples/06_jog_mode.cpp",
+  "file": "/home/ym/workspace/CodroidSDK/cpp/examples/06_jog_mode.cpp",
+  "output": "CMakeFiles/06_jog_mode.dir/examples/06_jog_mode.cpp.o"
+},
+{
+  "directory": "/home/ym/workspace/CodroidSDK/cpp/build_linux",
+  "command": "/usr/bin/c++ -DASIO_STANDALONE -I/home/ym/workspace/CodroidSDK/cpp/include -I/home/ym/workspace/CodroidSDK/cpp -I/home/ym/workspace/CodroidSDK/cpp/kinematics -isystem /home/ym/workspace/CodroidSDK/cpp/third_party -std=gnu++17 -o CMakeFiles/07_move_To.dir/examples/07_move_To.cpp.o -c /home/ym/workspace/CodroidSDK/cpp/examples/07_move_To.cpp",
+  "file": "/home/ym/workspace/CodroidSDK/cpp/examples/07_move_To.cpp",
+  "output": "CMakeFiles/07_move_To.dir/examples/07_move_To.cpp.o"
+},
+{
+  "directory": "/home/ym/workspace/CodroidSDK/cpp/build_linux",
+  "command": "/usr/bin/c++ -DASIO_STANDALONE -I/home/ym/workspace/CodroidSDK/cpp/include -I/home/ym/workspace/CodroidSDK/cpp -I/home/ym/workspace/CodroidSDK/cpp/kinematics -isystem /home/ym/workspace/CodroidSDK/cpp/third_party -std=gnu++17 -o CMakeFiles/08_move.dir/examples/08_move.cpp.o -c /home/ym/workspace/CodroidSDK/cpp/examples/08_move.cpp",
+  "file": "/home/ym/workspace/CodroidSDK/cpp/examples/08_move.cpp",
+  "output": "CMakeFiles/08_move.dir/examples/08_move.cpp.o"
+},
+{
+  "directory": "/home/ym/workspace/CodroidSDK/cpp/build_linux",
+  "command": "/usr/bin/c++ -DASIO_STANDALONE -I/home/ym/workspace/CodroidSDK/cpp/include -I/home/ym/workspace/CodroidSDK/cpp -I/home/ym/workspace/CodroidSDK/cpp/kinematics -isystem /home/ym/workspace/CodroidSDK/cpp/third_party -std=gnu++17 -o CMakeFiles/09_io_test.dir/examples/09_io_test.cpp.o -c /home/ym/workspace/CodroidSDK/cpp/examples/09_io_test.cpp",
+  "file": "/home/ym/workspace/CodroidSDK/cpp/examples/09_io_test.cpp",
+  "output": "CMakeFiles/09_io_test.dir/examples/09_io_test.cpp.o"
+},
+{
+  "directory": "/home/ym/workspace/CodroidSDK/cpp/build_linux",
+  "command": "/usr/bin/c++ -DASIO_STANDALONE -I/home/ym/workspace/CodroidSDK/cpp/include -I/home/ym/workspace/CodroidSDK/cpp -I/home/ym/workspace/CodroidSDK/cpp/kinematics -isystem /home/ym/workspace/CodroidSDK/cpp/third_party -std=gnu++17 -o CMakeFiles/10_register_test.dir/examples/10_register_test.cpp.o -c /home/ym/workspace/CodroidSDK/cpp/examples/10_register_test.cpp",
+  "file": "/home/ym/workspace/CodroidSDK/cpp/examples/10_register_test.cpp",
+  "output": "CMakeFiles/10_register_test.dir/examples/10_register_test.cpp.o"
+},
+{
+  "directory": "/home/ym/workspace/CodroidSDK/cpp/build_linux",
+  "command": "/usr/bin/c++ -DASIO_STANDALONE -I/home/ym/workspace/CodroidSDK/cpp/include -I/home/ym/workspace/CodroidSDK/cpp -I/home/ym/workspace/CodroidSDK/cpp/kinematics -isystem /home/ym/workspace/CodroidSDK/cpp/third_party -std=gnu++17 -o CMakeFiles/11_sub.dir/examples/11_sub.cpp.o -c /home/ym/workspace/CodroidSDK/cpp/examples/11_sub.cpp",
+  "file": "/home/ym/workspace/CodroidSDK/cpp/examples/11_sub.cpp",
+  "output": "CMakeFiles/11_sub.dir/examples/11_sub.cpp.o"
+},
+{
+  "directory": "/home/ym/workspace/CodroidSDK/cpp/build_linux",
+  "command": "/usr/bin/c++ -DASIO_STANDALONE -I/home/ym/workspace/CodroidSDK/cpp/include -I/home/ym/workspace/CodroidSDK/cpp -I/home/ym/workspace/CodroidSDK/cpp/kinematics -isystem /home/ym/workspace/CodroidSDK/cpp/third_party -std=gnu++17 -o CMakeFiles/12_Ik_Fk.dir/examples/12_Ik_Fk.cpp.o -c /home/ym/workspace/CodroidSDK/cpp/examples/12_Ik_Fk.cpp",
+  "file": "/home/ym/workspace/CodroidSDK/cpp/examples/12_Ik_Fk.cpp",
+  "output": "CMakeFiles/12_Ik_Fk.dir/examples/12_Ik_Fk.cpp.o"
+},
+{
+  "directory": "/home/ym/workspace/CodroidSDK/cpp/build_linux",
+  "command": "/usr/bin/c++ -DASIO_STANDALONE -I/home/ym/workspace/CodroidSDK/cpp/include -I/home/ym/workspace/CodroidSDK/cpp -I/home/ym/workspace/CodroidSDK/cpp/kinematics -isystem /home/ym/workspace/CodroidSDK/cpp/third_party -std=gnu++17 -o CMakeFiles/13_kinematics.dir/examples/13_kinematics.cpp.o -c /home/ym/workspace/CodroidSDK/cpp/examples/13_kinematics.cpp",
+  "file": "/home/ym/workspace/CodroidSDK/cpp/examples/13_kinematics.cpp",
+  "output": "CMakeFiles/13_kinematics.dir/examples/13_kinematics.cpp.o"
+},
+{
+  "directory": "/home/ym/workspace/CodroidSDK/cpp/build_linux",
+  "command": "/usr/bin/c++ -DASIO_STANDALONE -I/home/ym/workspace/CodroidSDK/cpp/include -I/home/ym/workspace/CodroidSDK/cpp -I/home/ym/workspace/CodroidSDK/cpp/kinematics -isystem /home/ym/workspace/CodroidSDK/cpp/third_party -std=gnu++17 -o CMakeFiles/kinematics.dir/kinematics/kinematics.cpp.o -c /home/ym/workspace/CodroidSDK/cpp/kinematics/kinematics.cpp",
+  "file": "/home/ym/workspace/CodroidSDK/cpp/kinematics/kinematics.cpp",
+  "output": "CMakeFiles/kinematics.dir/kinematics/kinematics.cpp.o"
+}
+]

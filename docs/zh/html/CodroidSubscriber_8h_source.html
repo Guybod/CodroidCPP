@@ -1,0 +1,167 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=9"/>
+<meta name="generator" content="Doxygen 1.9.1"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Codroid SDK: include/Codroid/CodroidSubscriber.h 源文件</title>
+<link href="tabs.css" rel="stylesheet" type="text/css"/>
+<script type="text/javascript" src="jquery.js"></script>
+<script type="text/javascript" src="dynsections.js"></script>
+<link href="search/search.css" rel="stylesheet" type="text/css"/>
+<script type="text/javascript" src="search/searchdata.js"></script>
+<script type="text/javascript" src="search/search.js"></script>
+<link href="doxygen.css" rel="stylesheet" type="text/css" />
+</head>
+<body>
+<div id="top"><!-- do not remove this div, it is closed by doxygen! -->
+<div id="titlearea">
+<table cellspacing="0" cellpadding="0">
+ <tbody>
+ <tr style="height: 56px;">
+  <td id="projectalign" style="padding-left: 0.5em;">
+   <div id="projectname">Codroid SDK
+   &#160;<span id="projectnumber">1.0.0</span>
+   </div>
+   <div id="projectbrief">跨平台机械臂远程控制 C++ SDK</div>
+  </td>
+ </tr>
+ </tbody>
+</table>
+</div>
+<!-- end header part -->
+<!-- 制作者 Doxygen 1.9.1 -->
+<script type="text/javascript">
+/* @license magnet:?xt=urn:btih:cf05388f2679ee054f2beb29a391d25f4e673ac3&amp;dn=gpl-2.0.txt GPL-v2 */
+var searchBox = new SearchBox("searchBox", "search",false,'搜索','.html');
+/* @license-end */
+</script>
+<script type="text/javascript" src="menudata.js"></script>
+<script type="text/javascript" src="menu.js"></script>
+<script type="text/javascript">
+/* @license magnet:?xt=urn:btih:cf05388f2679ee054f2beb29a391d25f4e673ac3&amp;dn=gpl-2.0.txt GPL-v2 */
+$(function() {
+  initMenu('',true,false,'search.php','搜索');
+  $(document).ready(function() { init_search(); });
+});
+/* @license-end */</script>
+<div id="main-nav"></div>
+<!-- window showing the filter options -->
+<div id="MSearchSelectWindow"
+     onmouseover="return searchBox.OnSearchSelectShow()"
+     onmouseout="return searchBox.OnSearchSelectHide()"
+     onkeydown="return searchBox.OnSearchSelectKey(event)">
+</div>
+
+<!-- iframe showing the search results (closed by default) -->
+<div id="MSearchResultsWindow">
+<iframe src="javascript:void(0)" frameborder="0" 
+        name="MSearchResults" id="MSearchResults">
+</iframe>
+</div>
+
+<div id="nav-path" class="navpath">
+  <ul>
+<li class="navelem"><a class="el" href="dir_d44c64559bbebec7f509842c48db8b23.html">include</a></li><li class="navelem"><a class="el" href="dir_069ba705a672cc48e795fddbb78de5ae.html">Codroid</a></li>  </ul>
+</div>
+</div><!-- top -->
+<div class="header">
+  <div class="headertitle">
+<div class="title">CodroidSubscriber.h</div>  </div>
+</div><!--header-->
+<div class="contents">
+<a href="CodroidSubscriber_8h.html">浏览该文件的文档.</a><div class="fragment"><div class="line"><a name="l00001"></a><span class="lineno">    1</span>&#160; </div>
+<div class="line"><a name="l00006"></a><span class="lineno">    6</span>&#160;<span class="preprocessor">#ifndef CODROID_SUBSCRIBER_H</span></div>
+<div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160;<span class="preprocessor">#define CODROID_SUBSCRIBER_H</span></div>
+<div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160; </div>
+<div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160;<span class="preprocessor">#include &lt;asio.hpp&gt;</span></div>
+<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="preprocessor">#include &lt;nlohmann/json.hpp&gt;</span></div>
+<div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="preprocessor">#include &lt;string&gt;</span></div>
+<div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;<span class="preprocessor">#include &lt;thread&gt;</span></div>
+<div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;<span class="preprocessor">#include &lt;atomic&gt;</span></div>
+<div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;<span class="preprocessor">#include &lt;functional&gt;</span></div>
+<div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;<span class="preprocessor">#include &lt;vector&gt;</span></div>
+<div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160;<span class="preprocessor">#include &lt;map&gt;</span></div>
+<div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;<span class="preprocessor">#include &lt;mutex&gt;</span></div>
+<div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="CodroidDefine_8h.html">CodroidDefine.h</a>&quot;</span></div>
+<div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160; </div>
+<div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;<span class="keyword">namespace </span>Codroid {</div>
+<div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160; </div>
+<div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;<span class="keyword">using</span> json = nlohmann::json;</div>
+<div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160; </div>
+<div class="line"><a name="l00027"></a><span class="lineno"><a class="line" href="CodroidSubscriber_8h.html#a94da13adb438041a2f6a0042053ff961">   27</a></span>&#160;<span class="keyword">using</span> <a class="code" href="CodroidSubscriber_8h.html#a94da13adb438041a2f6a0042053ff961">StatusCallback</a> = std::function&lt;void(<span class="keyword">const</span> <a class="code" href="structCodroid_1_1RobotStatus.html">RobotStatus</a>&amp;)&gt;;</div>
+<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160; </div>
+<div class="line"><a name="l00032"></a><span class="lineno"><a class="line" href="CodroidSubscriber_8h.html#a08b2ecedb86acece2a3278a8fbd43c7e">   32</a></span>&#160;<span class="keyword">using</span> <a class="code" href="CodroidSubscriber_8h.html#a08b2ecedb86acece2a3278a8fbd43c7e">PostureCallback</a> = std::function&lt;void(<span class="keyword">const</span> <a class="code" href="structCodroid_1_1RobotPosture.html">RobotPosture</a>&amp;)&gt;;</div>
+<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160; </div>
+<div class="line"><a name="l00037"></a><span class="lineno"><a class="line" href="CodroidSubscriber_8h.html#a642dfd99e4d5d6e820611cb819796280">   37</a></span>&#160;<span class="keyword">using</span> <a class="code" href="CodroidSubscriber_8h.html#a642dfd99e4d5d6e820611cb819796280">VarCallback</a>    = std::function&lt;void(<span class="keyword">const</span> std::map&lt;std::string, std::string&gt;&amp;)&gt;;</div>
+<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160; </div>
+<div class="line"><a name="l00042"></a><span class="lineno"><a class="line" href="CodroidSubscriber_8h.html#aa10a17ad1d35f21535d42e2b6d8d8ac1">   42</a></span>&#160;<span class="keyword">using</span> <a class="code" href="CodroidSubscriber_8h.html#aa10a17ad1d35f21535d42e2b6d8d8ac1">LogCallback</a>    = std::function&lt;void(<span class="keyword">const</span> std::string&amp; msg, <span class="keywordtype">int</span> level)&gt;;</div>
+<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160; </div>
+<div class="line"><a name="l00051"></a><span class="lineno"><a class="line" href="classCodroid_1_1CodroidSubscriber.html">   51</a></span>&#160;<span class="keyword">class </span>CODROID_API <a class="code" href="classCodroid_1_1CodroidSubscriber.html">CodroidSubscriber</a> {</div>
+<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;<span class="keyword">public</span>:</div>
+<div class="line"><a name="l00056"></a><span class="lineno"><a class="line" href="classCodroid_1_1CodroidSubscriber.html#a6a2a9fb7fd2523ce679cf80469fbd846">   56</a></span>&#160;    <a class="code" href="classCodroid_1_1CodroidSubscriber.html#a6a2a9fb7fd2523ce679cf80469fbd846">CodroidSubscriber</a>();</div>
+<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160; </div>
+<div class="line"><a name="l00061"></a><span class="lineno"><a class="line" href="classCodroid_1_1CodroidSubscriber.html#ad6089690e77172da3ef4cd24c6e76d2a">   61</a></span>&#160;    <a class="code" href="classCodroid_1_1CodroidSubscriber.html#ad6089690e77172da3ef4cd24c6e76d2a">~CodroidSubscriber</a>();</div>
+<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160; </div>
+<div class="line"><a name="l00069"></a><span class="lineno"><a class="line" href="classCodroid_1_1CodroidSubscriber.html#ae1efcfda380df534e8f87b2cf9314729">   69</a></span>&#160;    <span class="keywordtype">bool</span> <a class="code" href="classCodroid_1_1CodroidSubscriber.html#ae1efcfda380df534e8f87b2cf9314729">connect</a>(<span class="keyword">const</span> std::string&amp; ip, <span class="keywordtype">int</span> port = 9001);</div>
+<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160; </div>
+<div class="line"><a name="l00074"></a><span class="lineno"><a class="line" href="classCodroid_1_1CodroidSubscriber.html#acec9b2a3517b5a18f6fe514f3e600ada">   74</a></span>&#160;    <span class="keywordtype">void</span> <a class="code" href="classCodroid_1_1CodroidSubscriber.html#acec9b2a3517b5a18f6fe514f3e600ada">disconnect</a>();</div>
+<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160; </div>
+<div class="line"><a name="l00084"></a><span class="lineno"><a class="line" href="classCodroid_1_1CodroidSubscriber.html#af1f84fd7e1a067d900eb22d7d0da6fde">   84</a></span>&#160;    <span class="keywordtype">bool</span> <a class="code" href="classCodroid_1_1CodroidSubscriber.html#af1f84fd7e1a067d900eb22d7d0da6fde">subscribe</a>(<span class="keyword">const</span> std::string&amp; topic, <span class="keywordtype">int</span> cycle = 0);</div>
+<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160; </div>
+<div class="line"><a name="l00090"></a><span class="lineno"><a class="line" href="classCodroid_1_1CodroidSubscriber.html#ac5b345672d99158be46e4ae31d8ba536">   90</a></span>&#160;    <span class="keywordtype">void</span> <a class="code" href="classCodroid_1_1CodroidSubscriber.html#ac5b345672d99158be46e4ae31d8ba536">setStatusCallback</a>(<a class="code" href="CodroidSubscriber_8h.html#a94da13adb438041a2f6a0042053ff961">StatusCallback</a> cb) { onStatus_ = cb; }</div>
+<div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160; </div>
+<div class="line"><a name="l00096"></a><span class="lineno"><a class="line" href="classCodroid_1_1CodroidSubscriber.html#ade8c4587e8c5a37f0a3c87d29f915059">   96</a></span>&#160;    <span class="keywordtype">void</span> <a class="code" href="classCodroid_1_1CodroidSubscriber.html#ade8c4587e8c5a37f0a3c87d29f915059">setPostureCallback</a>(<a class="code" href="CodroidSubscriber_8h.html#a08b2ecedb86acece2a3278a8fbd43c7e">Codroid::PostureCallback</a> cb) { onPosture_ = cb; }</div>
+<div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160; </div>
+<div class="line"><a name="l00102"></a><span class="lineno"><a class="line" href="classCodroid_1_1CodroidSubscriber.html#a0ed02ecf33fa301bdbfee3922b6ab83b">  102</a></span>&#160;    <span class="keywordtype">void</span> <a class="code" href="classCodroid_1_1CodroidSubscriber.html#a0ed02ecf33fa301bdbfee3922b6ab83b">setVarCallback</a>(<a class="code" href="CodroidSubscriber_8h.html#a642dfd99e4d5d6e820611cb819796280">VarCallback</a> cb) { onVar_ = cb; }</div>
+<div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160; </div>
+<div class="line"><a name="l00108"></a><span class="lineno"><a class="line" href="classCodroid_1_1CodroidSubscriber.html#a43752873cd35bf77c78dc170863e3aa7">  108</a></span>&#160;    <span class="keywordtype">void</span> <a class="code" href="classCodroid_1_1CodroidSubscriber.html#a43752873cd35bf77c78dc170863e3aa7">setLogCallback</a>(<a class="code" href="CodroidSubscriber_8h.html#aa10a17ad1d35f21535d42e2b6d8d8ac1">LogCallback</a> cb) { onLog_ = cb; }</div>
+<div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160; </div>
+<div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;<span class="keyword">private</span>:</div>
+<div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;    <span class="keywordtype">void</span> runLoop();</div>
+<div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160; </div>
+<div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160;    <span class="keywordtype">void</span> handleMessage(<span class="keyword">const</span> json&amp; j);</div>
+<div class="line"><a name="l00116"></a><span class="lineno">  116</span>&#160; </div>
+<div class="line"><a name="l00118"></a><span class="lineno">  118</span>&#160;    std::string receiveOneRaw();</div>
+<div class="line"><a name="l00119"></a><span class="lineno">  119</span>&#160; </div>
+<div class="line"><a name="l00120"></a><span class="lineno">  120</span>&#160;    asio::io_context io_context_;</div>
+<div class="line"><a name="l00121"></a><span class="lineno">  121</span>&#160;    std::unique_ptr&lt;asio::ip::tcp::socket&gt; socket_;</div>
+<div class="line"><a name="l00122"></a><span class="lineno">  122</span>&#160;    </div>
+<div class="line"><a name="l00123"></a><span class="lineno">  123</span>&#160;    std::string buffer_;</div>
+<div class="line"><a name="l00124"></a><span class="lineno">  124</span>&#160;    std::thread thread_;</div>
+<div class="line"><a name="l00125"></a><span class="lineno">  125</span>&#160;    std::atomic&lt;bool&gt; running_{<span class="keyword">false</span>};</div>
+<div class="line"><a name="l00126"></a><span class="lineno">  126</span>&#160; </div>
+<div class="line"><a name="l00127"></a><span class="lineno">  127</span>&#160;    StatusCallback onStatus_;</div>
+<div class="line"><a name="l00128"></a><span class="lineno">  128</span>&#160;    PostureCallback onPosture_;</div>
+<div class="line"><a name="l00129"></a><span class="lineno">  129</span>&#160;    VarCallback onVar_;</div>
+<div class="line"><a name="l00130"></a><span class="lineno">  130</span>&#160;    LogCallback onLog_;</div>
+<div class="line"><a name="l00131"></a><span class="lineno">  131</span>&#160;};</div>
+<div class="line"><a name="l00132"></a><span class="lineno">  132</span>&#160; </div>
+<div class="line"><a name="l00133"></a><span class="lineno">  133</span>&#160;} <span class="comment">// namespace Codroid</span></div>
+<div class="line"><a name="l00134"></a><span class="lineno">  134</span>&#160; </div>
+<div class="line"><a name="l00135"></a><span class="lineno">  135</span>&#160;<span class="preprocessor">#endif </span><span class="comment">// CODROID_SUBSCRIBER_H</span></div>
+<div class="ttc" id="aCodroidDefine_8h_html"><div class="ttname"><a href="CodroidDefine_8h.html">CodroidDefine.h</a></div><div class="ttdoc">定义文件</div></div>
+<div class="ttc" id="aCodroidSubscriber_8h_html_a08b2ecedb86acece2a3278a8fbd43c7e"><div class="ttname"><a href="CodroidSubscriber_8h.html#a08b2ecedb86acece2a3278a8fbd43c7e">Codroid::PostureCallback</a></div><div class="ttdeci">std::function&lt; void(const RobotPosture &amp;)&gt; PostureCallback</div><div class="ttdoc">机器人位姿回调类型</div><div class="ttdef"><b>Definition:</b> CodroidSubscriber.h:32</div></div>
+<div class="ttc" id="aCodroidSubscriber_8h_html_a642dfd99e4d5d6e820611cb819796280"><div class="ttname"><a href="CodroidSubscriber_8h.html#a642dfd99e4d5d6e820611cb819796280">Codroid::VarCallback</a></div><div class="ttdeci">std::function&lt; void(const std::map&lt; std::string, std::string &gt; &amp;)&gt; VarCallback</div><div class="ttdoc">变量更新回调类型</div><div class="ttdef"><b>Definition:</b> CodroidSubscriber.h:37</div></div>
+<div class="ttc" id="aCodroidSubscriber_8h_html_a94da13adb438041a2f6a0042053ff961"><div class="ttname"><a href="CodroidSubscriber_8h.html#a94da13adb438041a2f6a0042053ff961">Codroid::StatusCallback</a></div><div class="ttdeci">std::function&lt; void(const RobotStatus &amp;)&gt; StatusCallback</div><div class="ttdoc">机器人状态回调类型</div><div class="ttdef"><b>Definition:</b> CodroidSubscriber.h:27</div></div>
+<div class="ttc" id="aCodroidSubscriber_8h_html_aa10a17ad1d35f21535d42e2b6d8d8ac1"><div class="ttname"><a href="CodroidSubscriber_8h.html#aa10a17ad1d35f21535d42e2b6d8d8ac1">Codroid::LogCallback</a></div><div class="ttdeci">std::function&lt; void(const std::string &amp;msg, int level)&gt; LogCallback</div><div class="ttdoc">系统日志回调类型</div><div class="ttdef"><b>Definition:</b> CodroidSubscriber.h:42</div></div>
+<div class="ttc" id="aclassCodroid_1_1CodroidSubscriber_html"><div class="ttname"><a href="classCodroid_1_1CodroidSubscriber.html">Codroid::CodroidSubscriber</a></div><div class="ttdoc">用于通过独立 TCP 通道进行异步数据订阅的专用类。</div><div class="ttdef"><b>Definition:</b> CodroidSubscriber.h:51</div></div>
+<div class="ttc" id="aclassCodroid_1_1CodroidSubscriber_html_a0ed02ecf33fa301bdbfee3922b6ab83b"><div class="ttname"><a href="classCodroid_1_1CodroidSubscriber.html#a0ed02ecf33fa301bdbfee3922b6ab83b">Codroid::CodroidSubscriber::setVarCallback</a></div><div class="ttdeci">void setVarCallback(VarCallback cb)</div><div class="ttdoc">设置变量更新回调</div><div class="ttdef"><b>Definition:</b> CodroidSubscriber.h:102</div></div>
+<div class="ttc" id="aclassCodroid_1_1CodroidSubscriber_html_a43752873cd35bf77c78dc170863e3aa7"><div class="ttname"><a href="classCodroid_1_1CodroidSubscriber.html#a43752873cd35bf77c78dc170863e3aa7">Codroid::CodroidSubscriber::setLogCallback</a></div><div class="ttdeci">void setLogCallback(LogCallback cb)</div><div class="ttdoc">设置系统日志回调</div><div class="ttdef"><b>Definition:</b> CodroidSubscriber.h:108</div></div>
+<div class="ttc" id="aclassCodroid_1_1CodroidSubscriber_html_a6a2a9fb7fd2523ce679cf80469fbd846"><div class="ttname"><a href="classCodroid_1_1CodroidSubscriber.html#a6a2a9fb7fd2523ce679cf80469fbd846">Codroid::CodroidSubscriber::CodroidSubscriber</a></div><div class="ttdeci">CodroidSubscriber()</div><div class="ttdoc">构造函数</div></div>
+<div class="ttc" id="aclassCodroid_1_1CodroidSubscriber_html_ac5b345672d99158be46e4ae31d8ba536"><div class="ttname"><a href="classCodroid_1_1CodroidSubscriber.html#ac5b345672d99158be46e4ae31d8ba536">Codroid::CodroidSubscriber::setStatusCallback</a></div><div class="ttdeci">void setStatusCallback(StatusCallback cb)</div><div class="ttdoc">设置机器人状态更新回调</div><div class="ttdef"><b>Definition:</b> CodroidSubscriber.h:90</div></div>
+<div class="ttc" id="aclassCodroid_1_1CodroidSubscriber_html_acec9b2a3517b5a18f6fe514f3e600ada"><div class="ttname"><a href="classCodroid_1_1CodroidSubscriber.html#acec9b2a3517b5a18f6fe514f3e600ada">Codroid::CodroidSubscriber::disconnect</a></div><div class="ttdeci">void disconnect()</div><div class="ttdoc">终止连接并停止后台处理</div></div>
+<div class="ttc" id="aclassCodroid_1_1CodroidSubscriber_html_ad6089690e77172da3ef4cd24c6e76d2a"><div class="ttname"><a href="classCodroid_1_1CodroidSubscriber.html#ad6089690e77172da3ef4cd24c6e76d2a">Codroid::CodroidSubscriber::~CodroidSubscriber</a></div><div class="ttdeci">~CodroidSubscriber()</div><div class="ttdoc">析构函数</div></div>
+<div class="ttc" id="aclassCodroid_1_1CodroidSubscriber_html_ade8c4587e8c5a37f0a3c87d29f915059"><div class="ttname"><a href="classCodroid_1_1CodroidSubscriber.html#ade8c4587e8c5a37f0a3c87d29f915059">Codroid::CodroidSubscriber::setPostureCallback</a></div><div class="ttdeci">void setPostureCallback(Codroid::PostureCallback cb)</div><div class="ttdoc">设置机器人位姿更新回调</div><div class="ttdef"><b>Definition:</b> CodroidSubscriber.h:96</div></div>
+<div class="ttc" id="aclassCodroid_1_1CodroidSubscriber_html_ae1efcfda380df534e8f87b2cf9314729"><div class="ttname"><a href="classCodroid_1_1CodroidSubscriber.html#ae1efcfda380df534e8f87b2cf9314729">Codroid::CodroidSubscriber::connect</a></div><div class="ttdeci">bool connect(const std::string &amp;ip, int port=9001)</div><div class="ttdoc">连接到机器人订阅服务器</div></div>
+<div class="ttc" id="aclassCodroid_1_1CodroidSubscriber_html_af1f84fd7e1a067d900eb22d7d0da6fde"><div class="ttname"><a href="classCodroid_1_1CodroidSubscriber.html#af1f84fd7e1a067d900eb22d7d0da6fde">Codroid::CodroidSubscriber::subscribe</a></div><div class="ttdeci">bool subscribe(const std::string &amp;topic, int cycle=0)</div><div class="ttdoc">订阅特定的数据主题</div></div>
+<div class="ttc" id="astructCodroid_1_1RobotPosture_html"><div class="ttname"><a href="structCodroid_1_1RobotPosture.html">Codroid::RobotPosture</a></div><div class="ttdoc">机器人实时位姿</div><div class="ttdef"><b>Definition:</b> CodroidDefine.h:261</div></div>
+<div class="ttc" id="astructCodroid_1_1RobotStatus_html"><div class="ttname"><a href="structCodroid_1_1RobotStatus.html">Codroid::RobotStatus</a></div><div class="ttdoc">机器人运行状态</div><div class="ttdef"><b>Definition:</b> CodroidDefine.h:236</div></div>
+</div><!-- fragment --></div><!-- contents -->
+<!-- start footer part -->
+<hr class="footer"/><address class="footer"><small>
+制作者&#160;<a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1
+</small></address>
+</body>
+</html>

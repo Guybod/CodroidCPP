@@ -1,0 +1,1558 @@
+\doxysection{Codroid\+::Codroid\+Control\+Interface类 参考}
+\label{classCodroid_1_1CodroidControlInterface}\index{Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}}
+\doxysubsection*{Public 成员函数}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\label{classCodroid_1_1CodroidControlInterface_a5bd20cdc67a63c666ccabb3adf785d1a}} 
+\mbox{\hyperlink{classCodroid_1_1CodroidControlInterface_a5bd20cdc67a63c666ccabb3adf785d1a}{Codroid\+Control\+Interface}} ()
+\begin{DoxyCompactList}\small\item\em 构造函数 \end{DoxyCompactList}\item 
+\mbox{\label{classCodroid_1_1CodroidControlInterface_ada3e8e635d1eca88288fa7c5a6b77945}} 
+\mbox{\hyperlink{classCodroid_1_1CodroidControlInterface_ada3e8e635d1eca88288fa7c5a6b77945}{$\sim$\+Codroid\+Control\+Interface}} ()
+\begin{DoxyCompactList}\small\item\em 析构函数 \end{DoxyCompactList}\item 
+\mbox{\label{classCodroid_1_1CodroidControlInterface_ab57d484e50ef4ce8d39b46cbde9f5ec7}} 
+{\bfseries Codroid\+Control\+Interface} (const \mbox{\hyperlink{classCodroid_1_1CodroidControlInterface}{Codroid\+Control\+Interface}} \&)=delete
+\item 
+\mbox{\label{classCodroid_1_1CodroidControlInterface_aa33877ec8821e28c53e0aa122e1fb9cb}} 
+\mbox{\hyperlink{classCodroid_1_1CodroidControlInterface}{Codroid\+Control\+Interface}} \& {\bfseries operator=} (const \mbox{\hyperlink{classCodroid_1_1CodroidControlInterface}{Codroid\+Control\+Interface}} \&)=delete
+\item 
+bool \mbox{\hyperlink{classCodroid_1_1CodroidControlInterface_aad56ea8f2519051fa988ce33e840c30a}{connect}} (const std\+::string \&ip, int port=9001)
+\begin{DoxyCompactList}\small\item\em 连接机器人 \end{DoxyCompactList}\item 
+\mbox{\label{classCodroid_1_1CodroidControlInterface_a52b4c98384bf9a95d2ed4b6f53613f3c}} 
+void \mbox{\hyperlink{classCodroid_1_1CodroidControlInterface_a52b4c98384bf9a95d2ed4b6f53613f3c}{disconnect}} ()
+\begin{DoxyCompactList}\small\item\em 断开与机器人的连接 \end{DoxyCompactList}\item 
+\mbox{\hyperlink{structCodroid_1_1Response}{Response}} \mbox{\hyperlink{classCodroid_1_1CodroidControlInterface_ad5a1f7e7ef9d8ef013069c9116b48102}{send\+Command}} (const std\+::string \&type, const json \&data, int id)
+\begin{DoxyCompactList}\small\item\em 向机器人发送指令 \end{DoxyCompactList}\item 
+\mbox{\hyperlink{structCodroid_1_1Response}{Response}} \mbox{\hyperlink{classCodroid_1_1CodroidControlInterface_a718ebb89caf20c3c8116996051bc29c4}{run\+Script}} (const std\+::string \&script, int id=1)
+\begin{DoxyCompactList}\small\item\em 在机器人上运行脚本 \end{DoxyCompactList}\item 
+\mbox{\hyperlink{structCodroid_1_1Response}{Response}} \mbox{\hyperlink{classCodroid_1_1CodroidControlInterface_a5f43a3dd8392152813ab440c4214a4f6}{enter\+Remote\+Script\+Mode}} (int id=1)
+\begin{DoxyCompactList}\small\item\em 在机器人上进入远程脚本模式 \end{DoxyCompactList}\item 
+\mbox{\hyperlink{structCodroid_1_1Response}{Response}} \mbox{\hyperlink{classCodroid_1_1CodroidControlInterface_a4e561340c58233db4c46e9d9af948a8e}{run\+Project}} (const std\+::string \&projectid, int id=1)
+\begin{DoxyCompactList}\small\item\em 在机器人上通过工程\+ID运行工程 \end{DoxyCompactList}\item 
+\mbox{\hyperlink{structCodroid_1_1Response}{Response}} \mbox{\hyperlink{classCodroid_1_1CodroidControlInterface_a148342a5054bde9cafd17dccbdf58dce}{run\+Project\+By\+Index}} (int index, int id=1)
+\begin{DoxyCompactList}\small\item\em 在机器人上通过索引运行工程 \end{DoxyCompactList}\item 
+\mbox{\hyperlink{structCodroid_1_1Response}{Response}} \mbox{\hyperlink{classCodroid_1_1CodroidControlInterface_a49c3d8596a0e8e18027cbb34f1d6771b}{run\+Step}} (const std\+::string \&projectid, int id=1)
+\begin{DoxyCompactList}\small\item\em 在机器人上单步运行工程 \end{DoxyCompactList}\item 
+\mbox{\hyperlink{structCodroid_1_1Response}{Response}} \mbox{\hyperlink{classCodroid_1_1CodroidControlInterface_a6e8db0613a3ebfb685ee0ba838e5e2c9}{pause\+Project}} (int id=1)
+\begin{DoxyCompactList}\small\item\em 暂停机器人上正在运行的工程 \end{DoxyCompactList}\item 
+\mbox{\hyperlink{structCodroid_1_1Response}{Response}} \mbox{\hyperlink{classCodroid_1_1CodroidControlInterface_ae2fa8f4e84c30e571784330a9658a07d}{resume\+Project}} (int id=1)
+\begin{DoxyCompactList}\small\item\em 恢复机器人上暂停的工程 \end{DoxyCompactList}\item 
+\mbox{\hyperlink{structCodroid_1_1Response}{Response}} \mbox{\hyperlink{classCodroid_1_1CodroidControlInterface_a4c2abda057503284413e99cb300ca303}{stop\+Project}} (int id=1)
+\begin{DoxyCompactList}\small\item\em 停止机器人上正在运行的工程 \end{DoxyCompactList}\item 
+\mbox{\hyperlink{structCodroid_1_1Response}{Response}} \mbox{\hyperlink{classCodroid_1_1CodroidControlInterface_ab1cacb6b5be02bed4a15907e28509a44}{set\+Start\+Line}} (int startline, int id=1)
+\begin{DoxyCompactList}\small\item\em 设置机器人上工程执行的启动行 \end{DoxyCompactList}\item 
+\mbox{\hyperlink{structCodroid_1_1Response}{Response}} \mbox{\hyperlink{classCodroid_1_1CodroidControlInterface_a6bef6cc1b869a5b10169b7e9d1289bfb}{clear\+Start\+Line}} (int id=1)
+\begin{DoxyCompactList}\small\item\em 清除机器人上工程执行的启动行设置 \end{DoxyCompactList}\item 
+\mbox{\hyperlink{structCodroid_1_1Response}{Response}} \mbox{\hyperlink{classCodroid_1_1CodroidControlInterface_a2d934dfcc0f96c4db8f10d07eb374dc7}{get\+Global\+Vars}} (int id=1)
+\begin{DoxyCompactList}\small\item\em 获取机器人上的全局变量列表 \end{DoxyCompactList}\item 
+\mbox{\hyperlink{structCodroid_1_1Response}{Response}} \mbox{\hyperlink{classCodroid_1_1CodroidControlInterface_ad4d01127f12343d324ad0f886f790a5f}{save\+Global\+Vars}} (const std\+::map$<$ std\+::string, \mbox{\hyperlink{structCodroid_1_1Variable}{Variable}} $>$ \&vars, int id=1)
+\begin{DoxyCompactList}\small\item\em 将全局变量列表保存到机器人 \end{DoxyCompactList}\item 
+\mbox{\hyperlink{structCodroid_1_1Response}{Response}} \mbox{\hyperlink{classCodroid_1_1CodroidControlInterface_a638e725f0e6ba036aab0303ac21a8d78}{remove\+Global\+Vars}} (const std\+::vector$<$ std\+::string $>$ \&var\+Names, int id=1)
+\begin{DoxyCompactList}\small\item\em 从机器人上删除全局变量 \end{DoxyCompactList}\item 
+\mbox{\hyperlink{structCodroid_1_1Response}{Response}} \mbox{\hyperlink{classCodroid_1_1CodroidControlInterface_aee6c5eabfef9abcf648ea896eb22b78c}{get\+Project\+Var}} (int id=1)
+\begin{DoxyCompactList}\small\item\em 从机器人上获取工程变量的值 \end{DoxyCompactList}\item 
+\mbox{\hyperlink{structCodroid_1_1Response}{Response}} \mbox{\hyperlink{classCodroid_1_1CodroidControlInterface_a60b170b4ee5501fd769c6b68041ec8f3}{RS485init}} (int baudrate, \mbox{\hyperlink{CodroidDefine_8h_acf3deee1f267030949fbf777cc7e486b}{RS485\+Stop\+Bits}} stop\+Bit=RS485\+Stop\+Bits\+::\+One, int data\+Bit=8, \mbox{\hyperlink{CodroidDefine_8h_acedc9f3a5c0ffca11a6d162ccd5c363b}{RS485\+Parity}} parity=RS485\+Parity\+::\+None, int id=1)
+\begin{DoxyCompactList}\small\item\em 初始化机器人上的\+RS485通信 \end{DoxyCompactList}\item 
+\mbox{\hyperlink{structCodroid_1_1Response}{Response}} \mbox{\hyperlink{classCodroid_1_1CodroidControlInterface_a29e377ea0d00d3b2aedacb5c0f750d3b}{RS485flush}} (int id=1)
+\begin{DoxyCompactList}\small\item\em 清空机器人上的\+RS485通信缓冲区 \end{DoxyCompactList}\item 
+\mbox{\hyperlink{structCodroid_1_1Response}{Response}} \mbox{\hyperlink{classCodroid_1_1CodroidControlInterface_a5ab7c5cd823113d3c6f9d571ee8a7a0a}{RS485read}} (int length, int timeout=5000, int id=1)
+\begin{DoxyCompactList}\small\item\em 从机器人上的\+RS485通信读取数据 \end{DoxyCompactList}\item 
+\mbox{\hyperlink{structCodroid_1_1Response}{Response}} \mbox{\hyperlink{classCodroid_1_1CodroidControlInterface_ab22f9bbeaeb4b5c77a5b27903a83b1ec}{RS485write}} (const std\+::vector$<$ uint8\+\_\+t $>$ \&data, int id=1)
+\begin{DoxyCompactList}\small\item\em 向机器人上的\+RS485通信写入数据 \end{DoxyCompactList}\item 
+std\+::vector$<$ double $>$ \mbox{\hyperlink{classCodroid_1_1CodroidControlInterface_a6ee04ecf357a086b917bf8dbeccab053}{forward\+Kinematics}} (const \mbox{\hyperlink{structCodroid_1_1FKParams}{FKParams}} \&params, int id=1)
+\begin{DoxyCompactList}\small\item\em 计算机器人的正运动学 \end{DoxyCompactList}\item 
+std\+::vector$<$ double $>$ \mbox{\hyperlink{classCodroid_1_1CodroidControlInterface_a7ae8adb08ae7133f30ee65fa3a2cdda3}{inverse\+Kinematics}} (const \mbox{\hyperlink{structCodroid_1_1IKParams}{IKParams}} \&params, int id=1)
+\begin{DoxyCompactList}\small\item\em 计算机器人的逆运动学 \end{DoxyCompactList}\item 
+std\+::vector$<$ double $>$ \mbox{\hyperlink{classCodroid_1_1CodroidControlInterface_af84764d54f4618b17aa2a7e9ce67b001}{calculate\+Relative\+Pose}} (const \mbox{\hyperlink{structCodroid_1_1RelativePoseParams}{Relative\+Pose\+Params}} \&params, int id=1)
+\begin{DoxyCompactList}\small\item\em 计算机器人的相对姿态 \end{DoxyCompactList}\item 
+\mbox{\hyperlink{structCodroid_1_1Response}{Response}} \mbox{\hyperlink{classCodroid_1_1CodroidControlInterface_ad5be9f79b9e88fac8494e4ab27d6b6e2}{jog}} (const \mbox{\hyperlink{structCodroid_1_1JogParams}{Jog\+Params}} \&params, int id=1)
+\begin{DoxyCompactList}\small\item\em 对机器人执行点动操作 \end{DoxyCompactList}\item 
+\mbox{\hyperlink{structCodroid_1_1Response}{Response}} \mbox{\hyperlink{classCodroid_1_1CodroidControlInterface_a9eef790b58f6de3eaa6982399eff500d}{stop\+Jog}} (int id=1)
+\begin{DoxyCompactList}\small\item\em 停止机器人上的点动操作 \end{DoxyCompactList}\item 
+\mbox{\hyperlink{structCodroid_1_1Response}{Response}} \mbox{\hyperlink{classCodroid_1_1CodroidControlInterface_a96815916ab9c2ef1e345c28dafcd40fd}{jog\+Heartbeat}} (int id=1)
+\begin{DoxyCompactList}\small\item\em 发送点动操作的心跳信号,至少每500ms发送一次 \end{DoxyCompactList}\item 
+\mbox{\hyperlink{structCodroid_1_1Response}{Response}} \mbox{\hyperlink{classCodroid_1_1CodroidControlInterface_a5b1361f4cd563ff6b66556f9c94602e2}{move\+To}} (const \mbox{\hyperlink{structCodroid_1_1MoveToParams}{Move\+To\+Params}} \&params, int id=1)
+\begin{DoxyCompactList}\small\item\em 将机器人移动到特定位置 \end{DoxyCompactList}\item 
+\mbox{\hyperlink{structCodroid_1_1Response}{Response}} \mbox{\hyperlink{classCodroid_1_1CodroidControlInterface_a1954aac3f15a0a1e0619f5fe9e88316a}{move\+To\+Heartbeat}} (int id=1)
+\begin{DoxyCompactList}\small\item\em 发送 move\+To 操作的心跳信号,至少每500ms发送一次 \end{DoxyCompactList}\item 
+\mbox{\hyperlink{structCodroid_1_1Response}{Response}} \mbox{\hyperlink{classCodroid_1_1CodroidControlInterface_af65296c1067c78f9fe85b7d75e372c0f}{set\+Manual\+Speed\+Rate}} (int speed, int id=1)
+\begin{DoxyCompactList}\small\item\em 设置机器人的手动运动倍率 \end{DoxyCompactList}\item 
+\mbox{\hyperlink{structCodroid_1_1Response}{Response}} \mbox{\hyperlink{classCodroid_1_1CodroidControlInterface_a1822b7c3ee2d6e72f0aa444e80843044}{set\+Auto\+Speed\+Rate}} (int speed, int id=1)
+\begin{DoxyCompactList}\small\item\em 设置机器人的自动运动倍率 \end{DoxyCompactList}\item 
+\mbox{\hyperlink{structCodroid_1_1Response}{Response}} \mbox{\hyperlink{classCodroid_1_1CodroidControlInterface_a68d7bc57d57ab5710894da5253ac5ad6}{move}} (const std\+::vector$<$ \mbox{\hyperlink{structCodroid_1_1MoveInstruction}{Move\+Instruction}} $>$ \&path, int id=1)
+\begin{DoxyCompactList}\small\item\em 按指定路径移动机器人 \end{DoxyCompactList}\item 
+\mbox{\hyperlink{structCodroid_1_1Response}{Response}} \mbox{\hyperlink{classCodroid_1_1CodroidControlInterface_a6de580e08139dd52ac6e657a3bef414b}{movJ}} (const \mbox{\hyperlink{structCodroid_1_1MoveInstruction}{Move\+Instruction}} \&inst, int id=1)
+\begin{DoxyCompactList}\small\item\em 将机器人移动到特定关节位置 \end{DoxyCompactList}\item 
+\mbox{\hyperlink{structCodroid_1_1Response}{Response}} \mbox{\hyperlink{classCodroid_1_1CodroidControlInterface_ad4c2c7751ee5755312bdf177fb570a3e}{movJ}} (const std\+::vector$<$ double $>$ \&jp, double speed, double acc, int id=1)
+\begin{DoxyCompactList}\small\item\em 将机器人移动到特定关节位置 \end{DoxyCompactList}\item 
+\mbox{\hyperlink{structCodroid_1_1Response}{Response}} \mbox{\hyperlink{classCodroid_1_1CodroidControlInterface_acc1f88e30c24d03b27f3fac26d85b453}{movL}} (const \mbox{\hyperlink{structCodroid_1_1MoveInstruction}{Move\+Instruction}} \&inst, int id=1)
+\begin{DoxyCompactList}\small\item\em 按直线路径移动机器人 \end{DoxyCompactList}\item 
+\mbox{\hyperlink{structCodroid_1_1Response}{Response}} \mbox{\hyperlink{classCodroid_1_1CodroidControlInterface_aef58b53879065c09a9863a96b168c546}{movL}} (const std\+::vector$<$ double $>$ \&cp, double speed, double acc, const std\+::vector$<$ double $>$ \&coor=\{\}, const std\+::vector$<$ double $>$ \&tool=\{\}, int id=1)
+\begin{DoxyCompactList}\small\item\em 按直线路径移动机器人 \end{DoxyCompactList}\item 
+\mbox{\hyperlink{structCodroid_1_1Response}{Response}} \mbox{\hyperlink{classCodroid_1_1CodroidControlInterface_a12a450c48f32a5bad73ccccab3ca14ef}{movC}} (const \mbox{\hyperlink{structCodroid_1_1MoveInstruction}{Move\+Instruction}} \&inst, int id=1)
+\begin{DoxyCompactList}\small\item\em 按圆弧路径移动机器人 \end{DoxyCompactList}\item 
+\mbox{\hyperlink{structCodroid_1_1Response}{Response}} \mbox{\hyperlink{classCodroid_1_1CodroidControlInterface_ad95126edd30178818e461d8bba73fa32}{mov\+Circle}} (const \mbox{\hyperlink{structCodroid_1_1MoveInstruction}{Move\+Instruction}} \&inst, int id=1)
+\begin{DoxyCompactList}\small\item\em 按圆弧路径移动机器人，形成一个完整的圆 \end{DoxyCompactList}\item 
+\mbox{\hyperlink{structCodroid_1_1Response}{Response}} \mbox{\hyperlink{classCodroid_1_1CodroidControlInterface_a2a5ebf6c4f97f41942b0dd49cd3abbd0}{pause\+Move}} (int id=1)
+\begin{DoxyCompactList}\small\item\em 暂停机器人当前的运动 \end{DoxyCompactList}\item 
+\mbox{\hyperlink{structCodroid_1_1Response}{Response}} \mbox{\hyperlink{classCodroid_1_1CodroidControlInterface_aa6dd1e7a0ad430efabe6050aee6bde05}{resume\+Move}} (int id=1)
+\begin{DoxyCompactList}\small\item\em 恢复机器人暂停的运动 \end{DoxyCompactList}\item 
+\mbox{\hyperlink{structCodroid_1_1Response}{Response}} \mbox{\hyperlink{classCodroid_1_1CodroidControlInterface_a320f771f7cf67ad619c83cfdae3c2d93}{stop\+Move}} (int id=1)
+\begin{DoxyCompactList}\small\item\em 立即停止机器人当前的运动 \end{DoxyCompactList}\item 
+\mbox{\hyperlink{structCodroid_1_1Response}{Response}} \mbox{\hyperlink{classCodroid_1_1CodroidControlInterface_a31a83b2be217c6a91d98df75242d465a}{switch\+On}} (int id=1)
+\begin{DoxyCompactList}\small\item\em 上使能机器人 \end{DoxyCompactList}\item 
+\mbox{\hyperlink{structCodroid_1_1Response}{Response}} \mbox{\hyperlink{classCodroid_1_1CodroidControlInterface_a347c03466c970d68acbdc86601dacdca}{switch\+Off}} (int id=1)
+\begin{DoxyCompactList}\small\item\em 下使能机器人 \end{DoxyCompactList}\item 
+\mbox{\hyperlink{structCodroid_1_1Response}{Response}} \mbox{\hyperlink{classCodroid_1_1CodroidControlInterface_a05c72e09934cf981df41cbcf513dddd1}{to\+Manual}} (int id=1)
+\begin{DoxyCompactList}\small\item\em 进入机器人的手动模式 \end{DoxyCompactList}\item 
+\mbox{\hyperlink{structCodroid_1_1Response}{Response}} \mbox{\hyperlink{classCodroid_1_1CodroidControlInterface_ae5d6f5f5dcf619966bf004dcadd1833c}{to\+Auto}} (int id=1)
+\begin{DoxyCompactList}\small\item\em 进入机器人的自动模式 \end{DoxyCompactList}\item 
+\mbox{\hyperlink{structCodroid_1_1Response}{Response}} \mbox{\hyperlink{classCodroid_1_1CodroidControlInterface_ac530a2696872a4e5e3d0c1239e526a83}{to\+Remote}} (int id=1)
+\begin{DoxyCompactList}\small\item\em 进入机器人的远程模式 \end{DoxyCompactList}\item 
+\mbox{\hyperlink{structCodroid_1_1Response}{Response}} \mbox{\hyperlink{classCodroid_1_1CodroidControlInterface_a070aa40e73cc98ef7c6a5f5833ab7116}{to\+Simulation}} (int id=1)
+\begin{DoxyCompactList}\small\item\em 进入机器人的仿真模式 \end{DoxyCompactList}\item 
+\mbox{\hyperlink{structCodroid_1_1Response}{Response}} \mbox{\hyperlink{classCodroid_1_1CodroidControlInterface_a06ca35b8c6ba30190e969f92b8083d47}{to\+Actual}} (int id=1)
+\begin{DoxyCompactList}\small\item\em 进入机器人的实机模式 \end{DoxyCompactList}\item 
+\mbox{\hyperlink{structCodroid_1_1Response}{Response}} \mbox{\hyperlink{classCodroid_1_1CodroidControlInterface_acda4617a8f41f43477eff4203f5ebfe1}{start\+Drag}} (int id=1)
+\begin{DoxyCompactList}\small\item\em 进入机器人的拖拽模式 \end{DoxyCompactList}\item 
+\mbox{\hyperlink{structCodroid_1_1Response}{Response}} \mbox{\hyperlink{classCodroid_1_1CodroidControlInterface_a40c5bd2e79ec486a17bf7afba48b84b4}{stop\+Drag}} (int id=1)
+\begin{DoxyCompactList}\small\item\em 退出机器人的拖拽模式 \end{DoxyCompactList}\item 
+\mbox{\hyperlink{structCodroid_1_1Response}{Response}} \mbox{\hyperlink{classCodroid_1_1CodroidControlInterface_a1819ff454d2d10cdac55663935ad66fc}{clear\+Error}} (int id=1)
+\begin{DoxyCompactList}\small\item\em 清除机器人上的错误 \end{DoxyCompactList}\item 
+std\+::vector$<$ \mbox{\hyperlink{structCodroid_1_1IOInfo}{IOInfo}} $>$ \mbox{\hyperlink{classCodroid_1_1CodroidControlInterface_afd49dd586aa18d0f3c5ec57f08b0b549}{get\+IOValues}} (const std\+::vector$<$ \mbox{\hyperlink{structCodroid_1_1IOInfo}{IOInfo}} $>$ \&query\+List, int id=1)
+\begin{DoxyCompactList}\small\item\em 获取机器人上\+IO端口的状态 \end{DoxyCompactList}\item 
+int \mbox{\hyperlink{classCodroid_1_1CodroidControlInterface_adde5196fdc398e6bb9f0628f051ada5e}{get\+DI}} (int port, int id=1)
+\begin{DoxyCompactList}\small\item\em 获取数字输入端口的值 \end{DoxyCompactList}\item 
+int \mbox{\hyperlink{classCodroid_1_1CodroidControlInterface_ac8ebe8db8b3963b855c40f4ba86d3eff}{get\+DO}} (int port, int id=1)
+\begin{DoxyCompactList}\small\item\em 获取数字输出端口的值 \end{DoxyCompactList}\item 
+double \mbox{\hyperlink{classCodroid_1_1CodroidControlInterface_a4ce7e31a11d40ccad3a4e0ece49461cc}{get\+AI}} (int port, int id=1)
+\begin{DoxyCompactList}\small\item\em 获取模拟输入端口的值 \end{DoxyCompactList}\item 
+double \mbox{\hyperlink{classCodroid_1_1CodroidControlInterface_a250c53203b3eb76186e96839d383805c}{get\+AO}} (int port, int id=1)
+\begin{DoxyCompactList}\small\item\em 获取模拟输出端口的值 \end{DoxyCompactList}\item 
+\mbox{\hyperlink{structCodroid_1_1Response}{Response}} \mbox{\hyperlink{classCodroid_1_1CodroidControlInterface_af821071ea012f4ac7097709833335de1}{set\+IOValue}} (const std\+::string \&type, int port, double value, int id=1)
+\begin{DoxyCompactList}\small\item\em 设置机器人上\+IO端口的值 \end{DoxyCompactList}\item 
+\mbox{\hyperlink{structCodroid_1_1Response}{Response}} \mbox{\hyperlink{classCodroid_1_1CodroidControlInterface_a961979760e4463fb40d6636df891253b}{set\+DO}} (int port, int value, int id=1)
+\begin{DoxyCompactList}\small\item\em 设置数字输出端口的值 \end{DoxyCompactList}\item 
+\mbox{\hyperlink{structCodroid_1_1Response}{Response}} \mbox{\hyperlink{classCodroid_1_1CodroidControlInterface_a4b0220b8b40c9abbe4621901fc7477c8}{set\+AO}} (int port, double value, int id=1)
+\begin{DoxyCompactList}\small\item\em 设置模拟输出端口的值 \end{DoxyCompactList}\item 
+std\+::vector$<$ \mbox{\hyperlink{structCodroid_1_1RegisterInfo}{Register\+Info}} $>$ \mbox{\hyperlink{classCodroid_1_1CodroidControlInterface_adf673d7a1bd8159b37f1060545be6057}{get\+Register\+Values}} (const std\+::vector$<$ int $>$ \&addresses, int id=1)
+\begin{DoxyCompactList}\small\item\em 获取机器人上寄存器的值 \end{DoxyCompactList}\item 
+double \mbox{\hyperlink{classCodroid_1_1CodroidControlInterface_a648fb7e470a77603218a116918ba233e}{get\+Register\+Value}} (const int address, int id=1)
+\begin{DoxyCompactList}\small\item\em 获取机器人上单个寄存器的值 \end{DoxyCompactList}\item 
+\mbox{\hyperlink{structCodroid_1_1Response}{Response}} \mbox{\hyperlink{classCodroid_1_1CodroidControlInterface_ab0594bf6d64317f0ea6c7df44768d047}{set\+Register\+Value}} (int address, double value, int id=1)
+\begin{DoxyCompactList}\small\item\em 设置机器人上寄存器的值 \end{DoxyCompactList}\item 
+\mbox{\hyperlink{structCodroid_1_1Response}{Response}} \mbox{\hyperlink{classCodroid_1_1CodroidControlInterface_a68dd39616b81707ddf43204f0b28c5df}{set\+Extend\+Array\+Type}} (int index, Extend\+Array\+Type type, int id=1)
+\begin{DoxyCompactList}\small\item\em 设置机器人上扩展数组的数据类型 \end{DoxyCompactList}\item 
+\mbox{\hyperlink{structCodroid_1_1Response}{Response}} \mbox{\hyperlink{classCodroid_1_1CodroidControlInterface_aaac69159263a71bf7539370e71f30104}{remove\+Extend\+Array}} (int index, int id=1)
+\begin{DoxyCompactList}\small\item\em 从机器人上删除一个扩展数组索引 \end{DoxyCompactList}\item 
+\mbox{\hyperlink{structCodroid_1_1Response}{Response}} \mbox{\hyperlink{classCodroid_1_1CodroidControlInterface_ac4775521f061e75378af874f2e2fe019}{start\+Data\+Push}} (const std\+::string \&ip, int port, int duration, int id=1)
+\begin{DoxyCompactList}\small\item\em 开启从机器人到指定\+IP和端口的数据推送流 \end{DoxyCompactList}\item 
+\mbox{\hyperlink{structCodroid_1_1Response}{Response}} \mbox{\hyperlink{classCodroid_1_1CodroidControlInterface_a5f63b42096cfb2334544097af3adc0ce}{stop\+Data\+Push}} (int id=1)
+\begin{DoxyCompactList}\small\item\em 关闭机器人上的数据推送流 \end{DoxyCompactList}\item 
+\mbox{\hyperlink{structCodroid_1_1Response}{Response}} \mbox{\hyperlink{classCodroid_1_1CodroidControlInterface_a6adf01457b9186c36e58877dc90c4cdb}{start\+Control}} (int duration, int start\+Buffer=5, int filter\+Typeint=1, int id=1)
+\begin{DoxyCompactList}\small\item\em 以指定参数开启机器人的实时控制 \end{DoxyCompactList}\item 
+\mbox{\hyperlink{structCodroid_1_1Response}{Response}} \mbox{\hyperlink{classCodroid_1_1CodroidControlInterface_a29a04b79def1e8d64fa55a6145d3dabc}{stop\+Control}} (int id=1)
+\begin{DoxyCompactList}\small\item\em 关闭机器人上的实时控制 \end{DoxyCompactList}\item 
+\mbox{\hyperlink{structCodroid_1_1Response}{Response}} \mbox{\hyperlink{classCodroid_1_1CodroidControlInterface_a943aebf405ad25d0c3a7ce778f5b5690}{set\+Collision\+Sensitivity}} (int level, int id=1)
+\begin{DoxyCompactList}\small\item\em 设置机器人上的碰撞灵敏度等级 \end{DoxyCompactList}\item 
+\mbox{\hyperlink{structCodroid_1_1Response}{Response}} \mbox{\hyperlink{classCodroid_1_1CodroidControlInterface_a50a2176b51f2432bbe42433419d4fc10}{set\+Payload}} (int payload\+Id, int id=1)
+\begin{DoxyCompactList}\small\item\em 设置机器人上的负载参数 \end{DoxyCompactList}\end{DoxyCompactItemize}
+\doxysubsection*{静态 Public 成员函数}
+\begin{DoxyCompactItemize}
+\item 
+static void \mbox{\hyperlink{classCodroid_1_1CodroidControlInterface_adde5cb9959c6bb59daa4f02e59a9342c}{print\+Response}} (const \mbox{\hyperlink{structCodroid_1_1Response}{Codroid\+::\+Response}} \&resp)
+\begin{DoxyCompactList}\small\item\em 打印指令的响应 \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\doxysubsection{成员函数说明}
+\mbox{\label{classCodroid_1_1CodroidControlInterface_af84764d54f4618b17aa2a7e9ce67b001}} 
+\index{Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}!calculateRelativePose@{calculateRelativePose}}
+\index{calculateRelativePose@{calculateRelativePose}!Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}}
+\doxysubsubsection{\texorpdfstring{calculateRelativePose()}{calculateRelativePose()}}
+{\footnotesize\ttfamily std\+::vector$<$double$>$ Codroid\+::\+Codroid\+Control\+Interface\+::calculate\+Relative\+Pose (\begin{DoxyParamCaption}\item[{const \mbox{\hyperlink{structCodroid_1_1RelativePoseParams}{Relative\+Pose\+Params}} \&}]{params,  }\item[{int}]{id = {\ttfamily 1} }\end{DoxyParamCaption})}
+
+
+
+计算机器人的相对姿态 
+
+
+\begin{DoxyParams}{参数}
+{\em params} & 相对姿态参数。 \\
+\hline
+{\em id} & 请求 ID。 \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{返回}
+笛卡尔坐标偏移向量。 
+\end{DoxyReturn}
+\mbox{\label{classCodroid_1_1CodroidControlInterface_a1819ff454d2d10cdac55663935ad66fc}} 
+\index{Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}!clearError@{clearError}}
+\index{clearError@{clearError}!Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}}
+\doxysubsubsection{\texorpdfstring{clearError()}{clearError()}}
+{\footnotesize\ttfamily \mbox{\hyperlink{structCodroid_1_1Response}{Response}} Codroid\+::\+Codroid\+Control\+Interface\+::clear\+Error (\begin{DoxyParamCaption}\item[{int}]{id = {\ttfamily 1} }\end{DoxyParamCaption})}
+
+
+
+清除机器人上的错误 
+
+
+\begin{DoxyParams}{参数}
+{\em id} & 请求 ID。 \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{返回}
+包含指令执行结果的响应对象。 
+\end{DoxyReturn}
+\mbox{\label{classCodroid_1_1CodroidControlInterface_a6bef6cc1b869a5b10169b7e9d1289bfb}} 
+\index{Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}!clearStartLine@{clearStartLine}}
+\index{clearStartLine@{clearStartLine}!Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}}
+\doxysubsubsection{\texorpdfstring{clearStartLine()}{clearStartLine()}}
+{\footnotesize\ttfamily \mbox{\hyperlink{structCodroid_1_1Response}{Response}} Codroid\+::\+Codroid\+Control\+Interface\+::clear\+Start\+Line (\begin{DoxyParamCaption}\item[{int}]{id = {\ttfamily 1} }\end{DoxyParamCaption})}
+
+
+
+清除机器人上工程执行的启动行设置 
+
+
+\begin{DoxyParams}{参数}
+{\em id} & 请求 ID。 \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{返回}
+包含指令执行结果的响应对象。 
+\end{DoxyReturn}
+\mbox{\label{classCodroid_1_1CodroidControlInterface_aad56ea8f2519051fa988ce33e840c30a}} 
+\index{Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}!connect@{connect}}
+\index{connect@{connect}!Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}}
+\doxysubsubsection{\texorpdfstring{connect()}{connect()}}
+{\footnotesize\ttfamily bool Codroid\+::\+Codroid\+Control\+Interface\+::connect (\begin{DoxyParamCaption}\item[{const std\+::string \&}]{ip,  }\item[{int}]{port = {\ttfamily 9001} }\end{DoxyParamCaption})}
+
+
+
+连接机器人 
+
+
+\begin{DoxyParams}{参数}
+{\em ip} & 机器人\+IP地址。 \\
+\hline
+{\em port} & TCP 端口号。(默认 9001)\\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{返回}
+连接成功返回 true。 
+\end{DoxyReturn}
+\mbox{\label{classCodroid_1_1CodroidControlInterface_a5f43a3dd8392152813ab440c4214a4f6}} 
+\index{Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}!enterRemoteScriptMode@{enterRemoteScriptMode}}
+\index{enterRemoteScriptMode@{enterRemoteScriptMode}!Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}}
+\doxysubsubsection{\texorpdfstring{enterRemoteScriptMode()}{enterRemoteScriptMode()}}
+{\footnotesize\ttfamily \mbox{\hyperlink{structCodroid_1_1Response}{Response}} Codroid\+::\+Codroid\+Control\+Interface\+::enter\+Remote\+Script\+Mode (\begin{DoxyParamCaption}\item[{int}]{id = {\ttfamily 1} }\end{DoxyParamCaption})}
+
+
+
+在机器人上进入远程脚本模式 
+
+
+\begin{DoxyParams}{参数}
+{\em id} & 请求 ID。 \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{返回}
+包含指令执行结果的响应对象。 
+\end{DoxyReturn}
+\mbox{\label{classCodroid_1_1CodroidControlInterface_a6ee04ecf357a086b917bf8dbeccab053}} 
+\index{Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}!forwardKinematics@{forwardKinematics}}
+\index{forwardKinematics@{forwardKinematics}!Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}}
+\doxysubsubsection{\texorpdfstring{forwardKinematics()}{forwardKinematics()}}
+{\footnotesize\ttfamily std\+::vector$<$double$>$ Codroid\+::\+Codroid\+Control\+Interface\+::forward\+Kinematics (\begin{DoxyParamCaption}\item[{const \mbox{\hyperlink{structCodroid_1_1FKParams}{FKParams}} \&}]{params,  }\item[{int}]{id = {\ttfamily 1} }\end{DoxyParamCaption})}
+
+
+
+计算机器人的正运动学 
+
+
+\begin{DoxyParams}{参数}
+{\em params} & 正运动学参数。 \\
+\hline
+{\em id} & 请求 ID。 \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{返回}
+关节角度向量。 
+\end{DoxyReturn}
+\mbox{\label{classCodroid_1_1CodroidControlInterface_a4ce7e31a11d40ccad3a4e0ece49461cc}} 
+\index{Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}!getAI@{getAI}}
+\index{getAI@{getAI}!Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}}
+\doxysubsubsection{\texorpdfstring{getAI()}{getAI()}}
+{\footnotesize\ttfamily double Codroid\+::\+Codroid\+Control\+Interface\+::get\+AI (\begin{DoxyParamCaption}\item[{int}]{port,  }\item[{int}]{id = {\ttfamily 1} }\end{DoxyParamCaption})}
+
+
+
+获取模拟输入端口的值 
+
+
+\begin{DoxyParams}{参数}
+{\em port} & 端口号。 \\
+\hline
+{\em id} & 请求 ID。 \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{返回}
+指定模拟输入端口的值。 
+\end{DoxyReturn}
+\mbox{\label{classCodroid_1_1CodroidControlInterface_a250c53203b3eb76186e96839d383805c}} 
+\index{Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}!getAO@{getAO}}
+\index{getAO@{getAO}!Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}}
+\doxysubsubsection{\texorpdfstring{getAO()}{getAO()}}
+{\footnotesize\ttfamily double Codroid\+::\+Codroid\+Control\+Interface\+::get\+AO (\begin{DoxyParamCaption}\item[{int}]{port,  }\item[{int}]{id = {\ttfamily 1} }\end{DoxyParamCaption})}
+
+
+
+获取模拟输出端口的值 
+
+
+\begin{DoxyParams}{参数}
+{\em port} & 端口号。 \\
+\hline
+{\em id} & 请求 ID。 \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{返回}
+指定模拟输出端口的值。 
+\end{DoxyReturn}
+\mbox{\label{classCodroid_1_1CodroidControlInterface_adde5196fdc398e6bb9f0628f051ada5e}} 
+\index{Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}!getDI@{getDI}}
+\index{getDI@{getDI}!Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}}
+\doxysubsubsection{\texorpdfstring{getDI()}{getDI()}}
+{\footnotesize\ttfamily int Codroid\+::\+Codroid\+Control\+Interface\+::get\+DI (\begin{DoxyParamCaption}\item[{int}]{port,  }\item[{int}]{id = {\ttfamily 1} }\end{DoxyParamCaption})}
+
+
+
+获取数字输入端口的值 
+
+
+\begin{DoxyParams}{参数}
+{\em port} & 端口号。 \\
+\hline
+{\em id} & 请求 ID。 \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{返回}
+指定数字输入端口的值。 
+\end{DoxyReturn}
+\mbox{\label{classCodroid_1_1CodroidControlInterface_ac8ebe8db8b3963b855c40f4ba86d3eff}} 
+\index{Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}!getDO@{getDO}}
+\index{getDO@{getDO}!Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}}
+\doxysubsubsection{\texorpdfstring{getDO()}{getDO()}}
+{\footnotesize\ttfamily int Codroid\+::\+Codroid\+Control\+Interface\+::get\+DO (\begin{DoxyParamCaption}\item[{int}]{port,  }\item[{int}]{id = {\ttfamily 1} }\end{DoxyParamCaption})}
+
+
+
+获取数字输出端口的值 
+
+
+\begin{DoxyParams}{参数}
+{\em port} & 端口号。 \\
+\hline
+{\em id} & 请求 ID。 \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{返回}
+指定数字输出端口的值。 
+\end{DoxyReturn}
+\mbox{\label{classCodroid_1_1CodroidControlInterface_a2d934dfcc0f96c4db8f10d07eb374dc7}} 
+\index{Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}!getGlobalVars@{getGlobalVars}}
+\index{getGlobalVars@{getGlobalVars}!Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}}
+\doxysubsubsection{\texorpdfstring{getGlobalVars()}{getGlobalVars()}}
+{\footnotesize\ttfamily \mbox{\hyperlink{structCodroid_1_1Response}{Response}} Codroid\+::\+Codroid\+Control\+Interface\+::get\+Global\+Vars (\begin{DoxyParamCaption}\item[{int}]{id = {\ttfamily 1} }\end{DoxyParamCaption})}
+
+
+
+获取机器人上的全局变量列表 
+
+
+\begin{DoxyParams}{参数}
+{\em id} & 请求 ID。 \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{返回}
+包含全局变量列表的响应对象。 
+\end{DoxyReturn}
+\mbox{\label{classCodroid_1_1CodroidControlInterface_afd49dd586aa18d0f3c5ec57f08b0b549}} 
+\index{Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}!getIOValues@{getIOValues}}
+\index{getIOValues@{getIOValues}!Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}}
+\doxysubsubsection{\texorpdfstring{getIOValues()}{getIOValues()}}
+{\footnotesize\ttfamily std\+::vector$<$\mbox{\hyperlink{structCodroid_1_1IOInfo}{IOInfo}}$>$ Codroid\+::\+Codroid\+Control\+Interface\+::get\+IOValues (\begin{DoxyParamCaption}\item[{const std\+::vector$<$ \mbox{\hyperlink{structCodroid_1_1IOInfo}{IOInfo}} $>$ \&}]{query\+List,  }\item[{int}]{id = {\ttfamily 1} }\end{DoxyParamCaption})}
+
+
+
+获取机器人上\+IO端口的状态 
+
+
+\begin{DoxyParams}{参数}
+{\em query\+List} & 要查询的\+IO端口列表。 \\
+\hline
+{\em id} & 请求 ID。 \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{返回}
+包含查询\+IO端口状态的\+IOInfo对象向量。 
+\end{DoxyReturn}
+\mbox{\label{classCodroid_1_1CodroidControlInterface_aee6c5eabfef9abcf648ea896eb22b78c}} 
+\index{Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}!getProjectVar@{getProjectVar}}
+\index{getProjectVar@{getProjectVar}!Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}}
+\doxysubsubsection{\texorpdfstring{getProjectVar()}{getProjectVar()}}
+{\footnotesize\ttfamily \mbox{\hyperlink{structCodroid_1_1Response}{Response}} Codroid\+::\+Codroid\+Control\+Interface\+::get\+Project\+Var (\begin{DoxyParamCaption}\item[{int}]{id = {\ttfamily 1} }\end{DoxyParamCaption})}
+
+
+
+从机器人上获取工程变量的值 
+
+
+\begin{DoxyParams}{参数}
+{\em id} & 请求 ID。 \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{返回}
+包含工程变量值的响应对象。 
+\end{DoxyReturn}
+\mbox{\label{classCodroid_1_1CodroidControlInterface_a648fb7e470a77603218a116918ba233e}} 
+\index{Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}!getRegisterValue@{getRegisterValue}}
+\index{getRegisterValue@{getRegisterValue}!Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}}
+\doxysubsubsection{\texorpdfstring{getRegisterValue()}{getRegisterValue()}}
+{\footnotesize\ttfamily double Codroid\+::\+Codroid\+Control\+Interface\+::get\+Register\+Value (\begin{DoxyParamCaption}\item[{const int}]{address,  }\item[{int}]{id = {\ttfamily 1} }\end{DoxyParamCaption})}
+
+
+
+获取机器人上单个寄存器的值 
+
+
+\begin{DoxyParams}{参数}
+{\em address} & 要查询的寄存器地址。 \\
+\hline
+{\em id} & 请求 ID。 \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{返回}
+指定寄存器的值。 
+\end{DoxyReturn}
+\mbox{\label{classCodroid_1_1CodroidControlInterface_adf673d7a1bd8159b37f1060545be6057}} 
+\index{Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}!getRegisterValues@{getRegisterValues}}
+\index{getRegisterValues@{getRegisterValues}!Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}}
+\doxysubsubsection{\texorpdfstring{getRegisterValues()}{getRegisterValues()}}
+{\footnotesize\ttfamily std\+::vector$<$\mbox{\hyperlink{structCodroid_1_1RegisterInfo}{Register\+Info}}$>$ Codroid\+::\+Codroid\+Control\+Interface\+::get\+Register\+Values (\begin{DoxyParamCaption}\item[{const std\+::vector$<$ int $>$ \&}]{addresses,  }\item[{int}]{id = {\ttfamily 1} }\end{DoxyParamCaption})}
+
+
+
+获取机器人上寄存器的值 
+
+
+\begin{DoxyParams}{参数}
+{\em addresses} & 要查询的寄存器地址向量。 \\
+\hline
+{\em id} & 请求 ID。 \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{返回}
+包含查询寄存器值的\+Register\+Info对象向量。 
+\end{DoxyReturn}
+\mbox{\label{classCodroid_1_1CodroidControlInterface_a7ae8adb08ae7133f30ee65fa3a2cdda3}} 
+\index{Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}!inverseKinematics@{inverseKinematics}}
+\index{inverseKinematics@{inverseKinematics}!Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}}
+\doxysubsubsection{\texorpdfstring{inverseKinematics()}{inverseKinematics()}}
+{\footnotesize\ttfamily std\+::vector$<$double$>$ Codroid\+::\+Codroid\+Control\+Interface\+::inverse\+Kinematics (\begin{DoxyParamCaption}\item[{const \mbox{\hyperlink{structCodroid_1_1IKParams}{IKParams}} \&}]{params,  }\item[{int}]{id = {\ttfamily 1} }\end{DoxyParamCaption})}
+
+
+
+计算机器人的逆运动学 
+
+
+\begin{DoxyParams}{参数}
+{\em params} & 逆运动学参数。 \\
+\hline
+{\em id} & 请求 ID。 \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{返回}
+关节角度向量。 
+\end{DoxyReturn}
+\mbox{\label{classCodroid_1_1CodroidControlInterface_ad5be9f79b9e88fac8494e4ab27d6b6e2}} 
+\index{Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}!jog@{jog}}
+\index{jog@{jog}!Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}}
+\doxysubsubsection{\texorpdfstring{jog()}{jog()}}
+{\footnotesize\ttfamily \mbox{\hyperlink{structCodroid_1_1Response}{Response}} Codroid\+::\+Codroid\+Control\+Interface\+::jog (\begin{DoxyParamCaption}\item[{const \mbox{\hyperlink{structCodroid_1_1JogParams}{Jog\+Params}} \&}]{params,  }\item[{int}]{id = {\ttfamily 1} }\end{DoxyParamCaption})}
+
+
+
+对机器人执行点动操作 
+
+
+\begin{DoxyParams}{参数}
+{\em params} & 点动参数。 \\
+\hline
+{\em id} & 请求 ID。 \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{返回}
+包含指令执行结果的响应对象。 
+\end{DoxyReturn}
+\mbox{\label{classCodroid_1_1CodroidControlInterface_a96815916ab9c2ef1e345c28dafcd40fd}} 
+\index{Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}!jogHeartbeat@{jogHeartbeat}}
+\index{jogHeartbeat@{jogHeartbeat}!Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}}
+\doxysubsubsection{\texorpdfstring{jogHeartbeat()}{jogHeartbeat()}}
+{\footnotesize\ttfamily \mbox{\hyperlink{structCodroid_1_1Response}{Response}} Codroid\+::\+Codroid\+Control\+Interface\+::jog\+Heartbeat (\begin{DoxyParamCaption}\item[{int}]{id = {\ttfamily 1} }\end{DoxyParamCaption})}
+
+
+
+发送点动操作的心跳信号,至少每500ms发送一次 
+
+
+\begin{DoxyParams}{参数}
+{\em id} & 请求 ID。 \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{返回}
+包含指令执行结果的响应对象。 
+\end{DoxyReturn}
+\mbox{\label{classCodroid_1_1CodroidControlInterface_a12a450c48f32a5bad73ccccab3ca14ef}} 
+\index{Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}!movC@{movC}}
+\index{movC@{movC}!Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}}
+\doxysubsubsection{\texorpdfstring{movC()}{movC()}}
+{\footnotesize\ttfamily \mbox{\hyperlink{structCodroid_1_1Response}{Response}} Codroid\+::\+Codroid\+Control\+Interface\+::movC (\begin{DoxyParamCaption}\item[{const \mbox{\hyperlink{structCodroid_1_1MoveInstruction}{Move\+Instruction}} \&}]{inst,  }\item[{int}]{id = {\ttfamily 1} }\end{DoxyParamCaption})}
+
+
+
+按圆弧路径移动机器人 
+
+
+\begin{DoxyParams}{参数}
+{\em inst} & 移动指令。 \\
+\hline
+{\em id} & 请求 ID。 \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{返回}
+包含指令执行结果的响应对象。 
+\end{DoxyReturn}
+\mbox{\label{classCodroid_1_1CodroidControlInterface_ad95126edd30178818e461d8bba73fa32}} 
+\index{Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}!movCircle@{movCircle}}
+\index{movCircle@{movCircle}!Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}}
+\doxysubsubsection{\texorpdfstring{movCircle()}{movCircle()}}
+{\footnotesize\ttfamily \mbox{\hyperlink{structCodroid_1_1Response}{Response}} Codroid\+::\+Codroid\+Control\+Interface\+::mov\+Circle (\begin{DoxyParamCaption}\item[{const \mbox{\hyperlink{structCodroid_1_1MoveInstruction}{Move\+Instruction}} \&}]{inst,  }\item[{int}]{id = {\ttfamily 1} }\end{DoxyParamCaption})}
+
+
+
+按圆弧路径移动机器人，形成一个完整的圆 
+
+
+\begin{DoxyParams}{参数}
+{\em inst} & 移动指令。 \\
+\hline
+{\em id} & 请求 ID。 \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{返回}
+包含指令执行结果的响应对象。 
+\end{DoxyReturn}
+\mbox{\label{classCodroid_1_1CodroidControlInterface_a68d7bc57d57ab5710894da5253ac5ad6}} 
+\index{Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}!move@{move}}
+\index{move@{move}!Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}}
+\doxysubsubsection{\texorpdfstring{move()}{move()}}
+{\footnotesize\ttfamily \mbox{\hyperlink{structCodroid_1_1Response}{Response}} Codroid\+::\+Codroid\+Control\+Interface\+::move (\begin{DoxyParamCaption}\item[{const std\+::vector$<$ \mbox{\hyperlink{structCodroid_1_1MoveInstruction}{Move\+Instruction}} $>$ \&}]{path,  }\item[{int}]{id = {\ttfamily 1} }\end{DoxyParamCaption})}
+
+
+
+按指定路径移动机器人 
+
+
+\begin{DoxyParams}{参数}
+{\em path} & 路径。 \\
+\hline
+{\em id} & 请求 ID。 \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{返回}
+包含指令执行结果的响应对象。 
+\end{DoxyReturn}
+\mbox{\label{classCodroid_1_1CodroidControlInterface_a5b1361f4cd563ff6b66556f9c94602e2}} 
+\index{Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}!moveTo@{moveTo}}
+\index{moveTo@{moveTo}!Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}}
+\doxysubsubsection{\texorpdfstring{moveTo()}{moveTo()}}
+{\footnotesize\ttfamily \mbox{\hyperlink{structCodroid_1_1Response}{Response}} Codroid\+::\+Codroid\+Control\+Interface\+::move\+To (\begin{DoxyParamCaption}\item[{const \mbox{\hyperlink{structCodroid_1_1MoveToParams}{Move\+To\+Params}} \&}]{params,  }\item[{int}]{id = {\ttfamily 1} }\end{DoxyParamCaption})}
+
+
+
+将机器人移动到特定位置 
+
+
+\begin{DoxyParams}{参数}
+{\em params} & 移动到参数。 \\
+\hline
+{\em id} & 请求 ID。 \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{返回}
+包含指令执行结果的响应对象。 
+\end{DoxyReturn}
+\mbox{\label{classCodroid_1_1CodroidControlInterface_a1954aac3f15a0a1e0619f5fe9e88316a}} 
+\index{Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}!moveToHeartbeat@{moveToHeartbeat}}
+\index{moveToHeartbeat@{moveToHeartbeat}!Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}}
+\doxysubsubsection{\texorpdfstring{moveToHeartbeat()}{moveToHeartbeat()}}
+{\footnotesize\ttfamily \mbox{\hyperlink{structCodroid_1_1Response}{Response}} Codroid\+::\+Codroid\+Control\+Interface\+::move\+To\+Heartbeat (\begin{DoxyParamCaption}\item[{int}]{id = {\ttfamily 1} }\end{DoxyParamCaption})}
+
+
+
+发送 move\+To 操作的心跳信号,至少每500ms发送一次 
+
+
+\begin{DoxyParams}{参数}
+{\em id} & 请求 ID。 \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{返回}
+包含指令执行结果的响应对象。 
+\end{DoxyReturn}
+\mbox{\label{classCodroid_1_1CodroidControlInterface_a6de580e08139dd52ac6e657a3bef414b}} 
+\index{Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}!movJ@{movJ}}
+\index{movJ@{movJ}!Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}}
+\doxysubsubsection{\texorpdfstring{movJ()}{movJ()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily \mbox{\hyperlink{structCodroid_1_1Response}{Response}} Codroid\+::\+Codroid\+Control\+Interface\+::movJ (\begin{DoxyParamCaption}\item[{const \mbox{\hyperlink{structCodroid_1_1MoveInstruction}{Move\+Instruction}} \&}]{inst,  }\item[{int}]{id = {\ttfamily 1} }\end{DoxyParamCaption})}
+
+
+
+将机器人移动到特定关节位置 
+
+
+\begin{DoxyParams}{参数}
+{\em inst} & 移动指令。 \\
+\hline
+{\em id} & 请求 ID。 \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{返回}
+包含指令执行结果的响应对象。 
+\end{DoxyReturn}
+\mbox{\label{classCodroid_1_1CodroidControlInterface_ad4c2c7751ee5755312bdf177fb570a3e}} 
+\index{Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}!movJ@{movJ}}
+\index{movJ@{movJ}!Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}}
+\doxysubsubsection{\texorpdfstring{movJ()}{movJ()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily \mbox{\hyperlink{structCodroid_1_1Response}{Response}} Codroid\+::\+Codroid\+Control\+Interface\+::movJ (\begin{DoxyParamCaption}\item[{const std\+::vector$<$ double $>$ \&}]{jp,  }\item[{double}]{speed,  }\item[{double}]{acc,  }\item[{int}]{id = {\ttfamily 1} }\end{DoxyParamCaption})}
+
+
+
+将机器人移动到特定关节位置 
+
+
+\begin{DoxyParams}{参数}
+{\em jp} & 关节位置。 \\
+\hline
+{\em speed} & 速度 \\
+\hline
+{\em acc} & 加速度 \\
+\hline
+{\em id} & 请求 ID。 \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{返回}
+包含指令执行结果的响应对象。 
+\end{DoxyReturn}
+\mbox{\label{classCodroid_1_1CodroidControlInterface_acc1f88e30c24d03b27f3fac26d85b453}} 
+\index{Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}!movL@{movL}}
+\index{movL@{movL}!Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}}
+\doxysubsubsection{\texorpdfstring{movL()}{movL()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily \mbox{\hyperlink{structCodroid_1_1Response}{Response}} Codroid\+::\+Codroid\+Control\+Interface\+::movL (\begin{DoxyParamCaption}\item[{const \mbox{\hyperlink{structCodroid_1_1MoveInstruction}{Move\+Instruction}} \&}]{inst,  }\item[{int}]{id = {\ttfamily 1} }\end{DoxyParamCaption})}
+
+
+
+按直线路径移动机器人 
+
+
+\begin{DoxyParams}{参数}
+{\em inst} & 移动指令。 \\
+\hline
+{\em id} & 请求 ID。 \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{返回}
+包含指令执行结果的响应对象。 
+\end{DoxyReturn}
+\mbox{\label{classCodroid_1_1CodroidControlInterface_aef58b53879065c09a9863a96b168c546}} 
+\index{Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}!movL@{movL}}
+\index{movL@{movL}!Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}}
+\doxysubsubsection{\texorpdfstring{movL()}{movL()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily \mbox{\hyperlink{structCodroid_1_1Response}{Response}} Codroid\+::\+Codroid\+Control\+Interface\+::movL (\begin{DoxyParamCaption}\item[{const std\+::vector$<$ double $>$ \&}]{cp,  }\item[{double}]{speed,  }\item[{double}]{acc,  }\item[{const std\+::vector$<$ double $>$ \&}]{coor = {\ttfamily \{\}},  }\item[{const std\+::vector$<$ double $>$ \&}]{tool = {\ttfamily \{\}},  }\item[{int}]{id = {\ttfamily 1} }\end{DoxyParamCaption})}
+
+
+
+按直线路径移动机器人 
+
+
+\begin{DoxyParams}{参数}
+{\em cp} & 笛卡尔位置。 \\
+\hline
+{\em speed} & 速度 \\
+\hline
+{\em acc} & 加速度 \\
+\hline
+{\em coor} & 目标点的可选坐标系，默认是世界坐标系。 \\
+\hline
+{\em tool} & 目标点的可选工具坐标系。 \\
+\hline
+{\em id} & 请求 ID。 \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{返回}
+包含指令执行结果的响应对象。 
+\end{DoxyReturn}
+\mbox{\label{classCodroid_1_1CodroidControlInterface_a2a5ebf6c4f97f41942b0dd49cd3abbd0}} 
+\index{Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}!pauseMove@{pauseMove}}
+\index{pauseMove@{pauseMove}!Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}}
+\doxysubsubsection{\texorpdfstring{pauseMove()}{pauseMove()}}
+{\footnotesize\ttfamily \mbox{\hyperlink{structCodroid_1_1Response}{Response}} Codroid\+::\+Codroid\+Control\+Interface\+::pause\+Move (\begin{DoxyParamCaption}\item[{int}]{id = {\ttfamily 1} }\end{DoxyParamCaption})}
+
+
+
+暂停机器人当前的运动 
+
+
+\begin{DoxyParams}{参数}
+{\em id} & 请求 ID。 \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{返回}
+包含指令执行结果的响应对象。 
+\end{DoxyReturn}
+\mbox{\label{classCodroid_1_1CodroidControlInterface_a6e8db0613a3ebfb685ee0ba838e5e2c9}} 
+\index{Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}!pauseProject@{pauseProject}}
+\index{pauseProject@{pauseProject}!Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}}
+\doxysubsubsection{\texorpdfstring{pauseProject()}{pauseProject()}}
+{\footnotesize\ttfamily \mbox{\hyperlink{structCodroid_1_1Response}{Response}} Codroid\+::\+Codroid\+Control\+Interface\+::pause\+Project (\begin{DoxyParamCaption}\item[{int}]{id = {\ttfamily 1} }\end{DoxyParamCaption})}
+
+
+
+暂停机器人上正在运行的工程 
+
+
+\begin{DoxyParams}{参数}
+{\em id} & 请求 ID。 \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{返回}
+包含指令执行结果的响应对象。 
+\end{DoxyReturn}
+\mbox{\label{classCodroid_1_1CodroidControlInterface_adde5cb9959c6bb59daa4f02e59a9342c}} 
+\index{Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}!printResponse@{printResponse}}
+\index{printResponse@{printResponse}!Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}}
+\doxysubsubsection{\texorpdfstring{printResponse()}{printResponse()}}
+{\footnotesize\ttfamily static void Codroid\+::\+Codroid\+Control\+Interface\+::print\+Response (\begin{DoxyParamCaption}\item[{const \mbox{\hyperlink{structCodroid_1_1Response}{Codroid\+::\+Response}} \&}]{resp }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}}
+
+
+
+打印指令的响应 
+
+
+\begin{DoxyParams}{参数}
+{\em action} & 操作名称。 \\
+\hline
+{\em resp} & 响应对象。 \\
+\hline
+\end{DoxyParams}
+\mbox{\label{classCodroid_1_1CodroidControlInterface_aaac69159263a71bf7539370e71f30104}} 
+\index{Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}!removeExtendArray@{removeExtendArray}}
+\index{removeExtendArray@{removeExtendArray}!Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}}
+\doxysubsubsection{\texorpdfstring{removeExtendArray()}{removeExtendArray()}}
+{\footnotesize\ttfamily \mbox{\hyperlink{structCodroid_1_1Response}{Response}} Codroid\+::\+Codroid\+Control\+Interface\+::remove\+Extend\+Array (\begin{DoxyParamCaption}\item[{int}]{index,  }\item[{int}]{id = {\ttfamily 1} }\end{DoxyParamCaption})}
+
+
+
+从机器人上删除一个扩展数组索引 
+
+
+\begin{DoxyParams}{参数}
+{\em index} & 要删除的扩展数组索引。 \\
+\hline
+{\em id} & 请求 ID。 \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{返回}
+包含指令执行结果的响应对象。 
+\end{DoxyReturn}
+\mbox{\label{classCodroid_1_1CodroidControlInterface_a638e725f0e6ba036aab0303ac21a8d78}} 
+\index{Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}!removeGlobalVars@{removeGlobalVars}}
+\index{removeGlobalVars@{removeGlobalVars}!Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}}
+\doxysubsubsection{\texorpdfstring{removeGlobalVars()}{removeGlobalVars()}}
+{\footnotesize\ttfamily \mbox{\hyperlink{structCodroid_1_1Response}{Response}} Codroid\+::\+Codroid\+Control\+Interface\+::remove\+Global\+Vars (\begin{DoxyParamCaption}\item[{const std\+::vector$<$ std\+::string $>$ \&}]{var\+Names,  }\item[{int}]{id = {\ttfamily 1} }\end{DoxyParamCaption})}
+
+
+
+从机器人上删除全局变量 
+
+
+\begin{DoxyParams}{参数}
+{\em var\+Names} & 要删除的变量名称向量。 \\
+\hline
+{\em id} & 请求 ID。 \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{返回}
+包含指令执行结果的响应对象。 
+\end{DoxyReturn}
+\mbox{\label{classCodroid_1_1CodroidControlInterface_aa6dd1e7a0ad430efabe6050aee6bde05}} 
+\index{Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}!resumeMove@{resumeMove}}
+\index{resumeMove@{resumeMove}!Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}}
+\doxysubsubsection{\texorpdfstring{resumeMove()}{resumeMove()}}
+{\footnotesize\ttfamily \mbox{\hyperlink{structCodroid_1_1Response}{Response}} Codroid\+::\+Codroid\+Control\+Interface\+::resume\+Move (\begin{DoxyParamCaption}\item[{int}]{id = {\ttfamily 1} }\end{DoxyParamCaption})}
+
+
+
+恢复机器人暂停的运动 
+
+
+\begin{DoxyParams}{参数}
+{\em id} & 请求 ID。 \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{返回}
+包含指令执行结果的响应对象。 
+\end{DoxyReturn}
+\mbox{\label{classCodroid_1_1CodroidControlInterface_ae2fa8f4e84c30e571784330a9658a07d}} 
+\index{Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}!resumeProject@{resumeProject}}
+\index{resumeProject@{resumeProject}!Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}}
+\doxysubsubsection{\texorpdfstring{resumeProject()}{resumeProject()}}
+{\footnotesize\ttfamily \mbox{\hyperlink{structCodroid_1_1Response}{Response}} Codroid\+::\+Codroid\+Control\+Interface\+::resume\+Project (\begin{DoxyParamCaption}\item[{int}]{id = {\ttfamily 1} }\end{DoxyParamCaption})}
+
+
+
+恢复机器人上暂停的工程 
+
+
+\begin{DoxyParams}{参数}
+{\em id} & 请求 ID。 \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{返回}
+包含指令执行结果的响应对象。 
+\end{DoxyReturn}
+\mbox{\label{classCodroid_1_1CodroidControlInterface_a29e377ea0d00d3b2aedacb5c0f750d3b}} 
+\index{Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}!RS485flush@{RS485flush}}
+\index{RS485flush@{RS485flush}!Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}}
+\doxysubsubsection{\texorpdfstring{RS485flush()}{RS485flush()}}
+{\footnotesize\ttfamily \mbox{\hyperlink{structCodroid_1_1Response}{Response}} Codroid\+::\+Codroid\+Control\+Interface\+::\+RS485flush (\begin{DoxyParamCaption}\item[{int}]{id = {\ttfamily 1} }\end{DoxyParamCaption})}
+
+
+
+清空机器人上的\+RS485通信缓冲区 
+
+
+\begin{DoxyParams}{参数}
+{\em id} & 请求 ID。 \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{返回}
+包含指令执行结果的响应对象。 
+\end{DoxyReturn}
+\mbox{\label{classCodroid_1_1CodroidControlInterface_a60b170b4ee5501fd769c6b68041ec8f3}} 
+\index{Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}!RS485init@{RS485init}}
+\index{RS485init@{RS485init}!Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}}
+\doxysubsubsection{\texorpdfstring{RS485init()}{RS485init()}}
+{\footnotesize\ttfamily \mbox{\hyperlink{structCodroid_1_1Response}{Response}} Codroid\+::\+Codroid\+Control\+Interface\+::\+RS485init (\begin{DoxyParamCaption}\item[{int}]{baudrate,  }\item[{\mbox{\hyperlink{CodroidDefine_8h_acf3deee1f267030949fbf777cc7e486b}{RS485\+Stop\+Bits}}}]{stop\+Bit = {\ttfamily RS485StopBits\+:\+:One},  }\item[{int}]{data\+Bit = {\ttfamily 8},  }\item[{\mbox{\hyperlink{CodroidDefine_8h_acedc9f3a5c0ffca11a6d162ccd5c363b}{RS485\+Parity}}}]{parity = {\ttfamily RS485Parity\+:\+:None},  }\item[{int}]{id = {\ttfamily 1} }\end{DoxyParamCaption})}
+
+
+
+初始化机器人上的\+RS485通信 
+
+
+\begin{DoxyParams}{参数}
+{\em baudrate} & RS485通信的波特率。 \\
+\hline
+{\em stop\+Bit} & RS485通信的停止位。 \\
+\hline
+{\em data\+Bit} & RS485通信的数据位。 \\
+\hline
+{\em parity} & RS485通信的校验位。 \\
+\hline
+{\em id} & 请求 ID。 \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{返回}
+包含指令执行结果的响应对象。 
+\end{DoxyReturn}
+\mbox{\label{classCodroid_1_1CodroidControlInterface_a5ab7c5cd823113d3c6f9d571ee8a7a0a}} 
+\index{Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}!RS485read@{RS485read}}
+\index{RS485read@{RS485read}!Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}}
+\doxysubsubsection{\texorpdfstring{RS485read()}{RS485read()}}
+{\footnotesize\ttfamily \mbox{\hyperlink{structCodroid_1_1Response}{Response}} Codroid\+::\+Codroid\+Control\+Interface\+::\+RS485read (\begin{DoxyParamCaption}\item[{int}]{length,  }\item[{int}]{timeout = {\ttfamily 5000},  }\item[{int}]{id = {\ttfamily 1} }\end{DoxyParamCaption})}
+
+
+
+从机器人上的\+RS485通信读取数据 
+
+
+\begin{DoxyParams}{参数}
+{\em length} & 要读取的字节数。 \\
+\hline
+{\em timeout} & 读取操作的超时时间。 \\
+\hline
+{\em id} & 请求 ID。 \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{返回}
+包含指令执行结果的响应对象。 
+\end{DoxyReturn}
+\mbox{\label{classCodroid_1_1CodroidControlInterface_ab22f9bbeaeb4b5c77a5b27903a83b1ec}} 
+\index{Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}!RS485write@{RS485write}}
+\index{RS485write@{RS485write}!Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}}
+\doxysubsubsection{\texorpdfstring{RS485write()}{RS485write()}}
+{\footnotesize\ttfamily \mbox{\hyperlink{structCodroid_1_1Response}{Response}} Codroid\+::\+Codroid\+Control\+Interface\+::\+RS485write (\begin{DoxyParamCaption}\item[{const std\+::vector$<$ uint8\+\_\+t $>$ \&}]{data,  }\item[{int}]{id = {\ttfamily 1} }\end{DoxyParamCaption})}
+
+
+
+向机器人上的\+RS485通信写入数据 
+
+
+\begin{DoxyParams}{参数}
+{\em data} & 要写入的数据。 \\
+\hline
+{\em id} & 请求 ID。 \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{返回}
+包含指令执行结果的响应对象。 
+\end{DoxyReturn}
+\mbox{\label{classCodroid_1_1CodroidControlInterface_a4e561340c58233db4c46e9d9af948a8e}} 
+\index{Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}!runProject@{runProject}}
+\index{runProject@{runProject}!Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}}
+\doxysubsubsection{\texorpdfstring{runProject()}{runProject()}}
+{\footnotesize\ttfamily \mbox{\hyperlink{structCodroid_1_1Response}{Response}} Codroid\+::\+Codroid\+Control\+Interface\+::run\+Project (\begin{DoxyParamCaption}\item[{const std\+::string \&}]{projectid,  }\item[{int}]{id = {\ttfamily 1} }\end{DoxyParamCaption})}
+
+
+
+在机器人上通过工程\+ID运行工程 
+
+
+\begin{DoxyParams}{参数}
+{\em projectid} & 工程 ID。 \\
+\hline
+{\em id} & 请求 ID。 \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{返回}
+包含指令执行结果的响应对象。 
+\end{DoxyReturn}
+\mbox{\label{classCodroid_1_1CodroidControlInterface_a148342a5054bde9cafd17dccbdf58dce}} 
+\index{Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}!runProjectByIndex@{runProjectByIndex}}
+\index{runProjectByIndex@{runProjectByIndex}!Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}}
+\doxysubsubsection{\texorpdfstring{runProjectByIndex()}{runProjectByIndex()}}
+{\footnotesize\ttfamily \mbox{\hyperlink{structCodroid_1_1Response}{Response}} Codroid\+::\+Codroid\+Control\+Interface\+::run\+Project\+By\+Index (\begin{DoxyParamCaption}\item[{int}]{index,  }\item[{int}]{id = {\ttfamily 1} }\end{DoxyParamCaption})}
+
+
+
+在机器人上通过索引运行工程 
+
+
+\begin{DoxyParams}{参数}
+{\em index} & 工程索引。 \\
+\hline
+{\em id} & 请求 ID。 \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{返回}
+包含指令执行结果的响应对象。 
+\end{DoxyReturn}
+\mbox{\label{classCodroid_1_1CodroidControlInterface_a718ebb89caf20c3c8116996051bc29c4}} 
+\index{Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}!runScript@{runScript}}
+\index{runScript@{runScript}!Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}}
+\doxysubsubsection{\texorpdfstring{runScript()}{runScript()}}
+{\footnotesize\ttfamily \mbox{\hyperlink{structCodroid_1_1Response}{Response}} Codroid\+::\+Codroid\+Control\+Interface\+::run\+Script (\begin{DoxyParamCaption}\item[{const std\+::string \&}]{script,  }\item[{int}]{id = {\ttfamily 1} }\end{DoxyParamCaption})}
+
+
+
+在机器人上运行脚本 
+
+
+\begin{DoxyParams}{参数}
+{\em script} & 脚本内容。 \\
+\hline
+{\em id} & 请求 ID。 \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{返回}
+包含指令执行结果的响应对象。 
+\end{DoxyReturn}
+\mbox{\label{classCodroid_1_1CodroidControlInterface_a49c3d8596a0e8e18027cbb34f1d6771b}} 
+\index{Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}!runStep@{runStep}}
+\index{runStep@{runStep}!Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}}
+\doxysubsubsection{\texorpdfstring{runStep()}{runStep()}}
+{\footnotesize\ttfamily \mbox{\hyperlink{structCodroid_1_1Response}{Response}} Codroid\+::\+Codroid\+Control\+Interface\+::run\+Step (\begin{DoxyParamCaption}\item[{const std\+::string \&}]{projectid,  }\item[{int}]{id = {\ttfamily 1} }\end{DoxyParamCaption})}
+
+
+
+在机器人上单步运行工程 
+
+
+\begin{DoxyParams}{参数}
+{\em projectid} & 工程 ID。 \\
+\hline
+{\em id} & 请求 ID。 \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{返回}
+包含指令执行结果的响应对象。 
+\end{DoxyReturn}
+\mbox{\label{classCodroid_1_1CodroidControlInterface_ad4d01127f12343d324ad0f886f790a5f}} 
+\index{Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}!saveGlobalVars@{saveGlobalVars}}
+\index{saveGlobalVars@{saveGlobalVars}!Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}}
+\doxysubsubsection{\texorpdfstring{saveGlobalVars()}{saveGlobalVars()}}
+{\footnotesize\ttfamily \mbox{\hyperlink{structCodroid_1_1Response}{Response}} Codroid\+::\+Codroid\+Control\+Interface\+::save\+Global\+Vars (\begin{DoxyParamCaption}\item[{const std\+::map$<$ std\+::string, \mbox{\hyperlink{structCodroid_1_1Variable}{Variable}} $>$ \&}]{vars,  }\item[{int}]{id = {\ttfamily 1} }\end{DoxyParamCaption})}
+
+
+
+将全局变量列表保存到机器人 
+
+
+\begin{DoxyParams}{参数}
+{\em vars} & 要保存的全局变量映射。 \\
+\hline
+{\em id} & 请求 ID。 \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{返回}
+包含指令执行结果的响应对象。 
+\end{DoxyReturn}
+\mbox{\label{classCodroid_1_1CodroidControlInterface_ad5a1f7e7ef9d8ef013069c9116b48102}} 
+\index{Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}!sendCommand@{sendCommand}}
+\index{sendCommand@{sendCommand}!Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}}
+\doxysubsubsection{\texorpdfstring{sendCommand()}{sendCommand()}}
+{\footnotesize\ttfamily \mbox{\hyperlink{structCodroid_1_1Response}{Response}} Codroid\+::\+Codroid\+Control\+Interface\+::send\+Command (\begin{DoxyParamCaption}\item[{const std\+::string \&}]{type,  }\item[{const json \&}]{data,  }\item[{int}]{id }\end{DoxyParamCaption})}
+
+
+
+向机器人发送指令 
+
+
+\begin{DoxyParams}{参数}
+{\em type} & 指令类型，例如 \char`\"{}run\+Script\char`\"{}、\char`\"{}switch\+On\char`\"{} 等。 \\
+\hline
+{\em data} & 指令数据，\+JSON 格式，根据不同指令类型具体定义。 \\
+\hline
+{\em id} & 请求 ID，用于匹配响应，默认为 1。 \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{返回}
+包含指令执行结果的响应对象。 
+\end{DoxyReturn}
+\mbox{\label{classCodroid_1_1CodroidControlInterface_a4b0220b8b40c9abbe4621901fc7477c8}} 
+\index{Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}!setAO@{setAO}}
+\index{setAO@{setAO}!Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}}
+\doxysubsubsection{\texorpdfstring{setAO()}{setAO()}}
+{\footnotesize\ttfamily \mbox{\hyperlink{structCodroid_1_1Response}{Response}} Codroid\+::\+Codroid\+Control\+Interface\+::set\+AO (\begin{DoxyParamCaption}\item[{int}]{port,  }\item[{double}]{value,  }\item[{int}]{id = {\ttfamily 1} }\end{DoxyParamCaption})}
+
+
+
+设置模拟输出端口的值 
+
+
+\begin{DoxyParams}{参数}
+{\em port} & 端口号。 \\
+\hline
+{\em value} & 要设置的值。 \\
+\hline
+{\em id} & 请求 ID。 \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{返回}
+包含指令执行结果的响应对象。 
+\end{DoxyReturn}
+\mbox{\label{classCodroid_1_1CodroidControlInterface_a1822b7c3ee2d6e72f0aa444e80843044}} 
+\index{Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}!setAutoSpeedRate@{setAutoSpeedRate}}
+\index{setAutoSpeedRate@{setAutoSpeedRate}!Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}}
+\doxysubsubsection{\texorpdfstring{setAutoSpeedRate()}{setAutoSpeedRate()}}
+{\footnotesize\ttfamily \mbox{\hyperlink{structCodroid_1_1Response}{Response}} Codroid\+::\+Codroid\+Control\+Interface\+::set\+Auto\+Speed\+Rate (\begin{DoxyParamCaption}\item[{int}]{speed,  }\item[{int}]{id = {\ttfamily 1} }\end{DoxyParamCaption})}
+
+
+
+设置机器人的自动运动倍率 
+
+
+\begin{DoxyParams}{参数}
+{\em speed} & 速度倍率，百分比形式（0-\/100）。 \\
+\hline
+{\em id} & 请求 ID。 \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{返回}
+包含指令执行结果的响应对象。 
+\end{DoxyReturn}
+\mbox{\label{classCodroid_1_1CodroidControlInterface_a943aebf405ad25d0c3a7ce778f5b5690}} 
+\index{Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}!setCollisionSensitivity@{setCollisionSensitivity}}
+\index{setCollisionSensitivity@{setCollisionSensitivity}!Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}}
+\doxysubsubsection{\texorpdfstring{setCollisionSensitivity()}{setCollisionSensitivity()}}
+{\footnotesize\ttfamily \mbox{\hyperlink{structCodroid_1_1Response}{Response}} Codroid\+::\+Codroid\+Control\+Interface\+::set\+Collision\+Sensitivity (\begin{DoxyParamCaption}\item[{int}]{level,  }\item[{int}]{id = {\ttfamily 1} }\end{DoxyParamCaption})}
+
+
+
+设置机器人上的碰撞灵敏度等级 
+
+
+\begin{DoxyParams}{参数}
+{\em level} & 碰撞灵敏度等级（0-\/5）。 \\
+\hline
+{\em id} & 请求 ID。 \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{返回}
+包含指令执行结果的响应对象。 
+\end{DoxyReturn}
+\mbox{\label{classCodroid_1_1CodroidControlInterface_a961979760e4463fb40d6636df891253b}} 
+\index{Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}!setDO@{setDO}}
+\index{setDO@{setDO}!Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}}
+\doxysubsubsection{\texorpdfstring{setDO()}{setDO()}}
+{\footnotesize\ttfamily \mbox{\hyperlink{structCodroid_1_1Response}{Response}} Codroid\+::\+Codroid\+Control\+Interface\+::set\+DO (\begin{DoxyParamCaption}\item[{int}]{port,  }\item[{int}]{value,  }\item[{int}]{id = {\ttfamily 1} }\end{DoxyParamCaption})}
+
+
+
+设置数字输出端口的值 
+
+
+\begin{DoxyParams}{参数}
+{\em port} & 端口号。 \\
+\hline
+{\em value} & 要设置的值。 \\
+\hline
+{\em id} & 请求 ID。 \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{返回}
+包含指令执行结果的响应对象。 
+\end{DoxyReturn}
+\mbox{\label{classCodroid_1_1CodroidControlInterface_a68dd39616b81707ddf43204f0b28c5df}} 
+\index{Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}!setExtendArrayType@{setExtendArrayType}}
+\index{setExtendArrayType@{setExtendArrayType}!Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}}
+\doxysubsubsection{\texorpdfstring{setExtendArrayType()}{setExtendArrayType()}}
+{\footnotesize\ttfamily \mbox{\hyperlink{structCodroid_1_1Response}{Response}} Codroid\+::\+Codroid\+Control\+Interface\+::set\+Extend\+Array\+Type (\begin{DoxyParamCaption}\item[{int}]{index,  }\item[{Extend\+Array\+Type}]{type,  }\item[{int}]{id = {\ttfamily 1} }\end{DoxyParamCaption})}
+
+
+
+设置机器人上扩展数组的数据类型 
+
+
+\begin{DoxyParams}{参数}
+{\em index} & 扩展数组的索引。 \\
+\hline
+{\em type} & 要设置的数据类型。 \\
+\hline
+{\em id} & 请求 ID。 \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{返回}
+包含指令执行结果的响应对象。 
+\end{DoxyReturn}
+\mbox{\label{classCodroid_1_1CodroidControlInterface_af821071ea012f4ac7097709833335de1}} 
+\index{Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}!setIOValue@{setIOValue}}
+\index{setIOValue@{setIOValue}!Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}}
+\doxysubsubsection{\texorpdfstring{setIOValue()}{setIOValue()}}
+{\footnotesize\ttfamily \mbox{\hyperlink{structCodroid_1_1Response}{Response}} Codroid\+::\+Codroid\+Control\+Interface\+::set\+IOValue (\begin{DoxyParamCaption}\item[{const std\+::string \&}]{type,  }\item[{int}]{port,  }\item[{double}]{value,  }\item[{int}]{id = {\ttfamily 1} }\end{DoxyParamCaption})}
+
+
+
+设置机器人上\+IO端口的值 
+
+
+\begin{DoxyParams}{参数}
+{\em type} & IO类型（\char`\"{}\+DI\char`\"{}、\char`\"{}\+DO\char`\"{}、\char`\"{}\+AI\char`\"{}、\char`\"{}\+AO\char`\"{}）。 \\
+\hline
+{\em port} & 端口号。 \\
+\hline
+{\em value} & 要设置的值。 \\
+\hline
+{\em id} & 请求 ID。 \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{返回}
+包含指令执行结果的响应对象。 
+\end{DoxyReturn}
+\mbox{\label{classCodroid_1_1CodroidControlInterface_af65296c1067c78f9fe85b7d75e372c0f}} 
+\index{Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}!setManualSpeedRate@{setManualSpeedRate}}
+\index{setManualSpeedRate@{setManualSpeedRate}!Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}}
+\doxysubsubsection{\texorpdfstring{setManualSpeedRate()}{setManualSpeedRate()}}
+{\footnotesize\ttfamily \mbox{\hyperlink{structCodroid_1_1Response}{Response}} Codroid\+::\+Codroid\+Control\+Interface\+::set\+Manual\+Speed\+Rate (\begin{DoxyParamCaption}\item[{int}]{speed,  }\item[{int}]{id = {\ttfamily 1} }\end{DoxyParamCaption})}
+
+
+
+设置机器人的手动运动倍率 
+
+
+\begin{DoxyParams}{参数}
+{\em speed} & 速度倍率，百分比形式（0-\/100）。 \\
+\hline
+{\em id} & 请求 ID。 \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{返回}
+包含指令执行结果的响应对象。 
+\end{DoxyReturn}
+\mbox{\label{classCodroid_1_1CodroidControlInterface_a50a2176b51f2432bbe42433419d4fc10}} 
+\index{Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}!setPayload@{setPayload}}
+\index{setPayload@{setPayload}!Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}}
+\doxysubsubsection{\texorpdfstring{setPayload()}{setPayload()}}
+{\footnotesize\ttfamily \mbox{\hyperlink{structCodroid_1_1Response}{Response}} Codroid\+::\+Codroid\+Control\+Interface\+::set\+Payload (\begin{DoxyParamCaption}\item[{int}]{payload\+Id,  }\item[{int}]{id = {\ttfamily 1} }\end{DoxyParamCaption})}
+
+
+
+设置机器人上的负载参数 
+
+
+\begin{DoxyParams}{参数}
+{\em payload\+Id} & 要设置的负载\+ID。 \\
+\hline
+{\em id} & 请求 ID。 \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{返回}
+包含指令执行结果的响应对象。 
+\end{DoxyReturn}
+\mbox{\label{classCodroid_1_1CodroidControlInterface_ab0594bf6d64317f0ea6c7df44768d047}} 
+\index{Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}!setRegisterValue@{setRegisterValue}}
+\index{setRegisterValue@{setRegisterValue}!Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}}
+\doxysubsubsection{\texorpdfstring{setRegisterValue()}{setRegisterValue()}}
+{\footnotesize\ttfamily \mbox{\hyperlink{structCodroid_1_1Response}{Response}} Codroid\+::\+Codroid\+Control\+Interface\+::set\+Register\+Value (\begin{DoxyParamCaption}\item[{int}]{address,  }\item[{double}]{value,  }\item[{int}]{id = {\ttfamily 1} }\end{DoxyParamCaption})}
+
+
+
+设置机器人上寄存器的值 
+
+
+\begin{DoxyParams}{参数}
+{\em address} & 要设置的寄存器地址。 \\
+\hline
+{\em value} & 要设置的值。 \\
+\hline
+{\em id} & 请求 ID。 \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{返回}
+包含指令执行结果的响应对象。 
+\end{DoxyReturn}
+\mbox{\label{classCodroid_1_1CodroidControlInterface_ab1cacb6b5be02bed4a15907e28509a44}} 
+\index{Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}!setStartLine@{setStartLine}}
+\index{setStartLine@{setStartLine}!Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}}
+\doxysubsubsection{\texorpdfstring{setStartLine()}{setStartLine()}}
+{\footnotesize\ttfamily \mbox{\hyperlink{structCodroid_1_1Response}{Response}} Codroid\+::\+Codroid\+Control\+Interface\+::set\+Start\+Line (\begin{DoxyParamCaption}\item[{int}]{startline,  }\item[{int}]{id = {\ttfamily 1} }\end{DoxyParamCaption})}
+
+
+
+设置机器人上工程执行的启动行 
+
+
+\begin{DoxyParams}{参数}
+{\em startline} & 要开始执行的行号。 \\
+\hline
+{\em id} & 请求 ID。 \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{返回}
+包含指令执行结果的响应对象。 
+\end{DoxyReturn}
+\mbox{\label{classCodroid_1_1CodroidControlInterface_a6adf01457b9186c36e58877dc90c4cdb}} 
+\index{Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}!startControl@{startControl}}
+\index{startControl@{startControl}!Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}}
+\doxysubsubsection{\texorpdfstring{startControl()}{startControl()}}
+{\footnotesize\ttfamily \mbox{\hyperlink{structCodroid_1_1Response}{Response}} Codroid\+::\+Codroid\+Control\+Interface\+::start\+Control (\begin{DoxyParamCaption}\item[{int}]{duration,  }\item[{int}]{start\+Buffer = {\ttfamily 5},  }\item[{int}]{filter\+Typeint = {\ttfamily 1},  }\item[{int}]{id = {\ttfamily 1} }\end{DoxyParamCaption})}
+
+
+
+以指定参数开启机器人的实时控制 
+
+
+\begin{DoxyParams}{参数}
+{\em duration} & 实时控制的间隔时间，单位为毫秒。（1000/频率） \\
+\hline
+{\em start\+Buffer} & 开始控制前的初始缓冲数组，及收到多少个位置消息后才开始运动 \\
+\hline
+{\em filter\+Typeint} & 滤波类型（0-\/关闭滤波 1-\/平均滤波值） \\
+\hline
+{\em id} & 请求 ID。 \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{返回}
+包含指令执行结果的响应对象。 
+\end{DoxyReturn}
+\mbox{\label{classCodroid_1_1CodroidControlInterface_ac4775521f061e75378af874f2e2fe019}} 
+\index{Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}!startDataPush@{startDataPush}}
+\index{startDataPush@{startDataPush}!Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}}
+\doxysubsubsection{\texorpdfstring{startDataPush()}{startDataPush()}}
+{\footnotesize\ttfamily \mbox{\hyperlink{structCodroid_1_1Response}{Response}} Codroid\+::\+Codroid\+Control\+Interface\+::start\+Data\+Push (\begin{DoxyParamCaption}\item[{const std\+::string \&}]{ip,  }\item[{int}]{port,  }\item[{int}]{duration,  }\item[{int}]{id = {\ttfamily 1} }\end{DoxyParamCaption})}
+
+
+
+开启从机器人到指定\+IP和端口的数据推送流 
+
+
+\begin{DoxyParams}{参数}
+{\em ip} & 要推送数据的\+IP地址。 \\
+\hline
+{\em port} & 要推送数据的端口号。 \\
+\hline
+{\em duration} & 数据推送流的间隔时间，单位为毫秒(1000/频率) \\
+\hline
+{\em id} & 请求 ID。 \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{返回}
+包含指令执行结果的响应对象。 
+\end{DoxyReturn}
+\mbox{\label{classCodroid_1_1CodroidControlInterface_acda4617a8f41f43477eff4203f5ebfe1}} 
+\index{Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}!startDrag@{startDrag}}
+\index{startDrag@{startDrag}!Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}}
+\doxysubsubsection{\texorpdfstring{startDrag()}{startDrag()}}
+{\footnotesize\ttfamily \mbox{\hyperlink{structCodroid_1_1Response}{Response}} Codroid\+::\+Codroid\+Control\+Interface\+::start\+Drag (\begin{DoxyParamCaption}\item[{int}]{id = {\ttfamily 1} }\end{DoxyParamCaption})}
+
+
+
+进入机器人的拖拽模式 
+
+
+\begin{DoxyParams}{参数}
+{\em id} & 请求 ID。 \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{返回}
+包含指令执行结果的响应对象。 
+\end{DoxyReturn}
+\mbox{\label{classCodroid_1_1CodroidControlInterface_a29a04b79def1e8d64fa55a6145d3dabc}} 
+\index{Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}!stopControl@{stopControl}}
+\index{stopControl@{stopControl}!Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}}
+\doxysubsubsection{\texorpdfstring{stopControl()}{stopControl()}}
+{\footnotesize\ttfamily \mbox{\hyperlink{structCodroid_1_1Response}{Response}} Codroid\+::\+Codroid\+Control\+Interface\+::stop\+Control (\begin{DoxyParamCaption}\item[{int}]{id = {\ttfamily 1} }\end{DoxyParamCaption})}
+
+
+
+关闭机器人上的实时控制 
+
+
+\begin{DoxyParams}{参数}
+{\em id} & 请求 ID。 \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{返回}
+包含指令执行结果的响应对象。 
+\end{DoxyReturn}
+\mbox{\label{classCodroid_1_1CodroidControlInterface_a5f63b42096cfb2334544097af3adc0ce}} 
+\index{Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}!stopDataPush@{stopDataPush}}
+\index{stopDataPush@{stopDataPush}!Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}}
+\doxysubsubsection{\texorpdfstring{stopDataPush()}{stopDataPush()}}
+{\footnotesize\ttfamily \mbox{\hyperlink{structCodroid_1_1Response}{Response}} Codroid\+::\+Codroid\+Control\+Interface\+::stop\+Data\+Push (\begin{DoxyParamCaption}\item[{int}]{id = {\ttfamily 1} }\end{DoxyParamCaption})}
+
+
+
+关闭机器人上的数据推送流 
+
+
+\begin{DoxyParams}{参数}
+{\em id} & 请求 ID。 \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{返回}
+包含指令执行结果的响应对象。 
+\end{DoxyReturn}
+\mbox{\label{classCodroid_1_1CodroidControlInterface_a40c5bd2e79ec486a17bf7afba48b84b4}} 
+\index{Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}!stopDrag@{stopDrag}}
+\index{stopDrag@{stopDrag}!Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}}
+\doxysubsubsection{\texorpdfstring{stopDrag()}{stopDrag()}}
+{\footnotesize\ttfamily \mbox{\hyperlink{structCodroid_1_1Response}{Response}} Codroid\+::\+Codroid\+Control\+Interface\+::stop\+Drag (\begin{DoxyParamCaption}\item[{int}]{id = {\ttfamily 1} }\end{DoxyParamCaption})}
+
+
+
+退出机器人的拖拽模式 
+
+
+\begin{DoxyParams}{参数}
+{\em id} & 请求 ID。 \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{返回}
+包含指令执行结果的响应对象。 
+\end{DoxyReturn}
+\mbox{\label{classCodroid_1_1CodroidControlInterface_a9eef790b58f6de3eaa6982399eff500d}} 
+\index{Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}!stopJog@{stopJog}}
+\index{stopJog@{stopJog}!Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}}
+\doxysubsubsection{\texorpdfstring{stopJog()}{stopJog()}}
+{\footnotesize\ttfamily \mbox{\hyperlink{structCodroid_1_1Response}{Response}} Codroid\+::\+Codroid\+Control\+Interface\+::stop\+Jog (\begin{DoxyParamCaption}\item[{int}]{id = {\ttfamily 1} }\end{DoxyParamCaption})}
+
+
+
+停止机器人上的点动操作 
+
+
+\begin{DoxyParams}{参数}
+{\em id} & 请求 ID。 \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{返回}
+包含指令执行结果的响应对象。 
+\end{DoxyReturn}
+\mbox{\label{classCodroid_1_1CodroidControlInterface_a320f771f7cf67ad619c83cfdae3c2d93}} 
+\index{Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}!stopMove@{stopMove}}
+\index{stopMove@{stopMove}!Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}}
+\doxysubsubsection{\texorpdfstring{stopMove()}{stopMove()}}
+{\footnotesize\ttfamily \mbox{\hyperlink{structCodroid_1_1Response}{Response}} Codroid\+::\+Codroid\+Control\+Interface\+::stop\+Move (\begin{DoxyParamCaption}\item[{int}]{id = {\ttfamily 1} }\end{DoxyParamCaption})}
+
+
+
+立即停止机器人当前的运动 
+
+
+\begin{DoxyParams}{参数}
+{\em id} & 请求 ID。 \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{返回}
+包含指令执行结果的响应对象。 
+\end{DoxyReturn}
+\mbox{\label{classCodroid_1_1CodroidControlInterface_a4c2abda057503284413e99cb300ca303}} 
+\index{Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}!stopProject@{stopProject}}
+\index{stopProject@{stopProject}!Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}}
+\doxysubsubsection{\texorpdfstring{stopProject()}{stopProject()}}
+{\footnotesize\ttfamily \mbox{\hyperlink{structCodroid_1_1Response}{Response}} Codroid\+::\+Codroid\+Control\+Interface\+::stop\+Project (\begin{DoxyParamCaption}\item[{int}]{id = {\ttfamily 1} }\end{DoxyParamCaption})}
+
+
+
+停止机器人上正在运行的工程 
+
+
+\begin{DoxyParams}{参数}
+{\em id} & 请求 ID。 \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{返回}
+包含指令执行结果的响应对象。 
+\end{DoxyReturn}
+\mbox{\label{classCodroid_1_1CodroidControlInterface_a347c03466c970d68acbdc86601dacdca}} 
+\index{Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}!switchOff@{switchOff}}
+\index{switchOff@{switchOff}!Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}}
+\doxysubsubsection{\texorpdfstring{switchOff()}{switchOff()}}
+{\footnotesize\ttfamily \mbox{\hyperlink{structCodroid_1_1Response}{Response}} Codroid\+::\+Codroid\+Control\+Interface\+::switch\+Off (\begin{DoxyParamCaption}\item[{int}]{id = {\ttfamily 1} }\end{DoxyParamCaption})}
+
+
+
+下使能机器人 
+
+
+\begin{DoxyParams}{参数}
+{\em id} & 请求 ID。 \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{返回}
+包含指令执行结果的响应对象。 
+\end{DoxyReturn}
+\mbox{\label{classCodroid_1_1CodroidControlInterface_a31a83b2be217c6a91d98df75242d465a}} 
+\index{Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}!switchOn@{switchOn}}
+\index{switchOn@{switchOn}!Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}}
+\doxysubsubsection{\texorpdfstring{switchOn()}{switchOn()}}
+{\footnotesize\ttfamily \mbox{\hyperlink{structCodroid_1_1Response}{Response}} Codroid\+::\+Codroid\+Control\+Interface\+::switch\+On (\begin{DoxyParamCaption}\item[{int}]{id = {\ttfamily 1} }\end{DoxyParamCaption})}
+
+
+
+上使能机器人 
+
+
+\begin{DoxyParams}{参数}
+{\em id} & 请求 ID。 \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{返回}
+包含指令执行结果的响应对象。 
+\end{DoxyReturn}
+\mbox{\label{classCodroid_1_1CodroidControlInterface_a06ca35b8c6ba30190e969f92b8083d47}} 
+\index{Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}!toActual@{toActual}}
+\index{toActual@{toActual}!Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}}
+\doxysubsubsection{\texorpdfstring{toActual()}{toActual()}}
+{\footnotesize\ttfamily \mbox{\hyperlink{structCodroid_1_1Response}{Response}} Codroid\+::\+Codroid\+Control\+Interface\+::to\+Actual (\begin{DoxyParamCaption}\item[{int}]{id = {\ttfamily 1} }\end{DoxyParamCaption})}
+
+
+
+进入机器人的实机模式 
+
+
+\begin{DoxyParams}{参数}
+{\em id} & 请求 ID。 \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{返回}
+包含指令执行结果的响应对象。 
+\end{DoxyReturn}
+\mbox{\label{classCodroid_1_1CodroidControlInterface_ae5d6f5f5dcf619966bf004dcadd1833c}} 
+\index{Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}!toAuto@{toAuto}}
+\index{toAuto@{toAuto}!Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}}
+\doxysubsubsection{\texorpdfstring{toAuto()}{toAuto()}}
+{\footnotesize\ttfamily \mbox{\hyperlink{structCodroid_1_1Response}{Response}} Codroid\+::\+Codroid\+Control\+Interface\+::to\+Auto (\begin{DoxyParamCaption}\item[{int}]{id = {\ttfamily 1} }\end{DoxyParamCaption})}
+
+
+
+进入机器人的自动模式 
+
+
+\begin{DoxyParams}{参数}
+{\em id} & 请求 ID。 \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{返回}
+包含指令执行结果的响应对象。 
+\end{DoxyReturn}
+\mbox{\label{classCodroid_1_1CodroidControlInterface_a05c72e09934cf981df41cbcf513dddd1}} 
+\index{Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}!toManual@{toManual}}
+\index{toManual@{toManual}!Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}}
+\doxysubsubsection{\texorpdfstring{toManual()}{toManual()}}
+{\footnotesize\ttfamily \mbox{\hyperlink{structCodroid_1_1Response}{Response}} Codroid\+::\+Codroid\+Control\+Interface\+::to\+Manual (\begin{DoxyParamCaption}\item[{int}]{id = {\ttfamily 1} }\end{DoxyParamCaption})}
+
+
+
+进入机器人的手动模式 
+
+
+\begin{DoxyParams}{参数}
+{\em id} & 请求 ID。 \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{返回}
+包含指令执行结果的响应对象。 
+\end{DoxyReturn}
+\mbox{\label{classCodroid_1_1CodroidControlInterface_ac530a2696872a4e5e3d0c1239e526a83}} 
+\index{Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}!toRemote@{toRemote}}
+\index{toRemote@{toRemote}!Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}}
+\doxysubsubsection{\texorpdfstring{toRemote()}{toRemote()}}
+{\footnotesize\ttfamily \mbox{\hyperlink{structCodroid_1_1Response}{Response}} Codroid\+::\+Codroid\+Control\+Interface\+::to\+Remote (\begin{DoxyParamCaption}\item[{int}]{id = {\ttfamily 1} }\end{DoxyParamCaption})}
+
+
+
+进入机器人的远程模式 
+
+
+\begin{DoxyParams}{参数}
+{\em id} & 请求 ID。 \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{返回}
+包含指令执行结果的响应对象。 
+\end{DoxyReturn}
+\mbox{\label{classCodroid_1_1CodroidControlInterface_a070aa40e73cc98ef7c6a5f5833ab7116}} 
+\index{Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}!toSimulation@{toSimulation}}
+\index{toSimulation@{toSimulation}!Codroid::CodroidControlInterface@{Codroid::CodroidControlInterface}}
+\doxysubsubsection{\texorpdfstring{toSimulation()}{toSimulation()}}
+{\footnotesize\ttfamily \mbox{\hyperlink{structCodroid_1_1Response}{Response}} Codroid\+::\+Codroid\+Control\+Interface\+::to\+Simulation (\begin{DoxyParamCaption}\item[{int}]{id = {\ttfamily 1} }\end{DoxyParamCaption})}
+
+
+
+进入机器人的仿真模式 
+
+
+\begin{DoxyParams}{参数}
+{\em id} & 请求 ID。 \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{返回}
+包含指令执行结果的响应对象。 
+\end{DoxyReturn}
+
+
+该类的文档由以下文件生成\+:\begin{DoxyCompactItemize}
+\item 
+include/\+Codroid/\mbox{\hyperlink{CodroidControlInterface_8h}{Codroid\+Control\+Interface.\+h}}\end{DoxyCompactItemize}
