@@ -1,11 +1,3 @@
-//     __ _____ _____ _____
-//  __|  |   __|     |   | |  JSON for Modern C++
-// |  |  |__   |  |  | | | |  version 3.11.3
-// |_____|_____|_____|_|___|  https://github.com/nlohmann/json
-//
-// SPDX-FileCopyrightText: 2013-2023 Niels Lohmann <https://nlohmann.me>
-// SPDX-License-Identifier: MIT
-
 #pragma once
 
 #include <algorithm> // copy
@@ -22,10 +14,10 @@
 
 #include <nlohmann/detail/macro_scope.hpp>
 
-NLOHMANN_JSON_NAMESPACE_BEGIN
+namespace nlohmann
+{
 namespace detail
 {
-
 /// abstract output adapter interface
 template<typename CharType> struct output_adapter_protocol
 {
@@ -61,7 +53,7 @@ class output_vector_adapter : public output_adapter_protocol<CharType>
     JSON_HEDLEY_NON_NULL(2)
     void write_characters(const CharType* s, std::size_t length) override
     {
-        v.insert(v.end(), s, s + length);
+        std::copy(s, s + length, std::back_inserter(v));
     }
 
   private:
@@ -142,6 +134,5 @@ class output_adapter
   private:
     output_adapter_t<CharType> oa = nullptr;
 };
-
 }  // namespace detail
-NLOHMANN_JSON_NAMESPACE_END
+}  // namespace nlohmann

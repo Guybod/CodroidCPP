@@ -2,7 +2,7 @@
 // execution/allocator.hpp
 // ~~~~~~~~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2023 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2020 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -78,73 +78,25 @@ template <typename ProtoAllocator>
 struct allocator_t
 {
 #if defined(ASIO_HAS_VARIABLE_TEMPLATES)
-# if defined(ASIO_NO_DEPRECATED)
   template <typename T>
   ASIO_STATIC_CONSTEXPR(bool,
-    is_applicable_property_v = (
-      is_executor<T>::value));
-# else // defined(ASIO_NO_DEPRECATED)
-  template <typename T>
-  ASIO_STATIC_CONSTEXPR(bool,
-    is_applicable_property_v = (
-      is_executor<T>::value
-        || conditional<
-            is_executor<T>::value,
-            false_type,
-            is_sender<T>
-          >::type::value
-        || conditional<
-            is_executor<T>::value,
-            false_type,
-            is_scheduler<T>
-          >::type::value
-      ));
-# endif // defined(ASIO_NO_DEPRECATED)
+    is_applicable_property_v = is_executor<T>::value
+      || is_sender<T>::value || is_scheduler<T>::value);
 #endif // defined(ASIO_HAS_VARIABLE_TEMPLATES)
 
   ASIO_STATIC_CONSTEXPR(bool, is_requirable = true);
   ASIO_STATIC_CONSTEXPR(bool, is_preferable = true);
 
-  template <typename T>
-  struct static_proxy
-  {
-#if defined(ASIO_HAS_DEDUCED_QUERY_STATIC_CONSTEXPR_MEMBER_TRAIT)
-    struct type
-    {
-      template <typename P>
-      static constexpr auto query(ASIO_MOVE_ARG(P) p)
-        noexcept(
-          noexcept(
-            conditional<true, T, P>::type::query(ASIO_MOVE_CAST(P)(p))
-          )
-        )
-        -> decltype(
-          conditional<true, T, P>::type::query(ASIO_MOVE_CAST(P)(p))
-        )
-      {
-        return T::query(ASIO_MOVE_CAST(P)(p));
-      }
-    };
-#else // defined(ASIO_HAS_DEDUCED_QUERY_STATIC_CONSTEXPR_MEMBER_TRAIT)
-    typedef T type;
-#endif // defined(ASIO_HAS_DEDUCED_QUERY_STATIC_CONSTEXPR_MEMBER_TRAIT)
-  };
-
-  template <typename T>
-  struct query_static_constexpr_member :
-    traits::query_static_constexpr_member<
-      typename static_proxy<T>::type, allocator_t> {};
-
 #if defined(ASIO_HAS_DEDUCED_STATIC_QUERY_TRAIT) \
   && defined(ASIO_HAS_SFINAE_VARIABLE_TEMPLATES)
   template <typename T>
   static ASIO_CONSTEXPR
-  typename query_static_constexpr_member<T>::result_type
+  typename traits::query_static_constexpr_member<T, allocator_t>::result_type
   static_query()
     ASIO_NOEXCEPT_IF((
-      query_static_constexpr_member<T>::is_noexcept))
+      traits::query_static_constexpr_member<T, allocator_t>::is_noexcept))
   {
-    return query_static_constexpr_member<T>::value();
+    return traits::query_static_constexpr_member<T, allocator_t>::value();
   }
 
   template <typename E, typename T = decltype(allocator_t::static_query<E>())>
@@ -180,28 +132,10 @@ template <>
 struct allocator_t<void>
 {
 #if defined(ASIO_HAS_VARIABLE_TEMPLATES)
-# if defined(ASIO_NO_DEPRECATED)
   template <typename T>
   ASIO_STATIC_CONSTEXPR(bool,
-    is_applicable_property_v = (
-      is_executor<T>::value));
-# else // defined(ASIO_NO_DEPRECATED)
-  template <typename T>
-  ASIO_STATIC_CONSTEXPR(bool,
-    is_applicable_property_v = (
-      is_executor<T>::value
-        || conditional<
-            is_executor<T>::value,
-            false_type,
-            is_sender<T>
-          >::type::value
-        || conditional<
-            is_executor<T>::value,
-            false_type,
-            is_scheduler<T>
-          >::type::value
-      ));
-# endif // defined(ASIO_NO_DEPRECATED)
+    is_applicable_property_v = is_executor<T>::value
+      || is_sender<T>::value || is_scheduler<T>::value);
 #endif // defined(ASIO_HAS_VARIABLE_TEMPLATES)
 
   ASIO_STATIC_CONSTEXPR(bool, is_requirable = true);
@@ -211,46 +145,16 @@ struct allocator_t<void>
   {
   }
 
-  template <typename T>
-  struct static_proxy
-  {
-#if defined(ASIO_HAS_DEDUCED_QUERY_STATIC_CONSTEXPR_MEMBER_TRAIT)
-    struct type
-    {
-      template <typename P>
-      static constexpr auto query(ASIO_MOVE_ARG(P) p)
-        noexcept(
-          noexcept(
-            conditional<true, T, P>::type::query(ASIO_MOVE_CAST(P)(p))
-          )
-        )
-        -> decltype(
-          conditional<true, T, P>::type::query(ASIO_MOVE_CAST(P)(p))
-        )
-      {
-        return T::query(ASIO_MOVE_CAST(P)(p));
-      }
-    };
-#else // defined(ASIO_HAS_DEDUCED_QUERY_STATIC_CONSTEXPR_MEMBER_TRAIT)
-    typedef T type;
-#endif // defined(ASIO_HAS_DEDUCED_QUERY_STATIC_CONSTEXPR_MEMBER_TRAIT)
-  };
-
-  template <typename T>
-  struct query_static_constexpr_member :
-    traits::query_static_constexpr_member<
-      typename static_proxy<T>::type, allocator_t> {};
-
 #if defined(ASIO_HAS_DEDUCED_STATIC_QUERY_TRAIT) \
   && defined(ASIO_HAS_SFINAE_VARIABLE_TEMPLATES)
   template <typename T>
   static ASIO_CONSTEXPR
-  typename query_static_constexpr_member<T>::result_type
+  typename traits::query_static_constexpr_member<T, allocator_t>::result_type
   static_query()
     ASIO_NOEXCEPT_IF((
-      query_static_constexpr_member<T>::is_noexcept))
+      traits::query_static_constexpr_member<T, allocator_t>::is_noexcept))
   {
-    return query_static_constexpr_member<T>::value();
+    return traits::query_static_constexpr_member<T, allocator_t>::value();
   }
 
   template <typename E, typename T = decltype(allocator_t::static_query<E>())>
@@ -299,19 +203,8 @@ template <typename T, typename ProtoAllocator>
 struct is_applicable_property<T, execution::allocator_t<ProtoAllocator> >
   : integral_constant<bool,
       execution::is_executor<T>::value
-#if !defined(ASIO_NO_DEPRECATED)
-        || conditional<
-            execution::is_executor<T>::value,
-            false_type,
-            execution::is_sender<T>
-          >::type::value
-        || conditional<
-            execution::is_executor<T>::value,
-            false_type,
-            execution::is_scheduler<T>
-          >::type::value
-#endif // !defined(ASIO_NO_DEPRECATED)
-    >
+        || execution::is_sender<T>::value
+        || execution::is_scheduler<T>::value>
 {
 };
 
@@ -325,20 +218,20 @@ namespace traits {
 template <typename T, typename ProtoAllocator>
 struct static_query<T, execution::allocator_t<ProtoAllocator>,
   typename enable_if<
-    execution::allocator_t<ProtoAllocator>::template
-      query_static_constexpr_member<T>::is_valid
+    traits::query_static_constexpr_member<T,
+      execution::allocator_t<ProtoAllocator> >::is_valid
   >::type>
 {
   ASIO_STATIC_CONSTEXPR(bool, is_valid = true);
   ASIO_STATIC_CONSTEXPR(bool, is_noexcept = true);
 
-  typedef typename execution::allocator_t<ProtoAllocator>::template
-    query_static_constexpr_member<T>::result_type result_type;
+  typedef typename traits::query_static_constexpr_member<T,
+    execution::allocator_t<ProtoAllocator> >::result_type result_type;
 
   static ASIO_CONSTEXPR result_type value()
   {
-    return execution::allocator_t<ProtoAllocator>::template
-      query_static_constexpr_member<T>::value();
+    return traits::query_static_constexpr_member<T,
+      execution::allocator_t<ProtoAllocator> >::value();
   }
 };
 

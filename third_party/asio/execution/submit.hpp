@@ -2,7 +2,7 @@
 // execution/submit.hpp
 // ~~~~~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2023 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2020 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -16,9 +16,6 @@
 #endif // defined(_MSC_VER) && (_MSC_VER >= 1200)
 
 #include "asio/detail/config.hpp"
-
-#if !defined(ASIO_NO_DEPRECATED)
-
 #include "asio/detail/type_traits.hpp"
 #include "asio/execution/detail/submit_receiver.hpp"
 #include "asio/execution/executor.hpp"
@@ -128,8 +125,7 @@ enum overload_type
   ill_formed
 };
 
-template <typename S, typename R, typename = void,
-    typename = void, typename = void>
+template <typename S, typename R, typename = void>
 struct call_traits
 {
   ASIO_STATIC_CONSTEXPR(overload_type, overload = ill_formed);
@@ -140,10 +136,11 @@ struct call_traits
 template <typename S, typename R>
 struct call_traits<S, void(R),
   typename enable_if<
-    submit_member<S, R>::is_valid
-  >::type,
-  typename enable_if<
-    is_sender_to<S, R>::value
+    (
+      submit_member<S, R>::is_valid
+      &&
+      is_sender_to<S, R>::value
+    )
   >::type> :
   submit_member<S, R>
 {
@@ -153,13 +150,13 @@ struct call_traits<S, void(R),
 template <typename S, typename R>
 struct call_traits<S, void(R),
   typename enable_if<
-    !submit_member<S, R>::is_valid
-  >::type,
-  typename enable_if<
-    submit_free<S, R>::is_valid
-  >::type,
-  typename enable_if<
-    is_sender_to<S, R>::value
+    (
+      !submit_member<S, R>::is_valid
+      &&
+      submit_free<S, R>::is_valid
+      &&
+      is_sender_to<S, R>::value
+    )
   >::type> :
   submit_free<S, R>
 {
@@ -169,13 +166,13 @@ struct call_traits<S, void(R),
 template <typename S, typename R>
 struct call_traits<S, void(R),
   typename enable_if<
-    !submit_member<S, R>::is_valid
-  >::type,
-  typename enable_if<
-    !submit_free<S, R>::is_valid
-  >::type,
-  typename enable_if<
-    is_sender_to<S, R>::value
+    (
+      !submit_member<S, R>::is_valid
+      &&
+      !submit_free<S, R>::is_valid
+      &&
+      is_sender_to<S, R>::value
+    )
   >::type>
 {
   ASIO_STATIC_CONSTEXPR(overload_type, overload = adapter);
@@ -449,7 +446,5 @@ void submit_helper(ASIO_MOVE_ARG(S) s, ASIO_MOVE_ARG(R) r)
 #endif // defined(GENERATING_DOCUMENTATION)
 
 #include "asio/detail/pop_options.hpp"
-
-#endif // !defined(ASIO_NO_DEPRECATED)
 
 #endif // ASIO_EXECUTION_SUBMIT_HPP

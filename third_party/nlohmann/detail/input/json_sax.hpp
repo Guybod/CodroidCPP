@@ -1,11 +1,3 @@
-//     __ _____ _____ _____
-//  __|  |   __|     |   | |  JSON for Modern C++
-// |  |  |__   |  |  | | | |  version 3.11.3
-// |_____|_____|_____|_|___|  https://github.com/nlohmann/json
-//
-// SPDX-FileCopyrightText: 2013-2023 Niels Lohmann <https://nlohmann.me>
-// SPDX-License-Identifier: MIT
-
 #pragma once
 
 #include <cstddef>
@@ -15,9 +7,9 @@
 
 #include <nlohmann/detail/exceptions.hpp>
 #include <nlohmann/detail/macro_scope.hpp>
-#include <nlohmann/detail/string_concat.hpp>
 
-NLOHMANN_JSON_NAMESPACE_BEGIN
+namespace nlohmann
+{
 
 /*!
 @brief SAX interface
@@ -142,6 +134,7 @@ struct json_sax
     virtual ~json_sax() = default;
 };
 
+
 namespace detail
 {
 /*!
@@ -231,7 +224,7 @@ class json_sax_dom_parser
 
         if (JSON_HEDLEY_UNLIKELY(len != static_cast<std::size_t>(-1) && len > ref_stack.back()->max_size()))
         {
-            JSON_THROW(out_of_range::create(408, concat("excessive object size: ", std::to_string(len)), ref_stack.back()));
+            JSON_THROW(out_of_range::create(408, "excessive object size: " + std::to_string(len), *ref_stack.back()));
         }
 
         return true;
@@ -239,19 +232,13 @@ class json_sax_dom_parser
 
     bool key(string_t& val)
     {
-        JSON_ASSERT(!ref_stack.empty());
-        JSON_ASSERT(ref_stack.back()->is_object());
-
         // add null at given key and store the reference for later
-        object_element = &(ref_stack.back()->m_data.m_value.object->operator[](val));
+        object_element = &(ref_stack.back()->m_value.object->operator[](val));
         return true;
     }
 
     bool end_object()
     {
-        JSON_ASSERT(!ref_stack.empty());
-        JSON_ASSERT(ref_stack.back()->is_object());
-
         ref_stack.back()->set_parents();
         ref_stack.pop_back();
         return true;
@@ -263,7 +250,7 @@ class json_sax_dom_parser
 
         if (JSON_HEDLEY_UNLIKELY(len != static_cast<std::size_t>(-1) && len > ref_stack.back()->max_size()))
         {
-            JSON_THROW(out_of_range::create(408, concat("excessive array size: ", std::to_string(len)), ref_stack.back()));
+            JSON_THROW(out_of_range::create(408, "excessive array size: " + std::to_string(len), *ref_stack.back()));
         }
 
         return true;
@@ -271,9 +258,6 @@ class json_sax_dom_parser
 
     bool end_array()
     {
-        JSON_ASSERT(!ref_stack.empty());
-        JSON_ASSERT(ref_stack.back()->is_array());
-
         ref_stack.back()->set_parents();
         ref_stack.pop_back();
         return true;
@@ -318,8 +302,8 @@ class json_sax_dom_parser
 
         if (ref_stack.back()->is_array())
         {
-            ref_stack.back()->m_data.m_value.array->emplace_back(std::forward<Value>(v));
-            return &(ref_stack.back()->m_data.m_value.array->back());
+            ref_stack.back()->m_value.array->emplace_back(std::forward<Value>(v));
+            return &(ref_stack.back()->m_value.array->back());
         }
 
         JSON_ASSERT(ref_stack.back()->is_object());
@@ -421,7 +405,7 @@ class json_sax_dom_callback_parser
         // check object limit
         if (ref_stack.back() && JSON_HEDLEY_UNLIKELY(len != static_cast<std::size_t>(-1) && len > ref_stack.back()->max_size()))
         {
-            JSON_THROW(out_of_range::create(408, concat("excessive object size: ", std::to_string(len)), ref_stack.back()));
+            JSON_THROW(out_of_range::create(408, "excessive object size: " + std::to_string(len), *ref_stack.back()));
         }
 
         return true;
@@ -438,7 +422,7 @@ class json_sax_dom_callback_parser
         // add discarded value at given key and store the reference for later
         if (keep && ref_stack.back())
         {
-            object_element = &(ref_stack.back()->m_data.m_value.object->operator[](val) = discarded);
+            object_element = &(ref_stack.back()->m_value.object->operator[](val) = discarded);
         }
 
         return true;
@@ -491,7 +475,7 @@ class json_sax_dom_callback_parser
         // check array limit
         if (ref_stack.back() && JSON_HEDLEY_UNLIKELY(len != static_cast<std::size_t>(-1) && len > ref_stack.back()->max_size()))
         {
-            JSON_THROW(out_of_range::create(408, concat("excessive array size: ", std::to_string(len)), ref_stack.back()));
+            JSON_THROW(out_of_range::create(408, "excessive array size: " + std::to_string(len), *ref_stack.back()));
         }
 
         return true;
@@ -523,7 +507,7 @@ class json_sax_dom_callback_parser
         // remove discarded value
         if (!keep && !ref_stack.empty() && ref_stack.back()->is_array())
         {
-            ref_stack.back()->m_data.m_value.array->pop_back();
+            ref_stack.back()->m_value.array->pop_back();
         }
 
         return true;
@@ -590,7 +574,7 @@ class json_sax_dom_callback_parser
         if (ref_stack.empty())
         {
             root = std::move(value);
-            return {true, & root};
+            return {true, &root};
         }
 
         // skip this value if we already decided to skip the parent
@@ -606,8 +590,8 @@ class json_sax_dom_callback_parser
         // array
         if (ref_stack.back()->is_array())
         {
-            ref_stack.back()->m_data.m_value.array->emplace_back(std::move(value));
-            return {true, & (ref_stack.back()->m_data.m_value.array->back())};
+            ref_stack.back()->m_value.array->emplace_back(std::move(value));
+            return {true, &(ref_stack.back()->m_value.array->back())};
         }
 
         // object
@@ -722,6 +706,6 @@ class json_sax_acceptor
         return false;
     }
 };
-
 }  // namespace detail
-NLOHMANN_JSON_NAMESPACE_END
+
+}  // namespace nlohmann

@@ -1,11 +1,3 @@
-//     __ _____ _____ _____
-//  __|  |   __|     |   | |  JSON for Modern C++
-// |  |  |__   |  |  | | | |  version 3.11.3
-// |_____|_____|_____|_|___|  https://github.com/nlohmann/json
-//
-// SPDX-FileCopyrightText: 2013-2023 Niels Lohmann <https://nlohmann.me>
-// SPDX-License-Identifier: MIT
-
 #ifndef INCLUDE_NLOHMANN_JSON_FWD_HPP_
 #define INCLUDE_NLOHMANN_JSON_FWD_HPP_
 
@@ -15,15 +7,13 @@
 #include <string> // string
 #include <vector> // vector
 
-#include <nlohmann/detail/abi_macros.hpp>
-
 /*!
 @brief namespace for Niels Lohmann
 @see https://github.com/nlohmann
 @since version 1.0.0
 */
-NLOHMANN_JSON_NAMESPACE_BEGIN
-
+namespace nlohmann
+{
 /*!
 @brief default JSONSerializer template argument
 
@@ -46,13 +36,12 @@ template<template<typename U, typename V, typename... Args> class ObjectType =
          template<typename U> class AllocatorType = std::allocator,
          template<typename T, typename SFINAE = void> class JSONSerializer =
          adl_serializer,
-         class BinaryType = std::vector<std::uint8_t>, // cppcheck-suppress syntaxError
-         class CustomBaseClass = void>
+         class BinaryType = std::vector<std::uint8_t>>
 class basic_json;
 
 /// @brief JSON Pointer defines a string syntax for identifying a specific value within a JSON document
 /// @sa https://json.nlohmann.me/api/json_pointer/
-template<typename RefStringType>
+template<typename BasicJsonType>
 class json_pointer;
 
 /*!
@@ -70,6 +59,6 @@ struct ordered_map;
 /// @sa https://json.nlohmann.me/api/ordered_json/
 using ordered_json = basic_json<nlohmann::ordered_map>;
 
-NLOHMANN_JSON_NAMESPACE_END
+}  // namespace nlohmann
 
 #endif  // INCLUDE_NLOHMANN_JSON_FWD_HPP_

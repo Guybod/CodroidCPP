@@ -1,1 +1,1 @@
-/usr/bin/c++ CMakeFiles/03_run_project.dir/examples/03_run_project.cpp.o -o 03_run_project   -L/home/ym/workspace/CodroidSDK/cpp/kinematics  -Wl,-rpath,/home/ym/workspace/CodroidSDK/cpp/kinematics libCodroid.so -lFk_Ik_so -lkdl 
+/usr/bin/c++ CMakeFiles/03_run_project.dir/examples/03_run_project.cpp.o -o 03_run_project   -L"/home/ym/workspace/CodroidSDK (New)/CodroidCPP/kinematics"  -Wl,-rpath,"/home/ym/workspace/CodroidSDK (New)/CodroidCPP/kinematics" libCodroid.so -lFk_Ik_so -lkdl 

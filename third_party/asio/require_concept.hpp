@@ -2,7 +2,7 @@
 // require_concept.hpp
 // ~~~~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2023 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2020 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -107,7 +107,6 @@ struct require_concept_result
 
 namespace asio_require_concept_fn {
 
-using asio::conditional;
 using asio::decay;
 using asio::declval;
 using asio::enable_if;
@@ -126,8 +125,7 @@ enum overload_type
   ill_formed
 };
 
-template <typename Impl, typename T, typename Properties, typename = void,
-    typename = void, typename = void, typename = void, typename = void>
+template <typename T, typename Properties, typename = void>
 struct call_traits
 {
   ASIO_STATIC_CONSTEXPR(overload_type, overload = ill_formed);
@@ -135,19 +133,19 @@ struct call_traits
   typedef void result_type;
 };
 
-template <typename Impl, typename T, typename Property>
-struct call_traits<Impl, T, void(Property),
+template <typename T, typename Property>
+struct call_traits<T, void(Property),
   typename enable_if<
-    is_applicable_property<
-      typename decay<T>::type,
-      typename decay<Property>::type
-    >::value
-  >::type,
-  typename enable_if<
-    decay<Property>::type::is_requirable_concept
-  >::type,
-  typename enable_if<
-    static_require_concept<T, Property>::is_valid
+    (
+      is_applicable_property<
+        typename decay<T>::type,
+        typename decay<Property>::type
+      >::value
+      &&
+      decay<Property>::type::is_requirable_concept
+      &&
+      static_require_concept<T, Property>::is_valid
+    )
   >::type>
 {
   ASIO_STATIC_CONSTEXPR(overload_type, overload = identity);
@@ -155,56 +153,44 @@ struct call_traits<Impl, T, void(Property),
   typedef ASIO_MOVE_ARG(T) result_type;
 };
 
-template <typename Impl, typename T, typename Property>
-struct call_traits<Impl, T, void(Property),
+template <typename T, typename Property>
+struct call_traits<T, void(Property),
   typename enable_if<
-    is_applicable_property<
-      typename decay<T>::type,
-      typename decay<Property>::type
-    >::value
-  >::type,
-  typename enable_if<
-    decay<Property>::type::is_requirable_concept
-  >::type,
-  typename enable_if<
-    !static_require_concept<T, Property>::is_valid
-  >::type,
-  typename enable_if<
-    require_concept_member<
-      typename Impl::template proxy<T>::type,
-      Property
-    >::is_valid
+    (
+      is_applicable_property<
+        typename decay<T>::type,
+        typename decay<Property>::type
+      >::value
+      &&
+      decay<Property>::type::is_requirable_concept
+      &&
+      !static_require_concept<T, Property>::is_valid
+      &&
+      require_concept_member<T, Property>::is_valid
+    )
   >::type> :
-  require_concept_member<
-    typename Impl::template proxy<T>::type,
-    Property
-  >
+  require_concept_member<T, Property>
 {
   ASIO_STATIC_CONSTEXPR(overload_type, overload = call_member);
 };
 
-template <typename Impl, typename T, typename Property>
-struct call_traits<Impl, T, void(Property),
+template <typename T, typename Property>
+struct call_traits<T, void(Property),
   typename enable_if<
-    is_applicable_property<
-      typename decay<T>::type,
-      typename decay<Property>::type
-    >::value
-  >::type,
-  typename enable_if<
-    decay<Property>::type::is_requirable_concept
-  >::type,
-  typename enable_if<
-    !static_require_concept<T, Property>::is_valid
-  >::type,
-  typename enable_if<
-    !require_concept_member<
-      typename Impl::template proxy<T>::type,
-      Property
-    >::is_valid
-  >::type,
-  typename enable_if<
-    require_concept_free<T, Property>::is_valid
+    (
+      is_applicable_property<
+        typename decay<T>::type,
+        typename decay<Property>::type
+      >::value
+      &&
+      decay<Property>::type::is_requirable_concept
+      &&
+      !static_require_concept<T, Property>::is_valid
+      &&
+      !require_concept_member<T, Property>::is_valid
+      &&
+      require_concept_free<T, Property>::is_valid
+    )
   >::type> :
   require_concept_free<T, Property>
 {
@@ -213,54 +199,30 @@ struct call_traits<Impl, T, void(Property),
 
 struct impl
 {
-  template <typename T>
-  struct proxy
-  {
-#if defined(ASIO_HAS_DEDUCED_REQUIRE_CONCEPT_MEMBER_TRAIT)
-    struct type
-    {
-      template <typename P>
-      auto require_concept(ASIO_MOVE_ARG(P) p)
-        noexcept(
-          noexcept(
-            declval<typename conditional<true, T, P>::type>().require_concept(
-              ASIO_MOVE_CAST(P)(p))
-          )
-        )
-        -> decltype(
-          declval<typename conditional<true, T, P>::type>().require_concept(
-            ASIO_MOVE_CAST(P)(p))
-        );
-    };
-#else // defined(ASIO_HAS_DEDUCED_REQUIRE_CONCEPT_MEMBER_TRAIT)
-    typedef T type;
-#endif // defined(ASIO_HAS_DEDUCED_REQUIRE_CONCEPT_MEMBER_TRAIT)
-  };
-
   template <typename T, typename Property>
   ASIO_NODISCARD ASIO_CONSTEXPR typename enable_if<
-    call_traits<impl, T, void(Property)>::overload == identity,
-    typename call_traits<impl, T, void(Property)>::result_type
+    call_traits<T, void(Property)>::overload == identity,
+    typename call_traits<T, void(Property)>::result_type
   >::type
   operator()(
       ASIO_MOVE_ARG(T) t,
       ASIO_MOVE_ARG(Property)) const
     ASIO_NOEXCEPT_IF((
-      call_traits<impl, T, void(Property)>::is_noexcept))
+      call_traits<T, void(Property)>::is_noexcept))
   {
     return ASIO_MOVE_CAST(T)(t);
   }
 
   template <typename T, typename Property>
   ASIO_NODISCARD ASIO_CONSTEXPR typename enable_if<
-    call_traits<impl, T, void(Property)>::overload == call_member,
-    typename call_traits<impl, T, void(Property)>::result_type
+    call_traits<T, void(Property)>::overload == call_member,
+    typename call_traits<T, void(Property)>::result_type
   >::type
   operator()(
       ASIO_MOVE_ARG(T) t,
       ASIO_MOVE_ARG(Property) p) const
     ASIO_NOEXCEPT_IF((
-      call_traits<impl, T, void(Property)>::is_noexcept))
+      call_traits<T, void(Property)>::is_noexcept))
   {
     return ASIO_MOVE_CAST(T)(t).require_concept(
         ASIO_MOVE_CAST(Property)(p));
@@ -268,14 +230,14 @@ struct impl
 
   template <typename T, typename Property>
   ASIO_NODISCARD ASIO_CONSTEXPR typename enable_if<
-    call_traits<impl, T, void(Property)>::overload == call_free,
-    typename call_traits<impl, T, void(Property)>::result_type
+    call_traits<T, void(Property)>::overload == call_free,
+    typename call_traits<T, void(Property)>::result_type
   >::type
   operator()(
       ASIO_MOVE_ARG(T) t,
       ASIO_MOVE_ARG(Property) p) const
     ASIO_NOEXCEPT_IF((
-      call_traits<impl, T, void(Property)>::is_noexcept))
+      call_traits<T, void(Property)>::is_noexcept))
   {
     return require_concept(
         ASIO_MOVE_CAST(T)(t),
@@ -301,14 +263,11 @@ static ASIO_CONSTEXPR const asio_require_concept_fn::impl&
 
 } // namespace
 
-typedef asio_require_concept_fn::impl require_concept_t;
-
 template <typename T, typename Property>
 struct can_require_concept :
   integral_constant<bool,
-    asio_require_concept_fn::call_traits<
-      require_concept_t, T, void(Property)>::overload !=
-        asio_require_concept_fn::ill_formed>
+    asio_require_concept_fn::call_traits<T, void(Property)>::overload !=
+      asio_require_concept_fn::ill_formed>
 {
 };
 
@@ -323,8 +282,7 @@ constexpr bool can_require_concept_v
 template <typename T, typename Property>
 struct is_nothrow_require_concept :
   integral_constant<bool,
-    asio_require_concept_fn::call_traits<
-      require_concept_t, T, void(Property)>::is_noexcept>
+    asio_require_concept_fn::call_traits<T, void(Property)>::is_noexcept>
 {
 };
 
@@ -340,7 +298,7 @@ template <typename T, typename Property>
 struct require_concept_result
 {
   typedef typename asio_require_concept_fn::call_traits<
-      require_concept_t, T, void(Property)>::result_type type;
+      T, void(Property)>::result_type type;
 };
 
 } // namespace asio

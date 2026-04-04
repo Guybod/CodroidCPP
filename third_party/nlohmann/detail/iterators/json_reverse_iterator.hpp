@@ -1,23 +1,13 @@
-//     __ _____ _____ _____
-//  __|  |   __|     |   | |  JSON for Modern C++
-// |  |  |__   |  |  | | | |  version 3.11.3
-// |_____|_____|_____|_|___|  https://github.com/nlohmann/json
-//
-// SPDX-FileCopyrightText: 2013-2023 Niels Lohmann <https://nlohmann.me>
-// SPDX-License-Identifier: MIT
-
 #pragma once
 
 #include <cstddef> // ptrdiff_t
 #include <iterator> // reverse_iterator
 #include <utility> // declval
 
-#include <nlohmann/detail/abi_macros.hpp>
-
-NLOHMANN_JSON_NAMESPACE_BEGIN
+namespace nlohmann
+{
 namespace detail
 {
-
 //////////////////////
 // reverse_iterator //
 //////////////////////
@@ -58,7 +48,7 @@ class json_reverse_iterator : public std::reverse_iterator<Base>
     explicit json_reverse_iterator(const base_iterator& it) noexcept : base_iterator(it) {}
 
     /// post-increment (it++)
-    json_reverse_iterator operator++(int)& // NOLINT(cert-dcl21-cpp)
+    json_reverse_iterator const operator++(int) // NOLINT(readability-const-return-type)
     {
         return static_cast<json_reverse_iterator>(base_iterator::operator++(1));
     }
@@ -70,7 +60,7 @@ class json_reverse_iterator : public std::reverse_iterator<Base>
     }
 
     /// post-decrement (it--)
-    json_reverse_iterator operator--(int)& // NOLINT(cert-dcl21-cpp)
+    json_reverse_iterator const operator--(int) // NOLINT(readability-const-return-type)
     {
         return static_cast<json_reverse_iterator>(base_iterator::operator--(1));
     }
@@ -125,6 +115,5 @@ class json_reverse_iterator : public std::reverse_iterator<Base>
         return it.operator * ();
     }
 };
-
 }  // namespace detail
-NLOHMANN_JSON_NAMESPACE_END
+}  // namespace nlohmann

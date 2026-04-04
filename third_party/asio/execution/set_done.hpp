@@ -2,7 +2,7 @@
 // execution/set_done.hpp
 // ~~~~~~~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2023 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2020 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -16,9 +16,6 @@
 #endif // defined(_MSC_VER) && (_MSC_VER >= 1200)
 
 #include "asio/detail/config.hpp"
-
-#if !defined(ASIO_NO_DEPRECATED)
-
 #include "asio/detail/type_traits.hpp"
 #include "asio/traits/set_done_member.hpp"
 #include "asio/traits/set_done_free.hpp"
@@ -86,7 +83,7 @@ enum overload_type
   ill_formed
 };
 
-template <typename R, typename = void, typename = void>
+template <typename R, typename = void>
 struct call_traits
 {
   ASIO_STATIC_CONSTEXPR(overload_type, overload = ill_formed);
@@ -97,7 +94,9 @@ struct call_traits
 template <typename R>
 struct call_traits<R,
   typename enable_if<
-    set_done_member<R>::is_valid
+    (
+      set_done_member<R>::is_valid
+    )
   >::type> :
   set_done_member<R>
 {
@@ -107,10 +106,11 @@ struct call_traits<R,
 template <typename R>
 struct call_traits<R,
   typename enable_if<
-    !set_done_member<R>::is_valid
-  >::type,
-  typename enable_if<
-    set_done_free<R>::is_valid
+    (
+      !set_done_member<R>::is_valid
+      &&
+      set_done_free<R>::is_valid
+    )
   >::type> :
   set_done_free<R>
 {
@@ -249,7 +249,5 @@ constexpr bool is_nothrow_set_done_v
 #endif // defined(GENERATING_DOCUMENTATION)
 
 #include "asio/detail/pop_options.hpp"
-
-#endif // !defined(ASIO_NO_DEPRECATED)
 
 #endif // ASIO_EXECUTION_SET_DONE_HPP

@@ -1,23 +1,14 @@
-//     __ _____ _____ _____
-//  __|  |   __|     |   | |  JSON for Modern C++
-// |  |  |__   |  |  | | | |  version 3.11.3
-// |_____|_____|_____|_|___|  https://github.com/nlohmann/json
-//
-// SPDX-FileCopyrightText: 2013-2023 Niels Lohmann <https://nlohmann.me>
-// SPDX-License-Identifier: MIT
-
 #pragma once
 
 #include <iterator> // random_access_iterator_tag
 
-#include <nlohmann/detail/abi_macros.hpp>
 #include <nlohmann/detail/meta/void_t.hpp>
 #include <nlohmann/detail/meta/cpp_future.hpp>
 
-NLOHMANN_JSON_NAMESPACE_BEGIN
+namespace nlohmann
+{
 namespace detail
 {
-
 template<typename It, typename = void>
 struct iterator_types {};
 
@@ -56,6 +47,5 @@ struct iterator_traits<T*, enable_if_t<std::is_object<T>::value>>
     using pointer = T*;
     using reference = T&;
 };
-
-}  // namespace detail
-NLOHMANN_JSON_NAMESPACE_END
+} // namespace detail
+} // namespace nlohmann

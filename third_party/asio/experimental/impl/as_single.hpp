@@ -2,7 +2,7 @@
 // experimental/impl/as_single.hpp
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2023 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2020 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -19,7 +19,8 @@
 
 #include <tuple>
 
-#include "asio/associator.hpp"
+#include "asio/associated_executor.hpp"
+#include "asio/associated_allocator.hpp"
 #include "asio/async_result.hpp"
 #include "asio/detail/handler_alloc_helpers.hpp"
 #include "asio/detail/handler_cont_helpers.hpp"
@@ -54,21 +55,19 @@ public:
 
   void operator()()
   {
-    ASIO_MOVE_OR_LVALUE(Handler)(handler_)();
+    handler_();
   }
 
   template <typename Arg>
   void operator()(ASIO_MOVE_ARG(Arg) arg)
   {
-    ASIO_MOVE_OR_LVALUE(Handler)(handler_)(
-        ASIO_MOVE_CAST(Arg)(arg));
+    handler_(ASIO_MOVE_CAST(Arg)(arg));
   }
 
   template <typename... Args>
   void operator()(ASIO_MOVE_ARG(Args)... args)
   {
-    ASIO_MOVE_OR_LVALUE(Handler)(handler_)(
-        std::make_tuple(ASIO_MOVE_CAST(Args)(args)...));
+    handler_(std::make_tuple(ASIO_MOVE_CAST(Args)(args)...));
   }
 
 //private:
@@ -76,29 +75,19 @@ public:
 };
 
 template <typename Handler>
-inline asio_handler_allocate_is_deprecated
-asio_handler_allocate(std::size_t size,
+inline void* asio_handler_allocate(std::size_t size,
     as_single_handler<Handler>* this_handler)
 {
-#if defined(ASIO_NO_DEPRECATED)
-  asio_handler_alloc_helpers::allocate(size, this_handler->handler_);
-  return asio_handler_allocate_is_no_longer_used();
-#else // defined(ASIO_NO_DEPRECATED)
   return asio_handler_alloc_helpers::allocate(
       size, this_handler->handler_);
-#endif // defined(ASIO_NO_DEPRECATED)
 }
 
 template <typename Handler>
-inline asio_handler_deallocate_is_deprecated
-asio_handler_deallocate(void* pointer, std::size_t size,
+inline void asio_handler_deallocate(void* pointer, std::size_t size,
     as_single_handler<Handler>* this_handler)
 {
   asio_handler_alloc_helpers::deallocate(
       pointer, size, this_handler->handler_);
-#if defined(ASIO_NO_DEPRECATED)
-  return asio_handler_deallocate_is_no_longer_used();
-#endif // defined(ASIO_NO_DEPRECATED)
 }
 
 template <typename Handler>
@@ -110,27 +99,19 @@ inline bool asio_handler_is_continuation(
 }
 
 template <typename Function, typename Handler>
-inline asio_handler_invoke_is_deprecated
-asio_handler_invoke(Function& function,
+inline void asio_handler_invoke(Function& function,
     as_single_handler<Handler>* this_handler)
 {
   asio_handler_invoke_helpers::invoke(
       function, this_handler->handler_);
-#if defined(ASIO_NO_DEPRECATED)
-  return asio_handler_invoke_is_no_longer_used();
-#endif // defined(ASIO_NO_DEPRECATED)
 }
 
 template <typename Function, typename Handler>
-inline asio_handler_invoke_is_deprecated
-asio_handler_invoke(const Function& function,
+inline void asio_handler_invoke(const Function& function,
     as_single_handler<Handler>* this_handler)
 {
   asio_handler_invoke_helpers::invoke(
       function, this_handler->handler_);
-#if defined(ASIO_NO_DEPRECATED)
-  return asio_handler_invoke_is_no_longer_used();
-#endif // defined(ASIO_NO_DEPRECATED)
 }
 
 template <typename Signature>
@@ -206,27 +187,32 @@ struct async_result<experimental::as_single_t<CompletionToken>, Signature>
   }
 };
 
-template <template <typename, typename> class Associator,
-    typename Handler, typename DefaultCandidate>
-struct associator<Associator,
-    experimental::detail::as_single_handler<Handler>, DefaultCandidate>
-  : Associator<Handler, DefaultCandidate>
+template <typename Handler, typename Executor>
+struct associated_executor<
+    experimental::detail::as_single_handler<Handler>, Executor>
+  : detail::associated_executor_forwarding_base<Handler, Executor>
 {
-  static typename Associator<Handler, DefaultCandidate>::type
-  get(const experimental::detail::as_single_handler<Handler>& h)
-    ASIO_NOEXCEPT
-  {
-    return Associator<Handler, DefaultCandidate>::get(h.handler_);
-  }
+  typedef typename associated_executor<Handler, Executor>::type type;
 
-  static ASIO_AUTO_RETURN_TYPE_PREFIX2(
-      typename Associator<Handler, DefaultCandidate>::type)
-  get(const experimental::detail::as_single_handler<Handler>& h,
-      const DefaultCandidate& c) ASIO_NOEXCEPT
-    ASIO_AUTO_RETURN_TYPE_SUFFIX((
-      Associator<Handler, DefaultCandidate>::get(h.handler_, c)))
+  static type get(
+      const experimental::detail::as_single_handler<Handler>& h,
+      const Executor& ex = Executor()) ASIO_NOEXCEPT
   {
-    return Associator<Handler, DefaultCandidate>::get(h.handler_, c);
+    return associated_executor<Handler, Executor>::get(h.handler_, ex);
+  }
+};
+
+template <typename Handler, typename Allocator>
+struct associated_allocator<
+    experimental::detail::as_single_handler<Handler>, Allocator>
+{
+  typedef typename associated_allocator<Handler, Allocator>::type type;
+
+  static type get(
+      const experimental::detail::as_single_handler<Handler>& h,
+      const Allocator& a = Allocator()) ASIO_NOEXCEPT
+  {
+    return associated_allocator<Handler, Allocator>::get(h.handler_, a);
   }
 };
 

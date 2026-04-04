@@ -1,1 +1,1 @@
-/usr/bin/c++ CMakeFiles/06_jog_mode.dir/examples/06_jog_mode.cpp.o -o 06_jog_mode   -L/home/ym/workspace/CodroidSDK/cpp/kinematics  -Wl,-rpath,/home/ym/workspace/CodroidSDK/cpp/kinematics libCodroid.so -lFk_Ik_so -lkdl 
+/usr/bin/c++ CMakeFiles/06_jog_mode.dir/examples/06_jog_mode.cpp.o -o 06_jog_mode   -L"/home/ym/workspace/CodroidSDK (New)/CodroidCPP/kinematics"  -Wl,-rpath,"/home/ym/workspace/CodroidSDK (New)/CodroidCPP/kinematics" libCodroid.so -lFk_Ik_so -lkdl 

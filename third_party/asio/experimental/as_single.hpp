@@ -2,7 +2,7 @@
 // experimental/as_single.hpp
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2023 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2020 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -23,7 +23,7 @@
 namespace asio {
 namespace experimental {
 
-/// A @ref completion_token adapter used to specify that the completion handler
+/// Completion token type used to specify that the completion handler
 /// arguments should be combined into a single argument.
 /**
  * The as_single_t class is used to indicate that any arguments to the
@@ -80,9 +80,9 @@ public:
     /// that to construct the adapted executor.
     template <typename OtherExecutor>
     executor_with_default(const OtherExecutor& ex,
-        typename constraint<
+        typename enable_if<
           is_convertible<OtherExecutor, InnerExecutor>::value
-        >::type = 0) ASIO_NOEXCEPT
+        >::type* = 0) ASIO_NOEXCEPT
       : InnerExecutor(ex)
     {
     }
@@ -115,11 +115,10 @@ public:
   CompletionToken token_;
 };
 
-/// Adapt a @ref completion_token to specify that the completion handler
-/// arguments should be combined into a single argument.
+/// Create a completion token to specify that the completion handler arguments
+/// should be combined into a single argument.
 template <typename CompletionToken>
-ASIO_NODISCARD inline
-ASIO_CONSTEXPR as_single_t<typename decay<CompletionToken>::type>
+inline ASIO_CONSTEXPR as_single_t<typename decay<CompletionToken>::type>
 as_single(ASIO_MOVE_ARG(CompletionToken) completion_token)
 {
   return as_single_t<typename decay<CompletionToken>::type>(

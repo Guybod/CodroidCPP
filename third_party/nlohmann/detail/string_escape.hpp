@@ -1,16 +1,10 @@
-//     __ _____ _____ _____
-//  __|  |   __|     |   | |  JSON for Modern C++
-// |  |  |__   |  |  | | | |  version 3.11.3
-// |_____|_____|_____|_|___|  https://github.com/nlohmann/json
-//
-// SPDX-FileCopyrightText: 2013-2023 Niels Lohmann <https://nlohmann.me>
-// SPDX-License-Identifier: MIT
-
 #pragma once
 
-#include <nlohmann/detail/abi_macros.hpp>
+#include <string>
+#include <nlohmann/detail/macro_scope.hpp>
 
-NLOHMANN_JSON_NAMESPACE_BEGIN
+namespace nlohmann
+{
 namespace detail
 {
 
@@ -27,13 +21,12 @@ enforced with an assertion.**
 
 @since version 2.0.0
 */
-template<typename StringType>
-inline void replace_substring(StringType& s, const StringType& f,
-                              const StringType& t)
+inline void replace_substring(std::string& s, const std::string& f,
+                              const std::string& t)
 {
     JSON_ASSERT(!f.empty());
     for (auto pos = s.find(f);                // find first occurrence of f
-            pos != StringType::npos;          // make sure f was found
+            pos != std::string::npos;         // make sure f was found
             s.replace(pos, f.size(), t),      // replace with t, and
             pos = s.find(f, pos + t.size()))  // find next occurrence of f
     {}
@@ -46,11 +39,10 @@ inline void replace_substring(StringType& s, const StringType& f,
  *
  * Note the order of escaping "~" to "~0" and "/" to "~1" is important.
  */
-template<typename StringType>
-inline StringType escape(StringType s)
+inline std::string escape(std::string s)
 {
-    replace_substring(s, StringType{"~"}, StringType{"~0"});
-    replace_substring(s, StringType{"/"}, StringType{"~1"});
+    replace_substring(s, "~", "~0");
+    replace_substring(s, "/", "~1");
     return s;
 }
 
@@ -61,12 +53,11 @@ inline StringType escape(StringType s)
  *
  * Note the order of escaping "~1" to "/" and "~0" to "~" is important.
  */
-template<typename StringType>
-static void unescape(StringType& s)
+static void unescape(std::string& s)
 {
-    replace_substring(s, StringType{"~1"}, StringType{"/"});
-    replace_substring(s, StringType{"~0"}, StringType{"~"});
+    replace_substring(s, "~1", "/");
+    replace_substring(s, "~0", "~");
 }
 
-}  // namespace detail
-NLOHMANN_JSON_NAMESPACE_END
+} // namespace detail
+} // namespace nlohmann
