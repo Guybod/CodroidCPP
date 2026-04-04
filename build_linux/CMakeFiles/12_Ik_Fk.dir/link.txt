@@ -1,1 +1,0 @@
-/usr/bin/c++ CMakeFiles/12_Ik_Fk.dir/examples/12_Ik_Fk.cpp.o -o 12_Ik_Fk   -L"/home/ym/workspace/CodroidSDK (New)/CodroidCPP/kinematics"  -Wl,-rpath,"/home/ym/workspace/CodroidSDK (New)/CodroidCPP/kinematics" libCodroid.so -lFk_Ik_so -lkdl 

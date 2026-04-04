@@ -1,1 +1,0 @@
-/usr/bin/c++ CMakeFiles/04_global_value.dir/examples/04_global_value.cpp.o -o 04_global_value   -L"/home/ym/workspace/CodroidSDK (New)/CodroidCPP/kinematics"  -Wl,-rpath,"/home/ym/workspace/CodroidSDK (New)/CodroidCPP/kinematics" libCodroid.so -lFk_Ik_so -lkdl 

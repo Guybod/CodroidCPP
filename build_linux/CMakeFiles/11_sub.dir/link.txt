@@ -1,1 +1,0 @@
-/usr/bin/c++ CMakeFiles/11_sub.dir/examples/11_sub.cpp.o -o 11_sub   -L"/home/ym/workspace/CodroidSDK (New)/CodroidCPP/kinematics"  -Wl,-rpath,"/home/ym/workspace/CodroidSDK (New)/CodroidCPP/kinematics" libCodroid.so -lFk_Ik_so -lkdl 

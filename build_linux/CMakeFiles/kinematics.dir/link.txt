@@ -1,1 +1,0 @@
-/usr/bin/c++ CMakeFiles/kinematics.dir/kinematics/kinematics.cpp.o -o kinematics   -L"/home/ym/workspace/CodroidSDK (New)/CodroidCPP/kinematics"  -Wl,-rpath,"/home/ym/workspace/CodroidSDK (New)/CodroidCPP/kinematics" -lFk_Ik_so -lkdl 
