@@ -2,11 +2,11 @@
 #include <iomanip> // 用于美化输出
 #include <thread>
 #include <chrono>
-#include "Codroid/CodroidControlInterface.h"
+#include "Codroid/CodroidController.h"
 
 int main() {
     // 1. 实例化控制类
-    Codroid::CodroidControlInterface robot;
+    Codroid::CodroidController robot;
 
     // 2. 配置机械臂 IP 和 端口 (请根据实际情况修改)
     std::string robot_ip = "192.168.1.136"; 
@@ -14,8 +14,8 @@ int main() {
 
     std::cout << "Connecting to robot at " << robot_ip << ":" << robot_port << "..." << std::endl;
 
-    // 3. 尝试连接
-    if (!robot.connect(robot_ip)) {
+    // 3. 尝试连接（默认不开启 CRI UDP；若需推送可传第三参：本机 IP，如 connect(robot_ip, robot_port, "192.168.1.10")）
+    if (!robot.connect(robot_ip, robot_port)) {
         std::cerr << "Critical Error: Could not connect to the robot!" << std::endl;
         return -1;
     }
@@ -25,14 +25,14 @@ int main() {
     // 调用上电接口
     std::cout << "Sending SwitchOn command..." << std::endl;
     auto resOn = robot.switchOn(101);
-    Codroid::CodroidControlInterface::printResponse(resOn);
+    Codroid::CodroidController::printResponse(resOn);
 
     std::this_thread::sleep_for(std::chrono::seconds(5));
     
     // 调用下电接口
     std::cout << "Sending SwitchOff command..." << std::endl;
     auto resOff = robot.switchOff(102);
-    Codroid::CodroidControlInterface::printResponse(resOff);
+    Codroid::CodroidController::printResponse(resOff);
 
     // 断开连接 (析构函数也会自动处理，但手动断开是好习惯)
     robot.disconnect();

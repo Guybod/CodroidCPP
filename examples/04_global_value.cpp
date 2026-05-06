@@ -2,13 +2,13 @@
 #include <iomanip> // 用于美化输出
 #include <thread>
 #include <chrono>
-#include "Codroid/CodroidControlInterface.h"
+#include "Codroid/CodroidController.h"
 
-void globalVal_test(Codroid::CodroidControlInterface& robot) {
+void globalVal_test(Codroid::CodroidController& robot) {
     // 测试获取全局变量列表接口
     std::cout << "Getting Global Variables..." << std::endl;
     auto resVars = robot.getGlobalVars(103);
-    Codroid::CodroidControlInterface::printResponse(resVars);
+    Codroid::CodroidController::printResponse(resVars);
 
     // 测试保存全局变量接口
     std::map<std::string, Codroid::Variable> myVars;
@@ -39,40 +39,41 @@ void globalVal_test(Codroid::CodroidControlInterface& robot) {
 
     // 注意：非法变量会被 SDK 内部拦截并返回错误，合法变量会成功保存
     auto res1 = robot.saveGlobalVars(myfailedVars1, 123);
-    Codroid::CodroidControlInterface::printResponse(res1); // 预期失败，返回错误信息
+    Codroid::CodroidController::printResponse(res1); // 预期失败，返回错误信息
     auto res2 = robot.saveGlobalVars(myfailedVars2, 123);
-    Codroid::CodroidControlInterface::printResponse(res2); // 预期失败，返回错误信息
+    Codroid::CodroidController::printResponse(res2); // 预期失败，返回错误信息
 
     auto res = robot.saveGlobalVars(myVars, 123);
     
     if (res.error_msg.empty()) {
         std::cout << "Global variables saved successfully!" << std::endl;
     }
-    Codroid::CodroidControlInterface::printResponse(res);   
+    Codroid::CodroidController::printResponse(res);   
     // 等待一段时间再获取变量
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
     // 测试获取全局变量列表接口
     std::cout << "Getting Global Variables..." << std::endl;
     auto resVars2 = robot.getGlobalVars(103);
-    Codroid::CodroidControlInterface::printResponse(resVars2);
+    Codroid::CodroidController::printResponse(resVars2);
 
     // 删除全局变量
     std::vector<std::string> varsToDelete = {"v991", "v992", "v993", "v994"};
     auto resDel = robot.removeGlobalVars(varsToDelete, 124);
-    Codroid::CodroidControlInterface::printResponse(resDel);
+    Codroid::CodroidController::printResponse(resDel);
     // 等待一段时间再获取变量
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
     // 测试获取全局变量列表接口
     std::cout << "Getting Global Variables..." << std::endl;
     auto resVars3 = robot.getGlobalVars(103);
-    Codroid::CodroidControlInterface::printResponse( resVars3);
+    Codroid::CodroidController::printResponse( resVars3);
 }
 
 int main() {
-    Codroid::CodroidControlInterface robot;
+    Codroid::CodroidController robot;
     std::string robot_ip = "192.168.1.136"; // 替换为实际的机器人 IP 地址
+    const int robot_port = 9001;
 
-    if (!robot.connect(robot_ip)) {
+    if (!robot.connect(robot_ip, robot_port)) {
         std::cerr << "Failed to connect to robot." << std::endl;
         return -1;
     }

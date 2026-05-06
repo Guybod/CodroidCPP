@@ -2,10 +2,10 @@
 #include <iomanip> // 用于美化输出
 #include <thread>
 #include <chrono>
-#include "Codroid/CodroidControlInterface.h"
+#include "Codroid/CodroidController.h"
 
 
-void startJogging(Codroid::CodroidControlInterface& robot) {
+void startJogging(Codroid::CodroidController& robot) {
     // 1. 启动 X 轴正向点动 (直线模式, 速度 0.5, 索引 1 代表 X)
     Codroid::JogParams p(Codroid::JogMode::Line, 0.5, 1);
     robot.jog(p);
@@ -22,10 +22,11 @@ void startJogging(Codroid::CodroidControlInterface& robot) {
 }
 
 int main() {
-    Codroid::CodroidControlInterface robot;
+    Codroid::CodroidController robot;
     std::string robot_ip = "192.168.1.136"; // 替换为实际的机器人 IP 地址
+    const int robot_port = 9001;
 
-    if (!robot.connect(robot_ip)) {
+    if (!robot.connect(robot_ip, robot_port)) {
         std::cerr << "Failed to connect to robot." << std::endl;
         return -1;
     }

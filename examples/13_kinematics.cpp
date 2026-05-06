@@ -1,4 +1,4 @@
-#include "../include/Codroid/CodroidControlInterface.h"
+#include "../include/Codroid/CodroidController.h"
 #include <vector>
 #include <iostream>
 
@@ -16,7 +16,7 @@ int main() {
     };
 
     // 1. 直接通过类名调用静态方法初始化
-    if (!Codroid::CodroidControlInterface::kinematicsInit(dh)) {
+    if (!Codroid::CodroidController::kinematicsInit(dh)) {
         std::cerr << "Init failed!" << std::endl;
         return -1;
     }
@@ -26,7 +26,7 @@ int main() {
     std::vector<double> tcpPosOut;
 
     // 2. 直接通过类名调用静态方法做正解
-    int errFk = Codroid::CodroidControlInterface::kinematicsFk(qIn, toolParam, tcpPosOut);
+    int errFk = Codroid::CodroidController::kinematicsFk(qIn, toolParam, tcpPosOut);
     if (errFk == 0) {
         std::cout << "FK Success! X: " << tcpPosOut[0] << std::endl;
         std::cout << "FK Success! Y: " << tcpPosOut[1] << std::endl;

@@ -2,10 +2,10 @@
 #include <iomanip> // 用于美化输出
 #include <thread>
 #include <chrono>
-#include "Codroid/CodroidControlInterface.h"
+#include "Codroid/CodroidController.h"
 
 
-void getIO(Codroid::CodroidControlInterface& robot) {
+void getIO(Codroid::CodroidController& robot) {
     // 1. 批量查询示例
     std::vector<Codroid::IOInfo> query = {
         {"DI", 0}, 
@@ -23,7 +23,7 @@ void getIO(Codroid::CodroidControlInterface& robot) {
     std::cout << "DI-0 is: " << di0 << std::endl;
 }
 
-void setIO(Codroid::CodroidControlInterface& robot) {
+void setIO(Codroid::CodroidController& robot) {
     // 1. 设置数字输出 10 号端口为 高电平
     auto res1 = robot.setDO(10, 1);
     if (res1.error_msg.empty()) {
@@ -41,10 +41,11 @@ void setIO(Codroid::CodroidControlInterface& robot) {
 }
 
 int main() {
-    Codroid::CodroidControlInterface robot;
+    Codroid::CodroidController robot;
     std::string robot_ip = "192.168.1.136"; // 替换为实际的机器人 IP 地址
+    const int robot_port = 9001;
 
-    if (!robot.connect(robot_ip)) {
+    if (!robot.connect(robot_ip, robot_port)) {
         std::cerr << "Failed to connect to robot." << std::endl;
         return -1;
     }

@@ -2,10 +2,10 @@
 #include <iomanip> // 用于美化输出
 #include <thread>
 #include <chrono>
-#include "Codroid/CodroidControlInterface.h"
+#include "Codroid/CodroidController.h"
 
 
-void moveToExample(Codroid::CodroidControlInterface& robot) {
+void moveToExample(Codroid::CodroidController& robot) {
     // 场景：规划运动到指定点
     // 关节角度
     auto jointtarget = Codroid::MoveToTarget::Joint({0, 0, 90, 0, 90, 0});
@@ -109,10 +109,11 @@ void moveToExample(Codroid::CodroidControlInterface& robot) {
 }
 
 int main() {
-    Codroid::CodroidControlInterface robot;
+    Codroid::CodroidController robot;
     std::string robot_ip = "192.168.1.136"; // 替换为实际的机器人 IP 地址
+    const int robot_port = 9001;
 
-    if (!robot.connect(robot_ip)) {
+    if (!robot.connect(robot_ip, robot_port)) {
         std::cerr << "Failed to connect to robot." << std::endl;
         return -1;
     }

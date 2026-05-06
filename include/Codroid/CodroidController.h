@@ -1,10 +1,10 @@
 /**
- * @file CodroidControlInterface.h
+ * @file CodroidController.h
  * @brief 控制接口头文件
  */
 
-#ifndef CODROID_CONTROL_INTERFACE_H
-#define CODROID_CONTROL_INTERFACE_H
+#ifndef CODROID_CONTROLLER_H
+#define CODROID_CONTROLLER_H
 
 #include "CodroidDefine.h"
 #include <unordered_set>
@@ -17,6 +17,10 @@
 #include <chrono>
 #include <algorithm>
 #include <cmath>
+#include <array>
+#include <atomic>
+#include <cstdint>
+#include <mutex>
 #include "../../kinematics/robotModel.h"
 
 namespace Codroid {
@@ -30,18 +34,16 @@ namespace Codroid {
     inline constexpr double MM_TO_M    = 0.001;
     inline constexpr double M_TO_MM    = 1000.0;
 
-class CODROID_API CodroidControlInterface {
+class CODROID_API CodroidController {
 public:
-    /**
-     * @brief @~english Construct a new Codroid Control Interface object @~chinese 构造函数
-     */
-    CodroidControlInterface();
+    /** @brief @~english Construct controller (no network I/O). @~chinese 构造函数，不发起网络连接。 */
+    CodroidController();
     /** @brief @~english Destructor @~chinese 析构函数 */
-    ~CodroidControlInterface();
+    ~CodroidController();
 
     // 禁止拷贝，防止 Socket 管理混乱
-    CodroidControlInterface(const CodroidControlInterface&) = delete;
-    CodroidControlInterface& operator=(const CodroidControlInterface&) = delete;
+    CodroidController(const CodroidController&) = delete;
+    CodroidController& operator=(const CodroidController&) = delete;
 
     /**
      * @brief @~english Connect to the robot @~chinese 连接机器人
@@ -52,11 +54,12 @@ public:
      * @~chinese
      * @param ip 机器人IP地址。
      * @param port TCP 端口号。(默认 9001)
+     * @param local_ip @~english Host IP for CRI/StartDataPush UDP (empty disables auto push). @~chinese 本机接收 CRI 实时推送的 IP；空字符串则不开启 UDP 推送。
      * 
      * @return @~english true if success. 
      *         @~chinese 连接成功返回 true。
      */
-    bool connect(const std::string& ip, int port = 9001);
+    bool connect(const std::string& ip, int port = 9001, std::string local_ip = {});
     /** @brief @~english Disconnect from the robot @~chinese 断开与机器人的连接 */
     void disconnect();
 
@@ -82,7 +85,7 @@ public:
      * @param action 操作名称。
      * @param resp 响应对象。
      */
-    static void printResponse(const Codroid::Response& resp);
+    static void printResponse(const Response& resp);
 
     // --- 2.1 运行脚本
         /** @brief @~english run script on the robot @~chinese 在机器人上运行脚本
@@ -853,6 +856,7 @@ public:
      * @param port Port number to push data to.
      * @param duration The interval time of the data push stream, in milliseconds (1000/frequency)
      * @param id Request ID.
+     * @param highPercision @~english Use double samples when true (omit mask to use default 0xFFFF). @~chinese 为 true 时 highPercision: double；不传 mask 时固件默认 0xFFFF。
      * @~chinese
      * @param ip 要推送数据的IP地址。
      * @param port 要推送数据的端口号。
@@ -861,7 +865,7 @@ public:
      * @return @~english  Response object containing the result of the command execution.
      *         @~chinese  包含指令执行结果的响应对象。
      */
-    Response startDataPush(const std::string& ip, int port,int duration, int id = 1);
+    Response startDataPush(const std::string& ip, int port, int duration, int id = 1, bool highPercision = false);
 
     // --- 17.3 关闭数据推送流 ---
     /** @brief @~english Stop the data push stream on the robot @~chinese 关闭机器人上的数据推送流
@@ -873,6 +877,20 @@ public:
      *         @~chinese  包含指令执行结果的响应对象。
      */
     Response stopDataPush(int id = 1);
+    /** @brief @~english Stop a specific CRI push endpoint @~chinese 按 IP/端口停止一路 CRI 推送
+     * @~english
+     * @param ip Target IP previously used in StartDataPush.
+     * @param port Target port previously used in StartDataPush.
+     * @param id Request ID.
+     * @~chinese
+     * @param ip 与 StartDataPush 中一致的 IP。
+     * @param port 与 StartDataPush 中一致的端口。
+     * @param id 请求 ID。
+     */
+    Response stopDataPush(const std::string& ip, int port, int id = 1);
+
+    /** @brief @~english Latest CRI realtime state (joints as vectors, flags as bool). @~chinese 线程安全读取最近一帧 CRI 数据（语义化结构体）。 */
+    RobotRealtimeState getRobotRealtimeState() const;
 
     // --- 17.4 开启实时控制 ---
     /** @brief @~english Start real-time control on the robot with specified parameters @~chinese 以指定参数开启机器人的实时控制
@@ -970,6 +988,22 @@ public:
                      std::vector<double>& qOut);
 
 private:
+    /** 内部：CRI 原始帧缓存（308 字节布局解析结果） */
+    struct CriInternalCache {
+        int64_t timestamp_ms = 0;
+        uint16_t status_word1 = 0;
+        uint16_t status_word2 = 0;
+        std::array<double, 6> joint_pos_rad{};
+        std::array<double, 6> joint_vel_rad_s{};
+        std::array<double, 6> tcp_pose{};
+        std::array<double, 6> tcp_vel{};
+        double tcp_line_speed_m_s = 0;
+        std::array<double, 6> joint_torque_nm{};
+        std::array<double, 6> joint_external_torque_nm{};
+    };
+
+    static RobotRealtimeState buildRobotRealtimeState_(const CriInternalCache& c, bool data_valid);
+
     // 用于记录模型是否已经初始化（防止未初始化就调用正逆解导致崩溃）
     static bool isKinematicsModelInited_;
 
@@ -984,12 +1018,28 @@ private:
 
     // --- 新增：用于记录连接信息，实现重连 ---
     std::string last_ip_;
-    int last_port_;
-    int last_sub_port_;
+    int last_port_ = 9001;
     bool auto_reconnect_ = true; // 是否开启自动重连
-    
-    // 内部私有重连函数
-    bool reconnect();
+
+    std::string local_ip_;
+    int cri_udp_port_ = 0;
+    std::unique_ptr<asio::ip::udp::socket> cri_udp_socket_;
+    std::thread cri_udp_thread_;
+    std::atomic<bool> cri_udp_running_{false};
+    bool cri_push_active_ = false;
+
+    static constexpr std::size_t kCriPushPacketBytes = 308;
+    static constexpr int kCriAxisCount = 6;
+
+    mutable std::mutex cri_cache_mtx_;
+    CriInternalCache cri_cache_{};
+    bool cri_cache_valid_ = false;
+
+    bool connectTcpOnly(const std::string& ip, int port);
+    void stopCriUdpReceiver_();
+    bool startCriUdpPushSession_();
+    void criUdpReceiveLoop_();
+    void parseCriPushPacket_(const uint8_t* data, std::size_t len);
 
     // 内部校验函数
     bool isValidVariableName(const std::string& name, std::string& outError);
@@ -1026,4 +1076,4 @@ private:
 
 }
 
-#endif
+#endif /* CODROID_CONTROLLER_H */

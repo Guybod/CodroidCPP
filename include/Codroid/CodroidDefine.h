@@ -9,6 +9,7 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <cstdint>
 #include <nlohmann/json.hpp>
 #include "CodroidExport.h"
 #include <stdexcept>
@@ -26,6 +27,59 @@ namespace Codroid {
         json db;              ///< @~english Return data @~chinese 返回数据内容
         std::string error_msg; ///< @~english Error message (empty if success) @~chinese 错误信息（成功则为空）
         Response() : id(0), db(json::object()) {}
+    };
+
+    /**
+     * @brief CRI 实时推送的语义化快照（关节用 vector、状态用 bool）。
+     * @note 需在 CodroidController::connect(ip, port, local_ip) 中传入非空 local_ip 开启 UDP；
+     *       未收到数据前 data_valid 为 false，各 vector 为空。
+     */
+    struct RobotRealtimeState {
+        int64_t timestamp_ms = 0;
+        /** 是否已收到过至少一帧有效 CRI 数据 */
+        bool data_valid = false;
+
+        /** 关节位置，单位 rad */
+        std::vector<double> joint_position_rad;
+        /** 关节速度，单位 rad/s */
+        std::vector<double> joint_velocity_rad_s;
+        /**
+         * 末端位姿 [x,y,z, rx,ry,rz]：x,y,z 单位 m；rx,ry,rz 单位 rad。
+         */
+        std::vector<double> tcp_pose;
+        /** 末端速度（线速度 m/s，角速度 rad/s，与协议一致） */
+        std::vector<double> tcp_velocity;
+        /** TCP 线速度标量，单位 m/s */
+        double tcp_line_speed_m_s = 0;
+        /** 关节输出力矩，单位 Nm */
+        std::vector<double> joint_torque_nm;
+        /** 关节外力矩，单位 Nm */
+        std::vector<double> joint_external_torque_nm;
+
+        // --- 状态数据 1：低 8 位（协议位 0~7）---
+        bool project_running = false;
+        bool project_stopped = false;
+        bool project_paused = false;
+        bool servo_on = false;
+        bool servo_off = false;
+        bool manual_mode = false;
+        bool dragging = false;
+        bool moving = false;
+
+        // --- 状态数据 1：高 8 位（协议位 8~15）---
+        bool collision_stop = false;
+        bool in_safe_position = false;
+        bool alarm = false;
+        bool simulation_mode = false;
+        bool emergency_stop = false;
+        bool rescue_mode = false;
+        bool auto_mode = false;
+        bool remote_mode = false;
+
+        // --- 状态数据 2 ---
+        bool realtime_control_mode = false;
+        /** 高 8 位：实时控制接口错误码 */
+        uint8_t cri_error_code = 0;
     };
 
     /**

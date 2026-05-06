@@ -1,26 +1,25 @@
-#include <iostream>
-#include <iomanip>
-#include <thread>
+#include <atomic>
 #include <chrono>
-#include <vector>
+#include <iomanip>
+#include <iostream>
 #include <sstream>
-#include "Codroid/CodroidControlInterface.h"
-#include "Codroid/CodroidSubscriber.h"
+#include <thread>
+#include <vector>
 
-// 高精度时间戳函数 [HH:MM:SS.ms]
+#include "Codroid/CodroidController.h"
+
 std::string now() {
-    auto now = std::chrono::system_clock::now();
-    auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()) % 1000;
-    auto timer = std::chrono::system_clock::to_time_t(now);
+    auto t = std::chrono::system_clock::now();
+    auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(t.time_since_epoch()) % 1000;
+    auto timer = std::chrono::system_clock::to_time_t(t);
     std::tm bt = *std::localtime(&timer);
-    
+
     std::ostringstream oss;
-    oss << "[" << std::put_time(&bt, "%H:%M:%S") << "." 
-        << std::setfill('0') << std::setw(3) << ms.count() << "] ";
+    oss << "[" << std::put_time(&bt, "%H:%M:%S") << "." << std::setfill('0') << std::setw(3) << ms.count()
+        << "] ";
     return oss.str();
 }
 
-// 辅助函数：带时间戳的输出
 void checkResponse(const std::string& action, const Codroid::Response& res) {
     if (!res.error_msg.empty()) {
         std::cerr << now() << action << " Failed: " << res.error_msg << std::endl;
@@ -29,79 +28,81 @@ void checkResponse(const std::string& action, const Codroid::Response& res) {
     }
 }
 
-void startMove(Codroid::CodroidControlInterface& robot) {
+void startMove(Codroid::CodroidController& robot) {
     try {
         robot.switchOn();
+        robot.stopMove();
         std::this_thread::sleep_for(std::chrono::milliseconds(200));
-        // 打印当前位姿
-        std::vector<double> homeJoints = {90.0, 0.0, 90.0, 0.0, 90.0, 0.0};
+        std::vector<double> homeJoints = {0.0, 0.0, 90.0, 0.0, 90.0, 0.0};
         std::cout << "\n" << now() << "1. Sending movJ non-blocking array mode" << std::endl;
-        auto res1 = robot.movJ(homeJoints, 50, 100); 
+        auto res1 = robot.movJ(homeJoints, 50, 100);
         checkResponse("movJ Array", res1);
-        
+
         std::this_thread::sleep_for(std::chrono::seconds(2));
 
-        std::vector<double> handelJoints = {-109.201,326.325,409.337,-179.999,0,0.001};
-        std::cout << "\n" << now() << "1. Sending movJ non-blocking array mode" << std::endl;
-        auto res2 = robot.movL(handelJoints, 500, 1000); 
-        checkResponse("movJLArray", res2);
+        std::vector<double> handelJoints = {927.504,214.495,598.998,179.999,0,-90};
+        std::cout << "\n" << now() << "2. Sending movL non-blocking array mode" << std::endl;
+        auto res2 = robot.movL(handelJoints, 500, 1000);
+        checkResponse("movL Array", res2);
 
         std::this_thread::sleep_for(std::chrono::seconds(2));
         robot.switchOff();
-    } 
-    catch (const std::exception& e) {
+    } catch (const std::exception& e) {
         std::cerr << now() << "Exception: " << e.what() << std::endl;
     }
 }
 
 int main() {
-    Codroid::CodroidControlInterface robot;
-    Codroid::CodroidSubscriber sub;
-
-    // 订阅位姿回调
-    sub.setPostureCallback([](const Codroid::RobotPosture& p) {
-        std::cout << "\r[Posture] Joint: [" 
-                  << p.joint[0] << ", " << p.joint[1] << ", " << p.joint[2] << "] " << std::flush;
-    });
-
-    // 订阅状态回调
-    sub.setStatusCallback([](const Codroid::RobotStatus& s) {
-        std::cout << "\n[Status] Mode: " << s.mode 
-                  << " | IsMoving: " << (s.isMoving ? "YES" : "NO") 
-                  << " | StateName: " << s.stateName << std::endl;
-    });
-
-    std::string robot_ip = "192.168.101.100"; 
+    std::string robot_ip = "192.168.8.136";
+    std::string local_pc_ip = "192.168.8.150";
     int robot_port = 9001;
 
-    std::cout << now() << "Connecting to robot..." << std::endl;
-    if (!robot.connect(robot_ip, robot_port)) {
+    Codroid::CodroidController robot;
+
+    std::atomic<bool> cri_poll{true};
+    std::thread cri_thread([&]() {
+        while (cri_poll.load()) {
+            auto s = robot.getRobotRealtimeState();
+            if (s.data_valid && !s.joint_position_rad.empty()) {
+                std::cout << "\rtimestamp=" << s.timestamp_ms 
+                          << " joint1(rad)=" << std::fixed
+                          << std::setprecision(4) << s.joint_position_rad[0] 
+                          << " joint2(rad)=" << std::fixed
+                          << std::setprecision(4) << s.joint_position_rad[1]
+                          << " joint3(rad)=" << std::fixed
+                          << std::setprecision(4) << s.joint_position_rad[2]
+                          << " joint4(rad)=" << std::fixed
+                          << std::setprecision(4) << s.joint_position_rad[3]
+                          << " joint5(rad)=" << std::fixed
+                          << std::setprecision(4) << s.joint_position_rad[4]
+                          << " joint6(rad)=" << std::fixed
+                          << std::setprecision(4) << s.joint_position_rad[5]
+                          << " moving=" << (s.moving ? "Y" : "N") << "    " << std::flush;
+            }
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        }
+        std::cout << std::endl;
+    });
+
+    std::cout << now() << "Connecting to robot (CRI UDP target IP=" << local_pc_ip << ")..." << std::endl;
+    if (!robot.connect(robot_ip, robot_port, local_pc_ip)) {
+        cri_poll = false;
+        cri_thread.join();
         std::cerr << now() << "Failed to connect" << std::endl;
         return -1;
     }
 
-    if (!sub.connect(robot_ip))
-    {
-        std::cerr << now() << "Failed to connect sub" << std::endl;
-        return -1;
-    }
-    else{
-        sub.subscribe("RobotStatus", 100);
-        std::this_thread::sleep_for(std::chrono::milliseconds(200));
-        sub.subscribe("RobotPosture", 100);
-        std::this_thread::sleep_for(std::chrono::milliseconds(200));
-    }
-    
-    
     std::cout << now() << "Connected to robot successfully" << std::endl;
     std::this_thread::sleep_for(std::chrono::milliseconds(2500));
-    
+
     startMove(robot);
-    
+
     std::this_thread::sleep_for(std::chrono::seconds(1));
-    sub.disconnect();
+    cri_poll = false;
+    cri_thread.join();
+
     robot.disconnect();
     std::cout << now() << "Disconnected. Test finished" << std::endl;
-    
+
     return 0;
 }

@@ -39,8 +39,7 @@ include_directories(SYSTEM third_party)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 # 4. 定义源文件
-set(LIB_SOURCES src/CodroidControlInterface.cpp
-                src/CodroidSubscriber.cpp
+set(LIB_SOURCES src/CodroidController.cpp
 )
 
 # 5. 构建动态库
@@ -82,8 +81,9 @@ else()
     # 当别人运行链接了 SDK 的程序时，系统必须知道去哪里加载第三方的 .so。
     # 这里使用 $ORIGIN，代表“去(libCodroid.so)当前所在的目录找”。
     # 这样以后交付 SDK 时，只要把 libCodroid.so 和第三方 .so 放在同一个文件夹下就能完美运行！
+    # 开发树中运动学 .so 仍在 kinematics/，故同时加入该路径，build_linux 下直接 ./example 可运行。
     set_target_properties(Codroid PROPERTIES 
-        INSTALL_RPATH "$ORIGIN"
+        INSTALL_RPATH "$ORIGIN;${CMAKE_CURRENT_SOURCE_DIR}/kinematics"
         BUILD_WITH_INSTALL_RPATH TRUE
     )
 endif()
@@ -96,11 +96,18 @@ if(NOT CMAKE_CROSSCOMPILING)
         add_executable(${test_name} ${test_file})
         target_link_libraries(${test_name} PRIVATE Codroid)
         
-        # 添加下面这两行：让示例程序在运行时也能在 kinematics 目录找库
-        set_target_properties(${test_name} PROPERTIES 
-            BUILD_WITH_INSTALL_RPATH TRUE
-            INSTALL_RPATH "${CMAKE_CURRENT_SOURCE_DIR}/kinematics"
-        )
+        # Linux：$ORIGIN 找同目录的 libCodroid.so；kinematics 供依赖解析（与库内 RUNPATH 一致）
+        if(WIN32)
+            set_target_properties(${test_name} PROPERTIES 
+                BUILD_WITH_INSTALL_RPATH TRUE
+                INSTALL_RPATH "${CMAKE_CURRENT_SOURCE_DIR}/kinematics"
+            )
+        else()
+            set_target_properties(${test_name} PROPERTIES 
+                BUILD_WITH_INSTALL_RPATH TRUE
+                INSTALL_RPATH "$ORIGIN;${CMAKE_CURRENT_SOURCE_DIR}/kinematics"
+            )
+        endif()
 
         message(STATUS "Adding Example: ${test_name}")
     endforeach()

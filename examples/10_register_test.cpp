@@ -2,10 +2,10 @@
 #include <iomanip> // 用于美化输出
 #include <thread>
 #include <chrono>
-#include "Codroid/CodroidControlInterface.h"
+#include "Codroid/CodroidController.h"
 
 
-void testRegisterAdvanced(Codroid::CodroidControlInterface& robot) {
+void testRegisterAdvanced(Codroid::CodroidController& robot) {
     // 1. 设置寄存器
     robot.setRegisterValue(9032, 1);
     robot.setRegisterValue(49100, 12345);
@@ -25,10 +25,11 @@ void testRegisterAdvanced(Codroid::CodroidControlInterface& robot) {
 }
 
 int main() {
-    Codroid::CodroidControlInterface robot;
+    Codroid::CodroidController robot;
     std::string robot_ip = "192.168.1.136"; // 替换为实际的机器人 IP 地址
+    const int robot_port = 9001;
 
-    if (!robot.connect(robot_ip)) {
+    if (!robot.connect(robot_ip, robot_port)) {
         std::cerr << "Failed to connect to robot." << std::endl;
         return -1;
     }

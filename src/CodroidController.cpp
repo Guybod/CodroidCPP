@@ -1,5 +1,6 @@
-#include "Codroid/CodroidControlInterface.h"
-
+#include "Codroid/CodroidController.h"
+#include <cstring>
+#include <random>
 
 // 跨平台网络底层头文件
 #if defined(_WIN32)
@@ -11,27 +12,92 @@
 
 namespace Codroid {
 
-bool CodroidControlInterface::isKinematicsModelInited_ = false;
+namespace {
+
+double readF64LE(const uint8_t* p) {
+    double v;
+    std::memcpy(&v, p, sizeof(v));
+    return v;
+}
+
+int64_t readI64LE(const uint8_t* p) {
+    int64_t v;
+    std::memcpy(&v, p, sizeof(v));
+    return v;
+}
+
+uint16_t readU16LE(const uint8_t* p) {
+    uint16_t v;
+    std::memcpy(&v, p, sizeof(v));
+    return v;
+}
+
+} // namespace
+
+bool CodroidController::isKinematicsModelInited_ = false;
 
 /**
  * @brief Construct a new Codroid Control Interface object / 创建一个新的 Codroid 控制接口对象
  */
-CodroidControlInterface::CodroidControlInterface() 
-    : io_context_(), 
-      cmd_socket_(std::make_unique<asio::ip::tcp::socket>(io_context_)) {
-    // 构造函数仅初始化成员，不执行网络操作
-}
+CodroidController::CodroidController()
+    : io_context_(),
+      cmd_socket_(std::make_unique<asio::ip::tcp::socket>(io_context_)) {}
 
 /**
- * @brief Destructor for CodroidControlInterface.
- *        CodroidControlInterface 的析构函数
- * Cleans up the CodroidControlInterface object and disconnects any active connections.
- * 清理 CodroidControlInterface 对象并断开所有活动连接
+ * @brief Destructor for Codroid.
+ *        Codroid 的析构函数
+ * Cleans up the Codroid object and disconnects any active connections.
+ * 清理 Codroid 对象并断开所有活动连接
  * This ensures that resources are properly released and the control interface is safely terminated when the object goes out of scope.
  * 这确保资源得到正确释放，并且控制接口在对象超出作用域时能够安全终止
  */
-CodroidControlInterface::~CodroidControlInterface() {
+CodroidController::~CodroidController() {
     disconnect();
+}
+
+RobotRealtimeState CodroidController::buildRobotRealtimeState_(const CriInternalCache& c, bool data_valid) {
+    RobotRealtimeState s;
+    s.timestamp_ms = c.timestamp_ms;
+    s.data_valid = data_valid;
+    if (!data_valid)
+        return s;
+
+    s.joint_position_rad.assign(c.joint_pos_rad.begin(), c.joint_pos_rad.end());
+    s.joint_velocity_rad_s.assign(c.joint_vel_rad_s.begin(), c.joint_vel_rad_s.end());
+    s.tcp_pose.assign(c.tcp_pose.begin(), c.tcp_pose.end());
+    s.tcp_velocity.assign(c.tcp_vel.begin(), c.tcp_vel.end());
+    s.tcp_line_speed_m_s = c.tcp_line_speed_m_s;
+    s.joint_torque_nm.assign(c.joint_torque_nm.begin(), c.joint_torque_nm.end());
+    s.joint_external_torque_nm.assign(c.joint_external_torque_nm.begin(), c.joint_external_torque_nm.end());
+
+    const uint16_t w1 = c.status_word1;
+    s.project_running = (w1 & (1u << 0)) != 0;
+    s.project_stopped = (w1 & (1u << 1)) != 0;
+    s.project_paused = (w1 & (1u << 2)) != 0;
+    s.servo_on = (w1 & (1u << 3)) != 0;
+    s.servo_off = (w1 & (1u << 4)) != 0;
+    s.manual_mode = (w1 & (1u << 5)) != 0;
+    s.dragging = (w1 & (1u << 6)) != 0;
+    s.moving = (w1 & (1u << 7)) != 0;
+
+    s.collision_stop = (w1 & (1u << 8)) != 0;
+    s.in_safe_position = (w1 & (1u << 9)) != 0;
+    s.alarm = (w1 & (1u << 10)) != 0;
+    s.simulation_mode = (w1 & (1u << 11)) != 0;
+    s.emergency_stop = (w1 & (1u << 12)) != 0;
+    s.rescue_mode = (w1 & (1u << 13)) != 0;
+    s.auto_mode = (w1 & (1u << 14)) != 0;
+    s.remote_mode = (w1 & (1u << 15)) != 0;
+
+    const uint16_t w2 = c.status_word2;
+    s.realtime_control_mode = (w2 & (1u << 0)) != 0;
+    s.cri_error_code = static_cast<uint8_t>(w2 >> 8);
+    return s;
+}
+
+RobotRealtimeState CodroidController::getRobotRealtimeState() const {
+    std::lock_guard<std::mutex> lock(cri_cache_mtx_);
+    return buildRobotRealtimeState_(cri_cache_, cri_cache_valid_);
 }
 
 /**
@@ -43,36 +109,49 @@ CodroidControlInterface::~CodroidControlInterface() {
  * @return true 
  * @return false 
  */
-bool CodroidControlInterface::connect(const std::string& ip, int port) {
+bool CodroidController::connectTcpOnly(const std::string& ip, int port) {
     try {
-        // 更新连接缓存，供重连使用
-        this->last_ip_ = ip;
-        this->last_port_ = port;
+        last_ip_ = ip;
+        last_port_ = port;
 
-        // 如果已经打开，先安全关闭
         if (cmd_socket_->is_open()) {
             asio::error_code ec;
             cmd_socket_->shutdown(asio::ip::tcp::socket::shutdown_both, ec);
             cmd_socket_->close(ec);
         }
 
-        // 重新解析和连接
         asio::ip::tcp::resolver resolver(io_context_);
         auto endpoints = resolver.resolve(ip, std::to_string(port));
-        
         asio::connect(*cmd_socket_, endpoints);
         cmd_socket_->set_option(asio::ip::tcp::no_delay(true));
-
-        std::cout << "[SDK] Connected to Codroid Command Channel: " << ip << ":" << port << std::endl;
-        sendCommand("Robot/toAuto", json::object(),1);
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        sendCommand("Robot/toRemote", json::object(),1);
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
         return true;
     } catch (const std::exception& e) {
-        std::cerr << "[SDK] Connection failed: " << e.what() << std::endl;
+        std::cerr << "[SDK] TCP connect failed: " << e.what() << std::endl;
         return false;
     }
+}
+
+bool CodroidController::connect(const std::string& ip, int port, std::string local_ip) {
+    local_ip_ = std::move(local_ip);
+
+    if (!connectTcpOnly(ip, port))
+        return false;
+
+    std::cout << "[SDK] Connected to Codroid Command Channel: " << ip << ":" << port << std::endl;
+
+    toAuto(1);
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    toRemote(1);
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+    if (!local_ip_.empty()) {
+        if (!startCriUdpPushSession_()) {
+            std::cerr << "[SDK] CRI StartDataPush / UDP bind failed." << std::endl;
+            disconnect();
+            return false;
+        }
+    }
+    return true;
 }
 
 /**
@@ -80,7 +159,133 @@ bool CodroidControlInterface::connect(const std::string& ip, int port) {
  *        断开与 Codroid 服务器的连接
  * 
  */
-void CodroidControlInterface::disconnect() {
+void CodroidController::stopCriUdpReceiver_() {
+    cri_udp_running_ = false;
+    if (cri_udp_socket_) {
+        asio::error_code ec;
+        cri_udp_socket_->close(ec);
+    }
+    if (cri_udp_thread_.joinable())
+        cri_udp_thread_.join();
+    cri_udp_socket_.reset();
+}
+
+void CodroidController::criUdpReceiveLoop_() {
+    std::array<uint8_t, 1024> buf{};
+    while (cri_udp_running_) {
+        if (!cri_udp_socket_ || !cri_udp_socket_->is_open())
+            break;
+        asio::error_code ec;
+        std::size_t n = cri_udp_socket_->receive(asio::buffer(buf), 0, ec);
+        if (ec || n == 0)
+            break;
+        parseCriPushPacket_(buf.data(), n);
+    }
+}
+
+void CodroidController::parseCriPushPacket_(const uint8_t* data, std::size_t len) {
+    if (len != kCriPushPacketBytes)
+        return;
+
+    CriInternalCache snap;
+    std::size_t o = 0;
+    snap.timestamp_ms = readI64LE(data + o);
+    o += 8;
+    snap.status_word1 = readU16LE(data + o);
+    o += 2;
+    snap.status_word2 = readU16LE(data + o);
+    o += 2;
+
+    for (int i = 0; i < kCriAxisCount; ++i) {
+        snap.joint_pos_rad[static_cast<std::size_t>(i)] = readF64LE(data + o);
+        o += 8;
+    }
+    for (int i = 0; i < kCriAxisCount; ++i) {
+        snap.joint_vel_rad_s[static_cast<std::size_t>(i)] = readF64LE(data + o);
+        o += 8;
+    }
+    for (int i = 0; i < kCriAxisCount; ++i) {
+        snap.tcp_pose[static_cast<std::size_t>(i)] = readF64LE(data + o);
+        o += 8;
+    }
+    for (int i = 0; i < kCriAxisCount; ++i) {
+        snap.tcp_vel[static_cast<std::size_t>(i)] = readF64LE(data + o);
+        o += 8;
+    }
+    snap.tcp_line_speed_m_s = readF64LE(data + o);
+    o += 8;
+    for (int i = 0; i < kCriAxisCount; ++i) {
+        snap.joint_torque_nm[static_cast<std::size_t>(i)] = readF64LE(data + o);
+        o += 8;
+    }
+    for (int i = 0; i < kCriAxisCount; ++i) {
+        snap.joint_external_torque_nm[static_cast<std::size_t>(i)] = readF64LE(data + o);
+        o += 8;
+    }
+
+    std::lock_guard<std::mutex> lock(cri_cache_mtx_);
+    cri_cache_ = snap;
+    cri_cache_valid_ = true;
+}
+
+bool CodroidController::startCriUdpPushSession_() {
+    stopCriUdpReceiver_();
+    cri_push_active_ = false;
+    {
+        std::lock_guard<std::mutex> lock(cri_cache_mtx_);
+        cri_cache_valid_ = false;
+        cri_cache_ = CriInternalCache{};
+    }
+
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<int> dist(10000, 65535);
+
+    asio::ip::address bind_addr = asio::ip::make_address(local_ip_);
+    int chosen_port = 0;
+
+    for (int attempt = 0; attempt < 32; ++attempt) {
+        chosen_port = dist(gen);
+        try {
+            cri_udp_socket_ = std::make_unique<asio::ip::udp::socket>(io_context_);
+            cri_udp_socket_->open(asio::ip::udp::v4());
+            cri_udp_socket_->set_option(asio::socket_base::reuse_address(true));
+            cri_udp_socket_->bind(asio::ip::udp::endpoint(bind_addr, static_cast<unsigned short>(chosen_port)));
+            cri_udp_port_ = chosen_port;
+            break;
+        } catch (...) {
+            cri_udp_socket_.reset();
+            if (attempt == 31)
+                return false;
+        }
+    }
+
+    cri_udp_running_ = true;
+    cri_udp_thread_ = std::thread(&CodroidController::criUdpReceiveLoop_, this);
+
+    Response pushResp = startDataPush(local_ip_, cri_udp_port_, 100, 1, true);
+    if (!pushResp.error_msg.empty()) {
+        stopCriUdpReceiver_();
+        return false;
+    }
+    cri_push_active_ = true;
+    return true;
+}
+
+void CodroidController::disconnect() {
+    if (cri_push_active_ && cmd_socket_ && cmd_socket_->is_open()) {
+        json db;
+        db["ip"] = local_ip_;
+        db["port"] = cri_udp_port_;
+        sendCommand("CRI/StopDataPush", db, 1);
+    }
+    cri_push_active_ = false;
+    stopCriUdpReceiver_();
+    {
+        std::lock_guard<std::mutex> lock(cri_cache_mtx_);
+        cri_cache_valid_ = false;
+    }
+
     try {
         if (cmd_socket_ && cmd_socket_->is_open()) {
             cmd_socket_->shutdown(asio::ip::tcp::socket::shutdown_both);
@@ -100,7 +305,7 @@ void CodroidControlInterface::disconnect() {
  * @param id request ID / 请求 ID
  * @return Response / 响应结果结构体
  */
-Response CodroidControlInterface::sendCommand(const std::string& type, const nlohmann::json& data, int id) {
+Response CodroidController::sendCommand(const std::string& type, const nlohmann::json& data, int id) {
     // 1. 加锁，保证指令通道的原子性
     std::lock_guard<std::mutex> lock(cmd_mtx_);
 
@@ -111,7 +316,7 @@ Response CodroidControlInterface::sendCommand(const std::string& type, const nlo
     // --- 逻辑 A: 发送前的连接自检 ---
     if (!cmd_socket_ || !cmd_socket_->is_open()) {
         std::cout << "[SDK] Socket closed. Attempting to reconnect..." << std::endl;
-        if (!this->connect(last_ip_, last_port_)) {
+        if (!this->connectTcpOnly(last_ip_, last_port_)) {
             resp.error_msg = "Command socket is disconnected and reconnection failed.";
             return resp;
         }
@@ -132,7 +337,7 @@ Response CodroidControlInterface::sendCommand(const std::string& type, const nlo
         if (ec) {
             // 如果写入失败（例如 broken pipe），尝试最后一次重连重发
             std::cerr << "[SDK] Write failed (" << ec.message() << "). Retrying once..." << std::endl;
-            if (this->connect(last_ip_, last_port_)) {
+            if (this->connectTcpOnly(last_ip_, last_port_)) {
                 asio::write(*cmd_socket_, asio::buffer(request_str));
             } else {
                 resp.error_msg = "Network error during write: " + ec.message();
@@ -179,7 +384,7 @@ Response CodroidControlInterface::sendCommand(const std::string& type, const nlo
     return resp;
 }   
 
-    void CodroidControlInterface::printResponse(const Codroid::Response& resp) {
+void CodroidController::printResponse(const Response& resp) {
     std::cout << "-----------------------" << std::endl;
     std::cout << "Request ID: " << resp.id << std::endl;
     std::cout << "Type:       " << resp.ty << std::endl;
@@ -192,7 +397,7 @@ Response CodroidControlInterface::sendCommand(const std::string& type, const nlo
         std::cout << "Error:      " << resp.error_msg << std::endl;
     }
     std::cout << "-----------------------" << std::endl << std::endl;
-    }
+}
 
 
 
@@ -206,7 +411,7 @@ Response CodroidControlInterface::sendCommand(const std::string& type, const nlo
  * 通用的分包处理函数：通过 {} 配对检测 JSON 完整性
  */
 // 在类成员中定义：std::string sub_buffer_;
-std::string CodroidControlInterface::receiveRaw(asio::ip::tcp::socket& socket, std::string& sticky_buffer) {
+std::string CodroidController::receiveRaw(asio::ip::tcp::socket& socket, std::string& sticky_buffer) {
     char chunk[1024];
     while (true) {
         // 1. 尝试从当前缓冲区提取完整 JSON
@@ -253,7 +458,7 @@ std::string CodroidControlInterface::receiveRaw(asio::ip::tcp::socket& socket, s
  * @param id request ID / 请求 ID
  * @return Response / 响应结果
  */
-Response CodroidControlInterface::runScript(const RunScriptParams& params, int id) {
+Response CodroidController::runScript(const RunScriptParams& params, int id) {
     json db;
     json scripts;
 
@@ -290,7 +495,7 @@ Response CodroidControlInterface::runScript(const RunScriptParams& params, int i
  * @param id request ID / 请求 ID
  * @return Response / 响应结果
  */
-Response CodroidControlInterface::enterRemoteScriptMode(int id){
+Response CodroidController::enterRemoteScriptMode(int id){
     return sendCommand("project/enterRemoteScriptMode", json::object(), id);
 }
 
@@ -303,7 +508,7 @@ Response CodroidControlInterface::enterRemoteScriptMode(int id){
  * @param id request ID / 请求 ID
  * @return Response / 响应结果
  */
-Response CodroidControlInterface::runProject(const std::string& projectid, int id){
+Response CodroidController::runProject(const std::string& projectid, int id){
     json data;
     data["id"] = projectid;
     return sendCommand("project/run", data, id);
@@ -318,7 +523,7 @@ Response CodroidControlInterface::runProject(const std::string& projectid, int i
  * @param id request ID / 请求 ID
  * @return Response / 响应结果
  */
-Response CodroidControlInterface::runProjectByIndex(int index, int id){
+Response CodroidController::runProjectByIndex(int index, int id){
     return sendCommand("project/runByIndex", index, id);
 }
 
@@ -331,7 +536,7 @@ Response CodroidControlInterface::runProjectByIndex(int index, int id){
  * @param id request ID / 请求 ID
  * @return Response / 响应结果
  */
-Response CodroidControlInterface::runStep(const std::string& projectid, int id){
+Response CodroidController::runStep(const std::string& projectid, int id){
     json data;
     data["id"] = projectid;
     return sendCommand("project/runStep", data, id);
@@ -344,7 +549,7 @@ Response CodroidControlInterface::runStep(const std::string& projectid, int id){
  * @param id request ID / 请求 ID
  * @return Response / 响应结果
  */
-Response CodroidControlInterface::pauseProject(int id){
+Response CodroidController::pauseProject(int id){
     return sendCommand("project/pause", json::object(), id);
 };
 
@@ -356,7 +561,7 @@ Response CodroidControlInterface::pauseProject(int id){
  * @param id request ID / 请求 ID
  * @return Response / 响应结果
  */
-Response CodroidControlInterface::resumeProject(int id){
+Response CodroidController::resumeProject(int id){
     return sendCommand("project/resume", json::object(), id);
 };
 
@@ -368,7 +573,7 @@ Response CodroidControlInterface::resumeProject(int id){
  * @param id request ID / 请求 ID
  * @return Response / 响应结果
  */
-Response CodroidControlInterface::stopProject(int id){
+Response CodroidController::stopProject(int id){
     return sendCommand("project/stop", json::object(), id);
 };
 
@@ -381,7 +586,7 @@ Response CodroidControlInterface::stopProject(int id){
  * @param id request ID / 请求 ID
  * @return Response / 响应结果
  */
-Response CodroidControlInterface::setStartLine(int startline, int id){
+Response CodroidController::setStartLine(int startline, int id){
     return sendCommand("project/setStartLine", startline, id);
 };
 
@@ -393,7 +598,7 @@ Response CodroidControlInterface::setStartLine(int startline, int id){
  * @param id request ID / 请求 ID
  * @return Response / 响应结果
  */
-Response CodroidControlInterface::clearStartLine(int id){
+Response CodroidController::clearStartLine(int id){
     return sendCommand("project/clearStartLine", json::object(), id);
 };
 
@@ -405,7 +610,7 @@ Response CodroidControlInterface::clearStartLine(int id){
  * @param id request ID / 请求 ID
  * @return Response / 响应结果
  */
-Response CodroidControlInterface::getGlobalVars(int id){
+Response CodroidController::getGlobalVars(int id){
     return sendCommand("globalVar/getVars", json::object(), id);
 };
 
@@ -417,7 +622,7 @@ Response CodroidControlInterface::getGlobalVars(int id){
  * @param id Request ID / 请求ID
  * @return Response Standard response / 标准响应
  */
-Response CodroidControlInterface::saveGlobalVars(const std::map<std::string, Variable>& vars, int id) {
+Response CodroidController::saveGlobalVars(const std::map<std::string, Variable>& vars, int id) {
     Response resp;
     resp.id = id;
     resp.ty = "globalVar/saveVars";
@@ -450,7 +655,7 @@ Response CodroidControlInterface::saveGlobalVars(const std::map<std::string, Var
  * @param id Request ID / 请求ID
  * @return Response Standard response / 标准响应
  */
-Response CodroidControlInterface::removeGlobalVars(const std::vector<std::string>& varNames, int id) {
+Response CodroidController::removeGlobalVars(const std::vector<std::string>& varNames, int id) {
     json db = json::array();
     for (const auto& name : varNames) {
         db.push_back(name);
@@ -464,7 +669,7 @@ Response CodroidControlInterface::removeGlobalVars(const std::vector<std::string
  * @param id Request ID / 请求ID
  * @return Response Standard response / 标准响应
  */
-Response CodroidControlInterface::getProjectVar(int id) {
+Response CodroidController::getProjectVar(int id) {
     return sendCommand("project/getVars", json::object(), id);
 };
 
@@ -480,7 +685,7 @@ Response CodroidControlInterface::getProjectVar(int id) {
  * @param id Request ID / 请求ID
  * @return Response Standard response / 标准响应
  */
-Response CodroidControlInterface::RS485init(int baudrate,  RS485StopBits stopBit, int dataBit,RS485Parity parity, int id) {
+Response CodroidController::RS485init(int baudrate,  RS485StopBits stopBit, int dataBit,RS485Parity parity, int id) {
     json db;
     db["baudrate"] = baudrate;
     db["stopBit"] = static_cast<int>(stopBit);
@@ -495,7 +700,7 @@ Response CodroidControlInterface::RS485init(int baudrate,  RS485StopBits stopBit
  * @param id Request ID / 请求ID
  * @return Response Standard response / 标准响应
  */
-Response CodroidControlInterface::RS485flush(int id) {
+Response CodroidController::RS485flush(int id) {
     return sendCommand("EC2RS485/flushReadBuffer", json::object(), id);
 };
 
@@ -505,7 +710,7 @@ Response CodroidControlInterface::RS485flush(int id) {
  * @param id Request ID / 请求ID
  * @return Response Standard response / 标准响应
  */
-Response CodroidControlInterface::RS485read(int length, int timeout, int id) {
+Response CodroidController::RS485read(int length, int timeout, int id) {
     json db;
     db["length"] = length;
     db["timeout"] = timeout;
@@ -519,7 +724,7 @@ Response CodroidControlInterface::RS485read(int length, int timeout, int id) {
  * @param[in] id Request ID / 请求ID
  * @return Response Standard response / 标准响应
  */
-Response CodroidControlInterface::RS485write(const std::vector<uint8_t>& data, int id) {
+Response CodroidController::RS485write(const std::vector<uint8_t>& data, int id) {
     // 1. 长度校验：协议规定最大长度为 127
     if (data.size() > 127) {
         Response errResp;
@@ -550,7 +755,7 @@ Response CodroidControlInterface::RS485write(const std::vector<uint8_t>& data, i
  * @throw CodroidException 计算失败时抛出
  * @return std::vector<double> [x, y, z, a, b, c]
  */
-std::vector<double> CodroidControlInterface::forwardKinematics(const FKParams& params, int id) {
+std::vector<double> CodroidController::forwardKinematics(const FKParams& params, int id) {
     json db;
     db["jp"] = params.jp;
     
@@ -579,7 +784,7 @@ std::vector<double> CodroidControlInterface::forwardKinematics(const FKParams& p
  * @throw CodroidException 计算失败时抛出
  * @return std::vector<double> [j1, j2, j3, j4, j5, j6]
  */
-std::vector<double> CodroidControlInterface::inverseKinematics(const IKParams& params, int id) {
+std::vector<double> CodroidController::inverseKinematics(const IKParams& params, int id) {
     json db;
     db["cp"] = params.cp;
     
@@ -614,7 +819,7 @@ std::vector<double> CodroidControlInterface::inverseKinematics(const IKParams& p
  * @throw CodroidException 当机器人返回错误或网络异常时抛出
  * @return std::vector<double> 计算后的坐标数组 [x,y,z,a,b,c]
  */
-std::vector<double> CodroidControlInterface::calculateRelativePose(const RelativePoseParams& params, int id) {
+std::vector<double> CodroidController::calculateRelativePose(const RelativePoseParams& params, int id) {
     json db;
     db["pos"] = params.pos;
     db["offset"] = params.offset;
@@ -654,7 +859,7 @@ std::vector<double> CodroidControlInterface::calculateRelativePose(const Relativ
  * @param id Request ID / 请求ID
  * @return Response Standard response / 标准响应
  */
-Response CodroidControlInterface::jog(const JogParams& params, int id) {
+Response CodroidController::jog(const JogParams& params, int id) {
     // 速度边界检查
     if (params.speed < -1.0 || params.speed > 1.0) {
         Response resp;
@@ -679,7 +884,7 @@ Response CodroidControlInterface::jog(const JogParams& params, int id) {
  * @param id Request ID / 请求ID
  * @return Response Standard response / 标准响应
  */
-Response CodroidControlInterface::stopJog(int id) {
+Response CodroidController::stopJog(int id) {
     return sendCommand("Robot/stopJog", json::object(), id);
 }
 
@@ -689,7 +894,7 @@ Response CodroidControlInterface::stopJog(int id) {
  * @param id Request ID / 请求ID
  * @return Response Standard response / 标准响应
  */
-Response CodroidControlInterface::jogHeartbeat(int id) {
+Response CodroidController::jogHeartbeat(int id) {
     return sendCommand("Robot/jogHeartbeat", json::object(), id);
 }
 
@@ -701,7 +906,7 @@ Response CodroidControlInterface::jogHeartbeat(int id) {
  * @param id Request ID / 请求ID
  * @return Response Standard response / 标准响应
  */
-Response CodroidControlInterface::moveTo(const MoveToParams& params, int id) {
+Response CodroidController::moveTo(const MoveToParams& params, int id) {
     json db;
     db["type"] = static_cast<int>(params.type);
 
@@ -741,7 +946,7 @@ Response CodroidControlInterface::moveTo(const MoveToParams& params, int id) {
  * @param id Request ID / 请求ID
  * @return Response Standard response / 标准响应
  */
-Response CodroidControlInterface::moveToHeartbeat(int id) {
+Response CodroidController::moveToHeartbeat(int id) {
     return sendCommand("Robot/moveToHeartbeat", json::object(), id);
 }
 
@@ -752,7 +957,7 @@ Response CodroidControlInterface::moveToHeartbeat(int id) {
  * @param id Request ID / 请求ID
  * @return Response Standard response / 标准响应
  */
-Response CodroidControlInterface::setManualSpeedRate(int speed, int id) {
+Response CodroidController::setManualSpeedRate(int speed, int id) {
     // 校验：速度倍率必须在 0 ~ 100 之间
     if (speed < 0 || speed > 100) {
         Response resp;
@@ -772,7 +977,7 @@ Response CodroidControlInterface::setManualSpeedRate(int speed, int id) {
  * @param id Request ID / 请求ID
  * @return Response Standard response / 标准响应
  */
-Response CodroidControlInterface::setAutoSpeedRate(int speed, int id) {
+Response CodroidController::setAutoSpeedRate(int speed, int id) {
     // 校验：速度倍率必须在 0 ~ 100 之间
     if (speed < 0 || speed > 100) {
         Response resp;
@@ -792,7 +997,7 @@ Response CodroidControlInterface::setAutoSpeedRate(int speed, int id) {
  * @param id Request ID / 请求ID
  * @return Response Standard response / 标准响应
  */
-Response CodroidControlInterface::move(const std::vector<MoveInstruction>& path, int id) {
+Response CodroidController::move(const std::vector<MoveInstruction>& path, int id) {
     json db = json::array();
     for (const auto& inst : path) {
         db.push_back(packInstruction(inst));
@@ -807,7 +1012,7 @@ Response CodroidControlInterface::move(const std::vector<MoveInstruction>& path,
  * @param id Request ID / 请求ID
  * @return Response Standard response / 标准响应
  */
-Response CodroidControlInterface::movJ(const MoveInstruction& inst, int id) {
+Response CodroidController::movJ(const MoveInstruction& inst, int id) {
     MoveInstruction tmp = inst; tmp.type = MoveType::movJ;
     return move({tmp}, id);
 }
@@ -823,7 +1028,7 @@ Response CodroidControlInterface::movJ(const MoveInstruction& inst, int id) {
  * @param id Request ID / 请求ID
  * @return Response Standard response / 标准响应
  */
-Response CodroidControlInterface::movJ(const std::vector<double>& jp, double speed, double acc, int id) {
+Response CodroidController::movJ(const std::vector<double>& jp, double speed, double acc, int id) {
     MoveInstruction inst;
     inst.targetPoint.jp = jp;
     inst.speed = speed; inst.acc = acc;
@@ -838,7 +1043,7 @@ Response CodroidControlInterface::movJ(const std::vector<double>& jp, double spe
  * @param id Request ID / 请求ID
  * @return Response Standard response / 标准响应
  */
-Response CodroidControlInterface::movL(const MoveInstruction& inst, int id) {
+Response CodroidController::movL(const MoveInstruction& inst, int id) {
     MoveInstruction tmp = inst; tmp.type = MoveType::movL;
     return move({tmp}, id);
 }
@@ -854,7 +1059,7 @@ Response CodroidControlInterface::movL(const MoveInstruction& inst, int id) {
  * @param id Request ID / 请求ID
  * @return Response Standard response / 标准响应
  */
-Response CodroidControlInterface::movL(const std::vector<double>& cp, double speed, double acc, 
+Response CodroidController::movL(const std::vector<double>& cp, double speed, double acc, 
                                       const std::vector<double>& coor, const std::vector<double>& tool, int id) {
     MoveInstruction inst;
     inst.targetPoint.cp = cp;
@@ -870,7 +1075,7 @@ Response CodroidControlInterface::movL(const std::vector<double>& cp, double spe
  * @param id Request ID / 请求ID
  * @return Response Standard response / 标准响应
  */
-Response CodroidControlInterface::pauseMove(int id) {
+Response CodroidController::pauseMove(int id) {
     return sendCommand("Robot/pause", json::object(), id);
 }
 
@@ -880,7 +1085,7 @@ Response CodroidControlInterface::pauseMove(int id) {
  * @param id Request ID / 请求ID
  * @return Response Standard response / 标准响应
  */
-Response CodroidControlInterface::resumeMove(int id) {
+Response CodroidController::resumeMove(int id) {
     return sendCommand("Robot/resume", json::object(), id);
 }
 
@@ -890,8 +1095,8 @@ Response CodroidControlInterface::resumeMove(int id) {
  * @param id Request ID / 请求ID
  * @return Response Standard response / 标准响应
  */
-Response CodroidControlInterface::stopMove(int id) {
-    return sendCommand("Robot/stop", json::object(), id);
+Response CodroidController::stopMove(int id) {
+    return sendCommand("Robot/stopMove", json::object(), id);
 }
 
 // --- 12.1 上使能 ---
@@ -902,7 +1107,7 @@ Response CodroidControlInterface::stopMove(int id) {
  * @param id request ID / 请求 ID
  * @return Response / 响应结果
  */
-Response CodroidControlInterface::switchOn(int id) {
+Response CodroidController::switchOn(int id) {
     return sendCommand("Robot/switchOn", json::object(), id);
 }
 
@@ -914,7 +1119,7 @@ Response CodroidControlInterface::switchOn(int id) {
  * @param id request ID / 请求 ID
  * @return Response / 响应结果
  */
-Response CodroidControlInterface::switchOff(int id) {
+Response CodroidController::switchOff(int id) {
     return sendCommand("Robot/switchOff", json::object(), id);
 }
 
@@ -926,7 +1131,7 @@ Response CodroidControlInterface::switchOff(int id) {
  * @param id request ID / 请求 ID
  * @return Response / 响应结果
  */
-Response CodroidControlInterface::toManual(int id) {
+Response CodroidController::toManual(int id) {
     sendCommand("Robot/toAuto", json::object(), id); // 先切自动，确保状态正确
     return sendCommand("Robot/toManual", json::object(), id);
 }
@@ -939,7 +1144,7 @@ Response CodroidControlInterface::toManual(int id) {
  * @param id request ID / 请求 ID
  * @return Response / 响应结果
  */
-Response CodroidControlInterface::toAuto(int id) {
+Response CodroidController::toAuto(int id) {
     return sendCommand("Robot/toAuto", json::object(), id);
 }
 
@@ -951,7 +1156,7 @@ Response CodroidControlInterface::toAuto(int id) {
  * @param id request ID / 请求 ID
  * @return Response / 响应结果
  */
-Response CodroidControlInterface::toRemote(int id) {
+Response CodroidController::toRemote(int id) {
     sendCommand("Robot/toAuto", json::object(), id); // 先切自动，确保状态正确
     return sendCommand("Robot/toRemote", json::object(), id);
 }
@@ -964,7 +1169,7 @@ Response CodroidControlInterface::toRemote(int id) {
  * @param id request ID / 请求 ID
  * @return Response / 响应结果
  */
-Response CodroidControlInterface::toSimulation(int id) {
+Response CodroidController::toSimulation(int id) {
     return sendCommand("Robot/toSimulation", json::object(), id);
 }
 
@@ -976,7 +1181,7 @@ Response CodroidControlInterface::toSimulation(int id) {
  * @param id request ID / 请求 ID
  * @return Response / 响应结果
  */
-Response CodroidControlInterface::toActual(int id) {
+Response CodroidController::toActual(int id) {
     return sendCommand("Robot/toActual", json::object(), id);
 }
 
@@ -988,7 +1193,7 @@ Response CodroidControlInterface::toActual(int id) {
  * @param id request ID / 请求 ID
  * @return Response / 响应结果
  */
-Response CodroidControlInterface::startDrag(int id) {
+Response CodroidController::startDrag(int id) {
     return sendCommand("Robot/startDrag", json::object(), id);
 }    
 
@@ -1000,7 +1205,7 @@ Response CodroidControlInterface::startDrag(int id) {
  * @param id request ID / 请求 ID
  * @return Response / 响应结果
  */
-Response CodroidControlInterface::stopDrag(int id) {
+Response CodroidController::stopDrag(int id) {
     return sendCommand("Robot/stopDrag", json::object(), id);
 }
 
@@ -1012,7 +1217,7 @@ Response CodroidControlInterface::stopDrag(int id) {
  * @param id request ID / 请求 ID
  * @return Response / 响应结果
  */
-Response CodroidControlInterface::clearError(int id) {
+Response CodroidController::clearError(int id) {
     return sendCommand("Robot/clearError", json::object(), id);
 }
 
@@ -1026,7 +1231,7 @@ Response CodroidControlInterface::clearError(int id) {
  * @param id Request ID / 请求ID
  * @return std::vector<IOInfo> IO信息列表
  */
-std::vector<IOInfo> CodroidControlInterface::getIOValues(const std::vector<IOInfo>& queryList, int id) {
+std::vector<IOInfo> CodroidController::getIOValues(const std::vector<IOInfo>& queryList, int id) {
     std::vector<IOInfo> results;
     
     // 1. 构建请求 db 数组
@@ -1064,7 +1269,7 @@ std::vector<IOInfo> CodroidControlInterface::getIOValues(const std::vector<IOInf
  * @param id Request ID / 请求ID
  * @return int Status value / 状态值
  */
-int CodroidControlInterface::getDI(int port, int id) {
+int CodroidController::getDI(int port, int id) {
     auto res = getIOValues({IOInfo("DI", port)}, id);
     return res.empty() ? -1 : static_cast<int>(res[0].value);
 }
@@ -1077,7 +1282,7 @@ int CodroidControlInterface::getDI(int port, int id) {
  * @param id Request ID / 请求ID
  * @return int Status value / 状态值
  */
-int CodroidControlInterface::getDO(int port, int id) {
+int CodroidController::getDO(int port, int id) {
     auto res = getIOValues({IOInfo("DO", port)}, id);
     return res.empty() ? -1 : static_cast<int>(res[0].value);
 }
@@ -1090,7 +1295,7 @@ int CodroidControlInterface::getDO(int port, int id) {
  * @param id Request ID / 请求ID
  * @return double Value / 值
  */
-double CodroidControlInterface::getAI(int port, int id) {
+double CodroidController::getAI(int port, int id) {
     auto res = getIOValues({IOInfo("AI", port)}, id);
     return res.empty() ? -1.0 : res[0].value;
 }
@@ -1103,7 +1308,7 @@ double CodroidControlInterface::getAI(int port, int id) {
  * @param id Request ID / 请求ID
  * @return double Value / 值
  */
-double CodroidControlInterface::getAO(int port, int id) {
+double CodroidController::getAO(int port, int id) {
     auto res = getIOValues({IOInfo("AO", port)}, id);
     return res.empty() ? -1.0 : res[0].value;
 }
@@ -1119,7 +1324,7 @@ double CodroidControlInterface::getAO(int port, int id) {
  * @param id 请求ID
  * @return Response 响应结果
  */
-Response CodroidControlInterface::setIOValue(const std::string& type, int port, double value, int id) {
+Response CodroidController::setIOValue(const std::string& type, int port, double value, int id) {
     nlohmann::json db;
     db["type"] = type;
     db["port"] = port;
@@ -1137,7 +1342,7 @@ Response CodroidControlInterface::setIOValue(const std::string& type, int port, 
  * @param id Request ID / 请求ID
  * @return Response 响应结果
  */
-Response CodroidControlInterface::setDO(int port, int value, int id) {
+Response CodroidController::setDO(int port, int value, int id) {
     // 可以在这里加一个简单的逻辑校验
     double val = (value != 0) ? 1.0 : 0.0;
     return setIOValue("DO", port, val, id);
@@ -1152,7 +1357,7 @@ Response CodroidControlInterface::setDO(int port, int value, int id) {
  * @param id Request ID / 请求ID
  * @return Response 响应结果
  */
-Response CodroidControlInterface::setAO(int port, double value, int id) {
+Response CodroidController::setAO(int port, double value, int id) {
     return setIOValue("AO", port, value, id);
 }
 
@@ -1165,7 +1370,7 @@ Response CodroidControlInterface::setAO(int port, double value, int id) {
  * @param id Request ID / 请求ID
  * @return std::vector<RegisterInfo> Register values / 寄存器值数组
  */
-std::vector<RegisterInfo> CodroidControlInterface::getRegisterValues(const std::vector<int>& addresses, int id) {
+std::vector<RegisterInfo> CodroidController::getRegisterValues(const std::vector<int>& addresses, int id) {
     std::vector<RegisterInfo> results;
     
     // 发送地址数组
@@ -1182,7 +1387,7 @@ std::vector<RegisterInfo> CodroidControlInterface::getRegisterValues(const std::
     return results;
 }
 
-double CodroidControlInterface::getRegisterValue(int address, int id) {
+double CodroidController::getRegisterValue(int address, int id) {
     auto res = getRegisterValues({address}, id);
     if (!res.empty()) {
         return res[0].value;
@@ -1202,7 +1407,7 @@ double CodroidControlInterface::getRegisterValue(int address, int id) {
  * @param id Request ID / 请求ID
  * @return Response 响应结果
  */
-Response CodroidControlInterface::setRegisterValue(int address, double value, int id) {
+Response CodroidController::setRegisterValue(int address, double value, int id) {
     nlohmann::json db;
     db["address"] = address;
     db["value"] = value;
@@ -1219,7 +1424,7 @@ Response CodroidControlInterface::setRegisterValue(int address, double value, in
  * @param id Request ID / 请求ID
  * @return Response 响应结果
  */
-Response CodroidControlInterface::setExtendArrayType(int index, ExtendArrayType type, int id) {
+Response CodroidController::setExtendArrayType(int index, ExtendArrayType type, int id) {
     // 参数校验
     if (index < 0 || index > 999) {
         Response r; r.id = id; r.error_msg = "Index out of range (0-999)";
@@ -1242,7 +1447,7 @@ Response CodroidControlInterface::setExtendArrayType(int index, ExtendArrayType 
  * @param id Request ID / 请求ID
  * @return Response 响应结果
  */
-Response CodroidControlInterface::removeExtendArray(int index, int id) {
+Response CodroidController::removeExtendArray(int index, int id) {
     if (index < 0 || index > 999) {
         Response r; r.id = id; r.error_msg = "Index out of range (0-999)";
         return r;
@@ -1264,15 +1469,17 @@ Response CodroidControlInterface::removeExtendArray(int index, int id) {
  * @param id Request ID / 请求ID
  * @return Response 响应结果
  */
-Response CodroidControlInterface::startDataPush(const std::string& ip, int port,int duration, int id){
-    // 校验端口合法范围
-    if (port < 1000 || port > 65534) {
-        Response r; r.id = id; r.error_msg = "Invalid port range (1000-65534)";
+Response CodroidController::startDataPush(const std::string& ip, int port, int duration, int id, bool highPercision) {
+    if (port < 10000 || port > 65535) {
+        Response r;
+        r.id = id;
+        r.error_msg = "Invalid port range (10000-65535)";
         return r;
     }
-    // 校验推送周期
-    if (duration < 1) {
-        Response r; r.id = id; r.error_msg = "Duration must be >= 1ms";
+    if (duration < 1 || duration > 1000) {
+        Response r;
+        r.id = id;
+        r.error_msg = "Duration must be in [1, 1000] ms";
         return r;
     }
 
@@ -1280,6 +1487,8 @@ Response CodroidControlInterface::startDataPush(const std::string& ip, int port,
     db["ip"] = ip;
     db["port"] = port;
     db["duration"] = duration;
+    if (highPercision)
+        db["highPercision"] = true;
 
     return sendCommand("CRI/StartDataPush", db, id);
 }
@@ -1292,8 +1501,15 @@ Response CodroidControlInterface::startDataPush(const std::string& ip, int port,
  * @param id Request ID / 请求ID
  * @return Response 响应结果
  */
-Response CodroidControlInterface::stopDataPush(int id){
+Response CodroidController::stopDataPush(int id) {
     return sendCommand("CRI/StopDataPush", nlohmann::json::object(), id);
+}
+
+Response CodroidController::stopDataPush(const std::string& ip, int port, int id) {
+    nlohmann::json db;
+    db["ip"] = ip;
+    db["port"] = port;
+    return sendCommand("CRI/StopDataPush", db, id);
 }
 
 // --- 17.4 开启实时控制 ---
@@ -1307,7 +1523,7 @@ Response CodroidControlInterface::stopDataPush(int id){
  * @param id Request ID / 请求ID
  * @return Response 响应结果
  */
-Response CodroidControlInterface::startControl(int duration, int startBuffer, int filterType, int id){
+Response CodroidController::startControl(int duration, int startBuffer, int filterType, int id){
     // 校验指令间隔 (1-16ms)
     if (duration < 1 || duration > 16) {
         Response r; r.id = id; r.error_msg = "Real-time duration must be [1, 16] ms";
@@ -1335,7 +1551,7 @@ Response CodroidControlInterface::startControl(int duration, int startBuffer, in
  * @param id Request ID / 请求ID
  * @return Response 响应结果
  */
-Response CodroidControlInterface::stopControl(int id){
+Response CodroidController::stopControl(int id){
     return sendCommand("CRI/StopControl", nlohmann::json::object(), id);
 }
 
@@ -1348,7 +1564,7 @@ Response CodroidControlInterface::stopControl(int id){
  * @param id Request ID / 请求ID
  * @return Response 响应结果
  */
-Response CodroidControlInterface::setCollisionSensitivity(int level, int id) {
+Response CodroidController::setCollisionSensitivity(int level, int id) {
     if (level < 0 || level > 100) {
         Response r; r.id = id; r.error_msg = "Collision sensitivity level must be between 0 and 100";
         return r;
@@ -1366,7 +1582,7 @@ Response CodroidControlInterface::setCollisionSensitivity(int level, int id) {
  * @param id Request ID / 请求ID
  * @return Response 响应结果
  */
-Response CodroidControlInterface::setPayload(int payloadId, int id) {
+Response CodroidController::setPayload(int payloadId, int id) {
     if (payloadId < 0 || payloadId > 15) {
         Response r; r.id = id; r.error_msg = "Payload ID must be between 0 and 15";
         return r;
@@ -1382,7 +1598,7 @@ Response CodroidControlInterface::setPayload(int payloadId, int id) {
  * @return true 验证通过
  * @return false 验证失败
  */
-bool CodroidControlInterface::isValidVariableName(const std::string& name, std::string& outError) {
+bool CodroidController::isValidVariableName(const std::string& name, std::string& outError) {
     // 1. 检查是否为空
     if (name.empty()) {
         outError = "Variable name cannot be empty";
@@ -1415,7 +1631,7 @@ bool CodroidControlInterface::isValidVariableName(const std::string& name, std::
  * @param inst Move instruction / 运动指令
  * @return json Packed JSON object / 打包后的 JSON 对象
  */
-json CodroidControlInterface::packInstruction(const MoveInstruction& inst) {
+json CodroidController::packInstruction(const MoveInstruction& inst) {
     json j;
     j["type"] = inst.type;
     j["speed"] = inst.speed;
@@ -1464,7 +1680,7 @@ json CodroidControlInterface::packInstruction(const MoveInstruction& inst) {
 // 运动学 (Kinematics) 接口实现
 // ==========================================
 
-// bool CodroidControlInterface::kinematicsInit(const std::vector<std::vector<double>>& dh_matrix) {
+// bool CodroidController::kinematicsInit(const std::vector<std::vector<double>>& dh_matrix) {
 //     #ifdef _WIN32
 //     // Windows 下暂时返回错误码，不调用底层函数
 //     std::cerr << "Kinematics is not supported on Windows yet!" << std::endl;
@@ -1497,7 +1713,7 @@ json CodroidControlInterface::packInstruction(const MoveInstruction& inst) {
 //     return true;
 // }
 
-// bool CodroidControlInterface::kinematicsInit_mm_deg(const std::vector<std::vector<double>>& dh_matrix) {
+// bool CodroidController::kinematicsInit_mm_deg(const std::vector<std::vector<double>>& dh_matrix) {
 //     #ifdef _WIN32
 //     // Windows 下暂时返回错误码，不调用底层函数
 //     std::cerr << "Kinematics is not supported on Windows yet!" << std::endl;
@@ -1526,7 +1742,7 @@ json CodroidControlInterface::packInstruction(const MoveInstruction& inst) {
 //     return true;
 // }
 
-// int CodroidControlInterface::kinematicsFk(const std::vector<double>& qIn, 
+// int CodroidController::kinematicsFk(const std::vector<double>& qIn, 
 //                                           const std::vector<double>& toolParam, 
 //                                           std::vector<double>& tcpPosOut) {
 //     // 1. 状态校验
@@ -1577,7 +1793,7 @@ json CodroidControlInterface::packInstruction(const MoveInstruction& inst) {
 //     return errCode;
 // }
 
-// int CodroidControlInterface::kinematicsIk(const std::vector<double>& tcpPosIn, 
+// int CodroidController::kinematicsIk(const std::vector<double>& tcpPosIn, 
 //                                           const std::vector<double>& toolParam, 
 //                                           const std::vector<double>& qRef, 
 //                                           std::vector<double>& qOut) {
@@ -1636,7 +1852,7 @@ json CodroidControlInterface::packInstruction(const MoveInstruction& inst) {
 // 运动学 (Kinematics) 接口实现
 // ==========================================
 
-bool CodroidControlInterface::kinematicsInit(const std::vector<std::vector<double>>& dh_matrix) {
+bool CodroidController::kinematicsInit(const std::vector<std::vector<double>>& dh_matrix) {
 #ifdef _WIN32
     std::cerr << "[Kinematics] Error: Kinematics is not supported on Windows." << std::endl;
     return false;
@@ -1655,7 +1871,7 @@ bool CodroidControlInterface::kinematicsInit(const std::vector<std::vector<doubl
 #endif
 }
 
-bool CodroidControlInterface::kinematicsInit_mm_deg(const std::vector<std::vector<double>>& dh_matrix) {
+bool CodroidController::kinematicsInit_mm_deg(const std::vector<std::vector<double>>& dh_matrix) {
 #ifdef _WIN32
     std::cerr << "[Kinematics] Error: Kinematics is not supported on Windows." << std::endl;
     return false;
@@ -1677,7 +1893,7 @@ bool CodroidControlInterface::kinematicsInit_mm_deg(const std::vector<std::vecto
 #endif
 }
 
-int CodroidControlInterface::kinematicsFk(const std::vector<double>& qIn, 
+int CodroidController::kinematicsFk(const std::vector<double>& qIn, 
                                           const std::vector<double>& toolParam, 
                                           std::vector<double>& tcpPosOut) {
 #ifdef _WIN32
@@ -1707,7 +1923,7 @@ int CodroidControlInterface::kinematicsFk(const std::vector<double>& qIn,
 #endif
 }
 
-int CodroidControlInterface::kinematicsIk(const std::vector<double>& tcpPosIn, 
+int CodroidController::kinematicsIk(const std::vector<double>& tcpPosIn, 
                                           const std::vector<double>& toolParam, 
                                           const std::vector<double>& qRef, 
                                           std::vector<double>& qOut) {
