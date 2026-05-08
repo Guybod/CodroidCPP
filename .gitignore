@@ -6,6 +6,7 @@ build-linux/
 build_linux/
 build_windows/
 build_msvc/
+build_mingw/
 package/
 bin/
 lib/
@@ -30,6 +31,8 @@ docs/
 # 本地发布脚本（不对外）
 package_linux.sh
 package_msvc.bat
+build_mingw.bat
+package_mingw.bat
 
 # === CMake 产生的中间文件 (CMake Artifacts) ===
 CMakeCache.txt

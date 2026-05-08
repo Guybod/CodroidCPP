@@ -14,7 +14,8 @@
 
 ## 2. 目录结构（关键）
 
-- `include/Codroid/`：底层控制器接口
+- `include/codroid/`：客户公开头（`client.hpp`、轨迹与 CRI 相关）
+- `include/Codroid/`：底层控制器接口（内部实现/兼容层，不建议客户直接依赖）
 - `include/codroid/client.hpp`：对齐 C# 命名的主入口 `CodroidClient`
 - `src/`：SDK 实现
 - `examples/`：官方示例（推荐先跑）

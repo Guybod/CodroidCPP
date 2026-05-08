@@ -55,6 +55,15 @@ chmod +x build_linux.sh
 - 安装 “使用 C++ 的桌面开发”
 - 目标平台使用 x64
 
+注意事项（编码）：
+
+- Windows 下请使用 UTF-8 编码（源码和项目建议统一为 UTF-8）。
+- 在 Visual Studio 中可通过“项目属性 -> C/C++ -> 命令行”添加 `/utf-8`，强制按 UTF-8 编译。
+- 使用其他 IDE（如 CLion、VS Code、Qt Creator）但底层仍是 MSVC 时，同样需要传递 `/utf-8`。
+- 使用 MinGW（GCC/Clang）时，建议添加 `-finput-charset=UTF-8 -fexec-charset=UTF-8`。
+
+本仓库的 `CMakeLists.txt` 已内置上述编码参数（MSVC/MinGW/GCC/Clang 自动处理）。
+
 编译：
 
 ```bat
@@ -62,6 +71,22 @@ build_msvc.bat
 ```
 
 脚本会提示选择 Visual Studio 版本，并构建 Debug / Release。产物在 `build_msvc/`。
+
+### Windows (MinGW)
+
+准备环境：
+
+- CMake 已加入 PATH
+- MinGW-w64（包含 `gcc`、`g++`、`mingw32-make`）已加入 PATH
+- 目标平台使用 x64
+
+编译：
+
+```bat
+build_mingw.bat
+```
+
+脚本会提示选择 Debug / Release / Both。产物在 `build_mingw/`。
 
 ## 3. 生成客户交付包
 
@@ -95,6 +120,24 @@ package_msvc.bat
 
 ```text
 package\CodroidSDK-Windows-x64\
+├── include\
+├── bin\
+├── lib\
+├── examples\
+├── docs\
+└── README_PACKAGE.md
+```
+
+### Windows MinGW x64
+
+```bat
+package_mingw.bat
+```
+
+生成目录：
+
+```text
+package\CodroidSDK-Windows-MinGW-x64\
 ├── include\
 ├── bin\
 ├── lib\

@@ -29,8 +29,19 @@ if(MSVC)
     
     add_definitions(-D_WIN32_WINNT=0x0601)
     add_definitions(-D_CRT_SECURE_NO_WARNINGS)
+    # 强制源码/执行字符集使用 UTF-8，避免 Windows 下中文注释与字符串乱码
     add_compile_options("$<$<C_COMPILER_ID:MSVC>:/utf-8>")
     add_compile_options("$<$<CXX_COMPILER_ID:MSVC>:/utf-8>")
+endif()
+
+# MinGW / GCC / Clang：显式指定输入与执行字符集为 UTF-8
+if(MINGW OR CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    add_compile_options(
+        "$<$<COMPILE_LANGUAGE:C>:-finput-charset=UTF-8>"
+        "$<$<COMPILE_LANGUAGE:C>:-fexec-charset=UTF-8>"
+        "$<$<COMPILE_LANGUAGE:CXX>:-finput-charset=UTF-8>"
+        "$<$<COMPILE_LANGUAGE:CXX>:-fexec-charset=UTF-8>"
+    )
 endif()
 
 # 3. 包含路径

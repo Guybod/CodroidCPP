@@ -103,18 +103,6 @@ ClientRealtimeState to_client_state(const RobotRealtimeState& s) {
 
 } // namespace
 
-ClientMovePoint ClientMovePoint::Joint(std::vector<double> joints_deg) {
-    ClientMovePoint out;
-    out.jp = std::move(joints_deg);
-    return out;
-}
-
-ClientMovePoint ClientMovePoint::Cartesian(std::vector<double> pose_mm_deg) {
-    ClientMovePoint out;
-    out.cp = std::move(pose_mm_deg);
-    return out;
-}
-
 ClientPublishSubscription::ClientPublishSubscription() = default;
 
 ClientPublishSubscription::ClientPublishSubscription(std::unique_ptr<Impl> impl) : impl_(std::move(impl)) {}

@@ -106,9 +106,17 @@ struct ClientMovePoint {
     std::vector<double> ep;
 
     /** @brief 构造关节点（度）。 */
-    static ClientMovePoint Joint(std::vector<double> joints_deg);
+    static ClientMovePoint Joint(std::vector<double> joints_deg) {
+        ClientMovePoint out;
+        out.jp = std::move(joints_deg);
+        return out;
+    }
     /** @brief 构造笛卡尔点（mm+度）。 */
-    static ClientMovePoint Cartesian(std::vector<double> pose_mm_deg);
+    static ClientMovePoint Cartesian(std::vector<double> pose_mm_deg) {
+        ClientMovePoint out;
+        out.cp = std::move(pose_mm_deg);
+        return out;
+    }
 };
 
 /**
