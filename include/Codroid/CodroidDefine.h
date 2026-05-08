@@ -1,6 +1,8 @@
 /**
  * @file CodroidDefine.h
- * @brief 定义文件
+ * @brief 内部 TCP SDK 共用类型：`Response`、`RobotRealtimeState`、运动/枚举 DTO、JSON 别名及异常。
+ *
+ * @note 客户仅使用 `codroid/client.hpp` 时无需包含本文件；高级集成或沿用 `CodroidController` 时依赖 nlohmann/json。
  */
 
 #ifndef CODROID_DEFINE_H

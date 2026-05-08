@@ -6,7 +6,7 @@
 #ifndef CODROID_TRAJECTORY_GENERATOR_HPP
 #define CODROID_TRAJECTORY_GENERATOR_HPP
 
-#include "Codroid/CodroidExport.h"
+#include "codroid/CodroidExport.h"
 #include "codroid/trajectory_types.hpp"
 
 #include <array>
@@ -14,6 +14,10 @@
 
 namespace Codroid {
 
+/**
+ * @brief 离线轨迹生成：单段 `Generate`、多路点 `GenerateMultiSegment`（段间去重复首点）。
+ * @see TRAJECTORY_ALGORITHM.md、`TrajectoryRequest` / `TrajectoryPoint`。
+ */
 class CODROID_API TrajectoryGenerator {
 public:
     static std::vector<TrajectoryPoint> Generate(const std::array<double, 6>& start,

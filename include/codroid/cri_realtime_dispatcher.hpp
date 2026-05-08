@@ -8,7 +8,7 @@
 #ifndef CODROID_CRI_REALTIME_DISPATCHER_HPP
 #define CODROID_CRI_REALTIME_DISPATCHER_HPP
 
-#include "Codroid/CodroidExport.h"
+#include "codroid/CodroidExport.h"
 #include "codroid/trajectory_types.hpp"
 
 #include <array>

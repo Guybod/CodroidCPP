@@ -1,8 +1,8 @@
 /**
  * @file CodroidExport.h
- * @brief 动态库符号可见性：`CODROID_API` 在 Windows 上为 dllimport/dllexport，在 GCC ≥4 上为默认可见属性。
+ * @brief 动态库符号可见性：`CODROID_API` 在 Windows 上为 dllimport/dllexport，在 GCC >= 4 上为默认可见属性。
  *
- * 构建本 SDK 动态库时在目标上定义 `CODROID_EXPORTS`，以导出实现符号；客户仅链接头文件与导入库/ `.so` 时 **不要**定义该宏。
+ * 构建本 SDK 动态库时在目标上定义 `CODROID_EXPORTS`，以导出实现符号；客户仅链接头文件与导入库/`.so` 时不要定义该宏。
  */
 
 #ifndef CODROID_EXPORT_H

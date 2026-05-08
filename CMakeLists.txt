@@ -115,6 +115,28 @@ if(NOT CMAKE_CROSSCOMPILING)
 
         message(STATUS "Adding Example: ${test_name}")
     endforeach()
+
+    file(GLOB CLIENT_EXAMPLE_SOURCES "examples_client/*.cpp")
+    foreach(test_file ${CLIENT_EXAMPLE_SOURCES})
+        get_filename_component(test_name ${test_file} NAME_WE)
+        set(target_name "client_${test_name}")
+        add_executable(${target_name} ${test_file})
+        target_link_libraries(${target_name} PRIVATE Codroid)
+
+        if(WIN32)
+            set_target_properties(${target_name} PROPERTIES
+                BUILD_WITH_INSTALL_RPATH TRUE
+                INSTALL_RPATH "${CMAKE_CURRENT_SOURCE_DIR}/kinematics"
+            )
+        else()
+            set_target_properties(${target_name} PROPERTIES
+                BUILD_WITH_INSTALL_RPATH TRUE
+                INSTALL_RPATH "$ORIGIN;${CMAKE_CURRENT_SOURCE_DIR}/kinematics"
+            )
+        endif()
+
+        message(STATUS "Adding Client Example: ${target_name}")
+    endforeach()
 endif()
 
 # =========================================================

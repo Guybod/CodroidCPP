@@ -1,10 +1,12 @@
 # === 编译产物目录 (Build Directories) ===
 build/
 build_judge/
+build_verify/
 build-linux/
 build_linux/
 build_windows/
 build_msvc/
+package/
 bin/
 lib/
 out/
@@ -21,6 +23,13 @@ docs/
 *.pdb
 *.exp
 *.ilk
+*.tar.gz
+*.zip
+*.7z
+
+# 本地发布脚本（不对外）
+package_linux.sh
+package_msvc.bat
 
 # === CMake 产生的中间文件 (CMake Artifacts) ===
 CMakeCache.txt

@@ -24,8 +24,6 @@
 #include <thread>
 #include <vector>
 
-#include "Codroid/CodroidDefine.h"
-
 #include "codroid/client.hpp"
 #include "codroid/cri_realtime_dispatcher.hpp"
 #include "codroid/trajectory_generator.hpp"
@@ -140,12 +138,12 @@ bool wait_realtime_control(Codroid::CodroidClient& robot, std::chrono::milliseco
     return false;
 }
 
-void print_err(const char* step, const Codroid::Response& r) {
+void print_err(const char* step, const Codroid::CommandResult& r) {
     if (!r.error_msg.empty())
         std::cerr << "[失败] " << step << ": " << r.error_msg << '\n';
 }
 
-std::optional<std::array<double, 6>> tcp_pose_array_mm_deg(const Codroid::RobotRealtimeState& st) {
+std::optional<std::array<double, 6>> tcp_pose_array_mm_deg(const Codroid::ClientRealtimeState& st) {
     if (!st.data_valid || st.tcp_pose.size() < 6)
         return std::nullopt;
     std::array<double, 6> p{};
@@ -318,8 +316,6 @@ int main() {
         log_send_end("path", t_path);
 
         dispatcher.Close();
-    } catch (const Codroid::CodroidException& ex) {
-        std::cerr << "CriRealtimeDispatcher: " << ex.what() << '\n';
     } catch (const std::exception& ex) {
         std::cerr << "SendTrajectory: " << ex.what() << '\n';
     }

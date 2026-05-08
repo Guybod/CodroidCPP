@@ -1,188 +1,285 @@
 /**
  * @file client.hpp
- * @brief CodroidClient — PascalCase public API aligned with AGENTS.md §4.1 (C# names).
+ * @brief 客户侧主入口 `CodroidClient`：TCP JSON 指令、IO/寄存器、点到点/路径运动、CRI 推送与实时控制会话。
  *
- * Internal transport/protocol implementation remains in CodroidController; this type
- * hides the legacy camelCase / snake_case method names from typical customer includes.
+ * @par 单位与惯例（与 AGENTS.md 一致）
+ * - 关节角：**度**；笛卡尔位姿 `[x,y,z,rx,ry,rz]`：**mm + 度**（固定欧拉 XYZ 外旋）。
+ * - CRI 上行 UDP（308 字节）线上为 SI；本 SDK 在内部解析后，`ClientRealtimeState` 已为 **mm/度**。
+ * - CRI **实时控制**下发（`StartCriControl` + `CriRealtimeDispatcher`）：周期须与 `durationMs` 一致（见 `cri_realtime_dispatcher.hpp`、`AGENTS.md` §6）。
+ *
+ * @note 本头仅依赖标准库与 `CodroidExport.h`；Asio / nlohmann 留在实现编译单元，客户工程无需引入。
  */
 
 #ifndef CODROID_SDK_CLIENT_HPP
 #define CODROID_SDK_CLIENT_HPP
 
-#include "Codroid/CodroidController.h"
+#include "codroid/CodroidExport.h"
 
+#include <cstdint>
 #include <functional>
 #include <map>
+#include <memory>
 #include <string>
 #include <vector>
 
 namespace Codroid {
 
-class CODROID_API CodroidClient : private CodroidController {
+/** @brief 单次 TCP 指令结果：`error_msg` 非空表示失败；`raw_json` 为完整响应 JSON 便于排查。 */
+struct CommandResult {
+    int id = 0;                 ///< 请求 id（与下发一致）
+    std::string ty;             ///< 响应类型 / 路由
+    std::string error_msg;      ///< 控制器 `err` 或本地错误说明；空表示成功
+    std::string raw_json;       ///< 最近一次完整响应 JSON
+
+    /** @brief 是否成功（`error_msg` 为空）。 */
+    bool Ok() const noexcept { return error_msg.empty(); }
+};
+
+/**
+ * @brief CRI 实时快照（与 `AGENTS.md` §2.3.4 对齐）：关节 **度**，TCP **mm+度**，速度 mm/s 与 °/s。
+ * @note 须先 `Connect`/`ConnectRemoteAndSwitchOn` 并 `StartCriDataPush`；首帧到达前 `data_valid` 可能为 false。
+ */
+struct ClientRealtimeState {
+    int64_t timestamp_ms = 0;
+    bool data_valid = false;
+    uint16_t status1_raw = 0;   ///< status1 原始 16 位（位语义见 AGENTS.md §2.3.2）
+    uint16_t status2_raw = 0;   ///< 含 CRI 错误码高 8 位与实时控制模式位 0
+
+    std::vector<double> joint_position;       ///< 关节位置，度
+    std::vector<double> joint_velocity;       ///< 关节角速度，度/s
+    std::vector<double> tcp_pose;             ///< [x,y,z,rx,ry,rz]，mm + 度
+    std::vector<double> tcp_velocity;         ///< 线 mm/s，角 °/s
+    double tcp_linear_velocity_mm_s = 0.0;
+    std::vector<double> joint_output_torque;
+    std::vector<double> joint_external_force;
+    std::vector<double> external_axis_position; ///< 当前解析策略下可能为空
+
+    bool project_running = false;
+    bool project_stopped = false;
+    bool project_paused = false;
+    bool enabling = false;
+    bool not_enabled = false;
+    bool manual_mode = false;
+    bool dragging = false;
+    bool in_motion = false;
+    bool collision_stopped = false;
+    bool in_safety_position = false;
+    bool has_alarm = false;
+    bool simulation_mode = false;
+    bool emergency_stop_pressed = false;
+    bool rescue_mode = false;
+    bool auto_mode = false;
+    bool remote_mode = false;
+    bool realtime_control_mode = false; ///< `StartCriControl` 生效后为 true（建议下发前轮询）
+    uint8_t cri_error_code = 0;
+};
+
+/** @brief 单路 IO 读回：`type` 为控制器返回的类型字符串，`value` 为解析后的数值。 */
+struct ClientIoInfo {
+    std::string type;
+    int port = 0;
+    double value = 0.0;
+};
+
+/** @brief 寄存器一项：地址与值。 */
+struct ClientRegisterInfo {
+    int address = 0;
+    double value = 0.0;
+};
+
+/** @brief 路径指令中的运动种类（与内部 `MoveType` 对应）。 */
+enum class ClientMoveType {
+    MovJ,       ///< 关节运动
+    MovL,       ///< 直线（笛卡尔）
+    MovC,       ///< 圆弧（经由中间点）
+    MovCircle   ///< 整圆/多圈（`circle_num`）
+};
+
+/**
+ * @brief 运动目标点：`jp` 关节度；`cp` 笛卡尔 mm+度；`rj`/`ep` 按协议可选。
+ * @note `ClientMovePoint::Joint` / `Cartesian` 为便捷工厂，填充对应字段。
+ */
+struct ClientMovePoint {
+    std::vector<double> jp;
+    std::vector<double> cp;
+    std::vector<double> rj;
+    std::vector<double> ep;
+
+    /** @brief 构造关节点（度）。 */
+    static ClientMovePoint Joint(std::vector<double> joints_deg);
+    /** @brief 构造笛卡尔点（mm+度）。 */
+    static ClientMovePoint Cartesian(std::vector<double> pose_mm_deg);
+};
+
+/**
+ * @brief `MovePath` 单段：`target` 必填；`MovC`/`MovCircle` 需有效 `middle`。
+ * @param speed / acceleration 含义与同类型点到点 API 一致（控制器约定百分比或内部标定，与示例对齐即可）。
+ * @param blend / relative_blend 融合半径；默认 -1 表示沿用控制器默认。
+ * @param circle_num 仅 `MovCircle`：圈数。
+ * @param coor / tool 坐标系与工具，可选，与 `MovL` 一致。
+ */
+struct ClientMoveInstruction {
+    ClientMoveType type = ClientMoveType::MovJ;
+    double speed = 60.0;
+    double acceleration = 150.0;
+    double blend = -1.0;
+    double relative_blend = -1.0;
+    int circle_num = 1;
+    ClientMovePoint target;
+    ClientMovePoint middle;
+    std::vector<double> coor;
+    std::vector<double> tool;
+};
+
+/** @brief 主题推送一帧：`ty` 为主题类型；`db_json` 为 `db` 子树的 JSON 字符串；`raw_json` 为整帧。 */
+struct ClientPublishNotification {
+    std::string ty;
+    std::string db_json;
+    std::string raw_json;
+};
+
+/**
+ * @brief 订阅句柄：析构或 `Dispose()` 后停止本地分发（不向控制器发退订）；断线后须重连并重新订阅。
+ */
+class CODROID_API ClientPublishSubscription {
 public:
-    using CodroidController::CodroidController;
+    ClientPublishSubscription();
+    ~ClientPublishSubscription();
 
-    // --- Local kinematics (.so), not controller JSON ---
-    using CodroidController::kinematicsInit;
-    using CodroidController::kinematicsInit_mm_deg;
-    using CodroidController::kinematicsFk;
-    using CodroidController::kinematicsIk;
+    ClientPublishSubscription(const ClientPublishSubscription&) = delete;
+    ClientPublishSubscription& operator=(const ClientPublishSubscription&) = delete;
+    ClientPublishSubscription(ClientPublishSubscription&&) noexcept;
+    ClientPublishSubscription& operator=(ClientPublishSubscription&&) noexcept;
 
-    static void PrintResponse(const Response& resp) { printResponse(resp); }
+    /** @brief 提前结束订阅（与析构效果类似）。 */
+    void Dispose();
+    /** @brief 是否仍绑定有效内部资源。 */
+    bool IsValid() const noexcept;
 
-    /** @brief 见 CodroidController::NextRequestId()；多线程并发发指令时请用此分配唯一 id。 */
-    int NextRequestId() { return CodroidController::NextRequestId(); }
+private:
+    class Impl;
+    explicit ClientPublishSubscription(std::unique_ptr<Impl> impl);
 
-    // --- Connection (C# naming) ---
-    bool Connect(const std::string& ip, int port = 9001) { return connectTcp(ip, port); }
-    /** TCP + Auto + Remote + optional CRI (local_ip non-empty) + SwitchOn. */
+    std::unique_ptr<Impl> impl_;
+
+    friend class CodroidClient;
+};
+
+/**
+ * @brief 对外门面：连接、模式、IO、寄存器、运动、CRI、主题订阅。
+ * @note 详见 `examples_client/` 与 README；异常模式见 `SetThrowOnCommandError`。
+ */
+class CODROID_API CodroidClient {
+public:
+    CodroidClient();
+    ~CodroidClient();
+
+    CodroidClient(const CodroidClient&) = delete;
+    CodroidClient& operator=(const CodroidClient&) = delete;
+    CodroidClient(CodroidClient&&) noexcept;
+    CodroidClient& operator=(CodroidClient&&) noexcept;
+
+    /** @brief 生成下一个单调递增请求 id（多线程发令时勿重复）。 */
+    int NextRequestId();
+
+    /** @brief 建立 TCP（默认 9001），不切模式、不自动上电。 */
+    bool Connect(const std::string& ip, int port = 9001);
+    /**
+     * @brief 连接并执行与 C# 一致的远程上电/模式切换；`local_ip` 非空时用于 `StartCriDataPush` 绑定本机 UDP。
+     */
     bool ConnectRemoteAndSwitchOn(const std::string& ip, int port = 9001, std::string local_ip = {});
-    void Disconnect() { disconnect(); }
+    /** @brief 断开 TCP，停止 CRI 相关线程与缓存。 */
+    void Disconnect();
 
-    // --- Project ---
-    Response EnterRemoteScriptMode(int id = 1) { return enterRemoteScriptMode(id); }
-    Response RunScript(const RunScriptParams& params, int id = 1) { return runScript(params, id); }
-    Response Run(const std::string& projectId, int id = 1) { return runProject(projectId, id); }
-    Response RunByIndex(int index, int id = 1) { return runProjectByIndex(index, id); }
-    Response RunStep(const std::string& projectId, int id = 1) { return runStep(projectId, id); }
-    Response PauseProject(int id = 1) { return pauseProject(id); }
-    Response ResumeProject(int id = 1) { return resumeProject(id); }
-    Response StopProject(int id = 1) { return stopProject(id); }
+    /** @brief 上电使能类指令封装，@p id 为请求序号。 */
+    CommandResult SwitchOn(int id = 1);
+    CommandResult SwitchOff(int id = 1);
+    CommandResult ToManual(int id = 1);
+    CommandResult ToAuto(int id = 1);
+    CommandResult ToRemote(int id = 1);
+    CommandResult ClearSystemError(int id = 1);
 
-    // --- Global variables ---
-    Response GetGlobalVars(int id = 1) { return getGlobalVars(id); }
-    std::map<std::string, Variable> GetGlobalVarsCatalog(int id = 1);
-    Response SaveGlobalVar(const std::string& name, const Variable& value, int id = 1);
-    Response SaveGlobalVars(const std::map<std::string, Variable>& vars, int id = 1) {
-        return saveGlobalVars(vars, id);
-    }
-    Response RemoveGlobalVars(const std::vector<std::string>& names, int id = 1) {
-        return removeGlobalVars(names, id);
-    }
+    /** @brief 读数字量输入（端口 @p port）。 */
+    int GetDi(int port, int id = 1);
+    int GetDo(int port, int id = 1);
+    double GetAi(int port, int id = 1);
+    double GetAo(int port, int id = 1);
+    CommandResult SetDo(int port, int value, int id = 1);
+    CommandResult SetAo(int port, double value, int id = 1);
 
-    // --- Mode / system (C# names) ---
-    Response SwitchOn(int id = 1) { return switchOn(id); }
-    Response SwitchOff(int id = 1) { return switchOff(id); }
-    Response ToManual(int id = 1) { return toManualDirect(id); }
-    Response EnterManualModeViaAuto(int id = 1) { return toManual(id); }
-    Response ToAuto(int id = 1) { return toAuto(id); }
-    Response ToRemote(int id = 1) { return toRemoteDirect(id); }
-    Response EnterRemoteModeViaAuto(int id = 1) { return toRemote(id); }
-    Response ToSimulation(int id = 1) { return toSimulation(id); }
-    Response ToActual(int id = 1) { return toActual(id); }
-    Response StartDrag(int id = 1) { return startDrag(id); }
-    Response StopDrag(int id = 1) { return stopDrag(id); }
-    Response ClearSystemError(int id = 1) { return clearError(id); }
+    double GetRegisterValue(int address, int id = 1);
+    std::vector<ClientRegisterInfo> GetRegisterValues(const std::vector<int>& addresses, int id = 1);
+    CommandResult SetRegisterValue(int address, double value, int id = 1);
 
-    // --- IO ---
-    std::vector<IOInfo> GetIoValues(const std::vector<IOInfo>& pins, int id = 1) {
-        return getIOValues(pins, id);
-    }
-    int GetDi(int port, int id = 1) { return getDI(port, id); }
-    int GetDo(int port, int id = 1) { return getDO(port, id); }
-    double GetAi(int port, int id = 1) { return getAI(port, id); }
-    double GetAo(int port, int id = 1) { return getAO(port, id); }
-    Response SetDo(int port, int value, int id = 1) { return setDO(port, value, id); }
-    Response SetAo(int port, double value, int id = 1) { return setAO(port, value, id); }
+    CommandResult SetManualMoveRate(int pct, int id = 1);
+    CommandResult SetAutoMoveRate(int pct, int id = 1);
+    CommandResult SetCollisionSensitivity(int sensitivity, int id = 1);
+    CommandResult SetPayload(int payloadId, int id = 1);
 
-    // --- Registers ---
-    double GetRegisterValue(int address, int id = 1) { return getRegisterValue(address, id); }
-    std::vector<RegisterInfo> GetRegisterValues(const std::vector<int>& addresses, int id = 1) {
-        return getRegisterValues(addresses, id);
-    }
-    Response SetRegisterValue(int address, double value, int id = 1) {
-        return setRegisterValue(address, value, id);
-    }
-    Response SetExtendArrayType(int index, ExtendArrayType type, int id = 1) {
-        return setExtendArrayType(index, type, id);
-    }
-    Response RemoveExtendArray(int index, int id = 1) { return removeExtendArray(index, id); }
+    /** @brief 关节运动：@p joints_deg 六轴度，@p speed @p acceleration 为控制器约定参数。 */
+    CommandResult MovJ(const std::vector<double>& joints_deg, double speed, double acceleration, int id = 1);
+    /**
+     * @brief 直线运动：@p pose_mm_deg 为 mm+度；@p coor @p tool 可选。
+     */
+    CommandResult MovL(const std::vector<double>& pose_mm_deg, double speed, double acceleration,
+                       const std::vector<double>& coor = {}, const std::vector<double>& tool = {}, int id = 1);
+    /**
+     * @brief 圆弧：经过 @p middle_pose_mm_deg，到达 @p target_pose_mm_deg（均为 mm+度）。
+     */
+    CommandResult MovC(const std::vector<double>& middle_pose_mm_deg, const std::vector<double>& target_pose_mm_deg,
+                       double speed, double acceleration, int id = 1);
+    /**
+     * @brief 整圆/多圈：中间点、目标点、圈数 @p circle_num。
+     */
+    CommandResult MovCircle(const std::vector<double>& middle_pose_mm_deg,
+                            const std::vector<double>& target_pose_mm_deg,
+                            int circle_num,
+                            double speed,
+                            double acceleration,
+                            int id = 1);
+    /** @brief 多段路径，按顺序下发为一条 `Robot/move`（或等价）指令。 */
+    CommandResult MovePath(const std::vector<ClientMoveInstruction>& path, int id = 1);
+    CommandResult PauseRobotMotion(int id = 1);
+    CommandResult ResumeRobotMotion(int id = 1);
+    CommandResult StopRobotMove(int id = 1);
 
-    // --- Protocol kinematics ---
-    std::vector<double> AposToCpos(const FKParams& params, int id = 1) {
-        return forwardKinematics(params, id);
-    }
-    std::vector<double> AposToCposPose(const FKParams& params, int id = 1) {
-        return forwardKinematics(params, id);
-    }
-    std::vector<double> CposToApos(const IKParams& params, int id = 1) {
-        return inverseKinematics(params, id);
-    }
-    std::vector<double> CposToAposJoints(const IKParams& params, int id = 1) {
-        return inverseKinematics(params, id);
-    }
-    std::vector<double> CalculateRelativePose(const RelativePoseParams& params, int id = 1) {
-        return calculateRelativePose(params, id);
-    }
-    std::vector<double> CalculateRelativePoseResult(const RelativePoseParams& params, int id = 1) {
-        return calculateRelativePose(params, id);
-    }
+    /**
+     * @brief 请求 CRI 状态 UDP 推送到本机 @p udpIp:@p udpPort（载荷 308 字节，周期等默认与 C# 一致）。
+     */
+    CommandResult StartCriDataPush(const std::string& udpIp, int udpPort, int id = 1);
+    CommandResult StopCriDataPush(int id = 1);
+    CommandResult StopCriDataPush(const std::string& udpIp, int udpPort, int id = 1);
+    /**
+     * @brief 启动实时控制会话：@p durationMs 为控制周期（ms），须与后续 `CriRealtimeDispatcher::SendTrajectory` 的 period 一致。
+     * @param filterType 滤波类型（0~3）；@p startBuffer 起始缓冲。
+     */
+    CommandResult StartCriControl(int filterType, int durationMs, int startBuffer, int id = 1);
+    CommandResult StopCriControl(int id = 1);
 
-    // --- Motion ---
-    Response StartJog(const JogParams& params, int id = 1) { return jog(params, id); }
-    Response StopJog(int id = 1) { return stopJog(id); }
-    Response JogHeartbeat(int id = 1) { return jogHeartbeat(id); }
-    Response MoveTo(const MoveToParams& params, int id = 1) { return moveTo(params, id); }
-    Response MoveToHeartbeat(int id = 1) { return moveToHeartbeat(id); }
-    Response SetManualMoveRate(int pct, int id = 1) { return setManualSpeedRate(pct, id); }
-    Response SetAutoMoveRate(int pct, int id = 1) { return setAutoSpeedRate(pct, id); }
-    Response SetCollisionSensitivity(int sensitivity, int id = 1) {
-        return setCollisionSensitivity(sensitivity, id);
-    }
-    Response SetPayload(int payloadId, int id = 1) { return setPayload(payloadId, id); }
-    Response Move(const std::vector<MoveInstruction>& path, int id = 1) { return move(path, id); }
-    Response PauseRobotMotion(int id = 1) { return pauseMove(id); }
-    Response ResumeRobotMotion(int id = 1) { return resumeMove(id); }
-    Response StopRobotMove(int id = 1) { return stopMove(id); }
+    /** @brief 本机为 CRI 推送绑定的 UDP 监听端口（未启动推送时可能为 0）。 */
+    int GetCriUdpListenPort() const;
+    /** @brief 线程安全快照，字段单位见 `ClientRealtimeState`。 */
+    ClientRealtimeState GetRobotRealtimeState() const;
+    /** @brief 每次收到 CRI 帧时回调（在内部接收路径上触发，避免长时间阻塞）。 */
+    void SetCriDataReceived(std::function<void(const ClientRealtimeState&)> cb);
+    /**
+     * @brief 订阅协议 15.x 推送主题；首次订阅发送 `ty`+`tc`，无整数 id。
+     * @param topicTy 主题字符串须与控制器一致（如 `publish/RobotStatus`）。
+     * @param tc_milliseconds 推送周期协商，默认 100 ms。
+     */
+    ClientPublishSubscription SubscribePublishTopic(std::string topicTy,
+                                                    std::function<void(const ClientPublishNotification&)> handler,
+                                                    int tc_milliseconds = 100);
 
-    // --- CRI ---
-    Response StartCriDataPush(const std::string& udpIp, int udpPort, int id = 1) {
-        return startDataPush(udpIp, udpPort, 100, id, true);
-    }
-    Response StopCriDataPush(int id = 1) { return stopDataPush(id); }
-    Response StopCriDataPush(const std::string& udpIp, int udpPort, int id = 1) {
-        return stopDataPush(udpIp, udpPort, id);
-    }
-    int GetCriUdpListenPort() const { return getCriUdpListenPort(); }
-    RobotRealtimeState GetRobotRealtimeState() const { return getRobotRealtimeState(); }
+    /**
+     * @brief true 时指令失败抛 `CodroidCommandException`；false 时通过 `CommandResult::error_msg` 返回。
+     */
+    void SetThrowOnCommandError(bool enable);
+    bool ThrowOnCommandError() const noexcept;
 
-    /** 等价 C# **`CriDataReceived`**；空函数则清空监听。 */
-    void SetCriDataReceived(std::function<void(const RobotRealtimeState&)> cb) {
-        CodroidController::setCriDataReceivedHandler(std::move(cb));
-    }
-    /** 严格模式：`err` non-empty、`sendCommand` 抛 **`CodroidCommandException`**。 */
-    void SetThrowOnCommandError(bool enable) { CodroidController::setThrowOnCommandError(enable); }
-    bool ThrowOnCommandError() const noexcept { return CodroidController::getThrowOnCommandError(); }
-
-    Response StartCriControl(int filterType, int durationMs, int startBuffer, int id = 1) {
-        return startControl(durationMs, startBuffer, filterType, id);
-    }
-    Response StopCriControl(int id = 1) { return stopControl(id); }
-
-    PublishTopicSubscription SubscribePublishTopic(std::string topicTy,
-                                                   PublishTopicHandler handler,
-                                                   int tc_milliseconds = 100) {
-        return subscribePublishTopic(std::move(topicTy), std::move(handler), tc_milliseconds);
-    }
-
-    // --- Project lines / misc (legacy protocol; not in §4.1 table) ---
-    Response SetStartLine(int line, int id = 1) { return setStartLine(line, id); }
-    Response ClearStartLine(int id = 1) { return clearStartLine(id); }
-    Response GetProjectVar(int id = 1) { return getProjectVar(id); }
-
-    // --- RS485 (optional; names unchanged from controller) ---
-    using CodroidController::RS485init;
-    using CodroidController::RS485flush;
-    using CodroidController::RS485read;
-    using CodroidController::RS485write;
-
-    // --- mov* helpers (same as controller) ---
-    using CodroidController::movJ;
-    using CodroidController::movL;
-    using CodroidController::movC;
-    using CodroidController::movCircle;
-
-    // Offline trajectory: `TrajectoryGenerator` in `codroid/trajectory_generator.hpp`. Real-time UDP: `CriRealtimeDispatcher`.
+private:
+    class Impl;
+    std::unique_ptr<Impl> impl_;
 };
 
 } // namespace Codroid
