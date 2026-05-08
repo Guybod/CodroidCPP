@@ -1,83 +1,99 @@
 # Codroid C++ SDK
 
-Codroid C++ SDK 是用于控制 Codroid 机械臂的 C++ 开发包。SDK 通过 TCP JSON 指令通道和 CRI UDP 实时通道完成连接、上电、运动、IO、寄存器、实时状态读取和实时轨迹下发。
+Codroid C++ SDK 提供一套 C++ 接口，用于连接 Codroid 控制器并完成上电、运动、IO、寄存器、实时状态读取和 CRI 实时轨迹下发。
 
-按本文顺序完成环境准备、编译、示例运行和业务代码接入。
+首页按实际接入顺序组织：准备网络，编译 SDK，跑通第一个示例，再接入业务程序。
 
 ## 资料入口
 
 - API 在线手册：[金山文档](https://www.kdocs.cn/l/cqlm2DOsjGRp)
-- 本仓库手册：`SDK_GUIDE.md`
-- 主要入口头文件：`include/codroid/client.hpp`
-- CRI 完整示例：`examples/14_cri_trajectory.cpp`
+- SDK 手册：`SDK_GUIDE.md`
+- 入口头文件：`include/codroid/client.hpp`
+- CRI 实时控制参考：`examples/14_cri_trajectory.cpp`
 
-## 准备工作
+## 1. 准备控制器网络
 
-### 控制器与网络
+先确认三件事：
 
 - 控制器 IP，例如 `192.168.8.136`
 - 本机网卡 IP，例如 `192.168.8.150`
-- TCP 指令端口默认是 `9001`
-- CRI 实时控制下发端口默认是控制器 UDP `9030`
+- TCP 指令端口，默认 `9001`
 
-确认本机与控制器能互通。示例中的 IP 需要按现场网络修改。
+示例代码里的 IP 需要按现场网络修改。先从控制器所在网段确认本机能访问控制器，再运行 SDK 示例。
 
-### Linux 环境
+CRI 实时控制还会用到控制器 UDP `9030`。本机 CRI 状态接收端口由 SDK 启动推送时绑定，示例中会自动处理。
+
+## 2. 编译 SDK
+
+### Linux
+
+安装依赖：
 
 ```bash
 sudo apt update
 sudo apt install -y build-essential cmake git libasio-dev nlohmann-json3-dev
 ```
 
-### Windows 环境
-
-- 安装 CMake，并加入 PATH
-- 安装 Visual Studio 2019 / 2022 / 2026
-- 安装 “使用 C++ 的桌面开发”
-- 使用 x64 目标平台
-
-## 1. 编译 SDK
-
-### Linux
+编译：
 
 ```bash
 chmod +x build_linux.sh
 ./build_linux.sh
 ```
 
-编译完成后，产物在 `build_linux/`：
+完成后检查 `build_linux/`：
 
-- `libCodroid.so`
-- 所有 `examples/*.cpp` 对应的可执行程序
+- `libCodroid.so`：SDK 动态库
+- `01_basic_usage`、`08_move`、`09_io_test`、`14_cri_trajectory` 等示例程序
 
 ### Windows (MSVC)
+
+准备环境：
+
+- CMake 已加入 PATH
+- Visual Studio 2019 / 2022 / 2026
+- 安装 “使用 C++ 的桌面开发”
+- 目标平台使用 x64
+
+编译：
 
 ```bat
 build_msvc.bat
 ```
 
-脚本会提示选择 Visual Studio 版本，并同时构建 Debug / Release。产物在 `build_msvc/`。
+脚本会提示选择 Visual Studio 版本，并构建 Debug / Release。产物在 `build_msvc/`。
 
-## 2. 运行第一个示例
+## 3. 跑通第一个 TCP 示例
 
-先打开 `examples/01_basic_usage.cpp`，将机器人 IP 改为控制器 IP。
+打开 `examples/01_basic_usage.cpp`，修改控制器 IP：
 
-Linux 下运行：
+```cpp
+std::string robot_ip = "192.168.8.136";
+```
+
+Linux 运行：
 
 ```bash
 ./build_linux/01_basic_usage
 ```
 
-如果能看到连接成功，并且控制器收到上电/下电命令，说明 TCP 指令通道已经正常。
+看到连接成功、控制器收到上电/下电命令，说明 TCP 指令通道可用。后续 IO、寄存器、运动指令都基于同一条 TCP 通道。
 
-## 3. 编写第一个程序
+## 4. 在业务程序里使用 SDK
 
-业务代码优先使用 `Codroid::CodroidClient`，命名与 C# SDK 对齐。
+业务代码优先包含：
+
+```cpp
+#include "codroid/client.hpp"
+```
+
+最小程序：
 
 ```cpp
 #include "codroid/client.hpp"
 
 #include <iostream>
+#include <string>
 
 int main() {
     const std::string robot_ip = "192.168.8.136";
@@ -90,7 +106,7 @@ int main() {
         return 1;
     }
 
-    auto state = robot.GetRobotRealtimeState();
+    const auto state = robot.GetRobotRealtimeState();
     if (state.data_valid) {
         std::cout << "CRI timestamp: " << state.timestamp_ms << "\n";
     }
@@ -100,28 +116,34 @@ int main() {
 }
 ```
 
-最常用的连接流程是：
+常用连接顺序：
 
 1. `ConnectRemoteAndSwitchOn(robot_ip, 9001, local_ip)`
-2. 执行业务命令
+2. 执行 IO、寄存器、运动或 CRI 业务
 3. `Disconnect()`
 
-`ConnectRemoteAndSwitchOn` 会完成 TCP 连接、切自动/远程、启动 CRI 数据推送和上电等常用准备动作。
+`ConnectRemoteAndSwitchOn` 会完成常用准备动作：TCP 连接、切自动/远程、启动 CRI 数据推送、上电。
 
-## 4. 常用功能
+## 5. 常用调用
 
 ### IO
 
 ```cpp
-int di0 = robot.GetDi(0, robot.NextRequestId());
-robot.SetDo(0, 1, robot.NextRequestId());
+const int id1 = robot.NextRequestId();
+int di0 = robot.GetDi(0, id1);
+
+const int id2 = robot.NextRequestId();
+robot.SetDo(0, 1, id2);
 ```
 
 ### 寄存器
 
 ```cpp
-double value = robot.GetRegisterValue(49100, robot.NextRequestId());
-robot.SetRegisterValue(49100, 520.0, robot.NextRequestId());
+const int id1 = robot.NextRequestId();
+double value = robot.GetRegisterValue(49100, id1);
+
+const int id2 = robot.NextRequestId();
+robot.SetRegisterValue(49100, 520.0, id2);
 ```
 
 ### 运动控制
@@ -131,45 +153,46 @@ robot.SetAutoMoveRate(40, robot.NextRequestId());
 robot.StopRobotMove(robot.NextRequestId());
 ```
 
-多段 `Move`、`MoveTo`、Jog 等完整用法见 `examples/08_move.cpp` 和 API 在线手册。
+`Move`、`MoveTo`、Jog 等完整运动示例见 `examples/08_move.cpp`。
 
-## 5. CRI 实时控制
+## 6. 跑 CRI 实时轨迹
 
-CRI 实时控制由两条 UDP 路径组成：
+CRI 实时轨迹使用两条 UDP 路径：
 
-- 控制器 -> 本机：`StartCriDataPush` 接收 308 字节实时状态
-- 本机 -> 控制器：`CriRealtimeDispatcher` 下发 64 字节实时控制数据
+- 控制器到本机：CRI 状态推送，SDK 解析为 `RobotRealtimeState`
+- 本机到控制器：`CriRealtimeDispatcher` 周期下发实时控制点
 
-先运行完整示例：
-
-```bash
-./build_linux/14_cri_trajectory
-```
-
-运行前修改 `examples/14_cri_trajectory.cpp` 中的地址：
+修改 `examples/14_cri_trajectory.cpp` 中的地址：
 
 ```cpp
 const std::string robot_ip = "192.168.8.136";
 const std::string local_ip = "192.168.8.150";
 ```
 
-实时控制标准流程：
+运行：
 
-1. `ConnectRemoteAndSwitchOn`
-2. 等首帧 CRI：`data_valid && timestamp_ms > 0`
-3. `StartCriControl(1, 4, 5, id)`
-4. 等 `realtime_control_mode == true`
-5. `TrajectoryGenerator::GenerateMultiSegment(...)` 离线生成轨迹
-6. `CriRealtimeDispatcher::SendTrajectory(..., period_ms=4)` 周期下发
-7. `StopCriControl`
-8. `StopCriDataPush`
-9. `Disconnect`
+```bash
+./build_linux/14_cri_trajectory
+```
 
-`StartCriControl` 的 `durationMs` 必须和 `SendTrajectory` 的 `period_ms` 一致。例如 `durationMs=4`，下发周期也必须是 `4ms`。
+示例会依次执行：
 
-## 6. 单位约定
+1. 离线轨迹算法自检
+2. TCP 连接、切远程、启动 CRI 推送、上电
+3. 等首帧 CRI
+4. `StartCriControl(1, 4, 5)`
+5. 等 `realtime_control_mode`
+6. 生成 joint / cart / path 三段轨迹
+7. UDP `9030` 周期下发轨迹点
+8. `StopCriControl`
+9. `StopCriDataPush`
+10. `Disconnect`
 
-SDK 对业务层统一使用：
+关键约束：`StartCriControl` 的 `durationMs` 必须等于 `SendTrajectory` 的 `period_ms`。示例使用 `4ms`，即 250Hz。
+
+## 7. 单位规则
+
+业务层统一使用：
 
 - 位置：`mm`
 - 角度：`deg`
@@ -180,17 +203,17 @@ CRI UDP 线上协议使用：
 - 位置：`m`
 - 角度：`rad`
 
-`CriRealtimeDispatcher` 默认会在发送前把 `mm/deg` 转成 `m/rad`。业务层不要重复转换，否则轨迹尺寸和姿态会出错。
+`CriRealtimeDispatcher` 默认会把 `mm/deg` 转成 `m/rad` 后发送。业务层不要再次转换。
 
-## 7. 协议分层
+## 8. 通信通道
 
-### TCP JSON 指令通道
+### TCP JSON 指令
 
-用于工程控制、模式切换、IO、寄存器、运动、运动学等普通指令。默认端口是 `9001`。
+默认端口 `9001`。用于工程控制、模式切换、IO、寄存器、运动、运动学等普通指令。
 
 ### TCP publish 推送
 
-用于控制器主动推送主题消息。使用：
+用于控制器主动推送主题消息：
 
 ```cpp
 robot.SubscribePublishTopic("publish/RobotStatus", [](const Codroid::PublishNotification& msg) {
@@ -198,40 +221,40 @@ robot.SubscribePublishTopic("publish/RobotStatus", [](const Codroid::PublishNoti
 });
 ```
 
-### CRI UDP 状态推送
+### CRI UDP 状态
 
-用于控制器高频发送实时状态，SDK 解析后通过：
+读取最新快照：
 
 ```cpp
 auto state = robot.GetRobotRealtimeState();
 ```
 
-或回调：
+注册回调：
 
 ```cpp
 robot.SetCriDataReceived([](const Codroid::RobotRealtimeState& state) {
-    // handle CRI state
+    // handle state
 });
 ```
 
-### CRI UDP 实时控制下发
+### CRI UDP 控制
 
-用于实时控制模式下按周期发送关节或笛卡尔轨迹点。对应类是 `Codroid::CriRealtimeDispatcher`。
+实时控制下发由 `Codroid::CriRealtimeDispatcher` 完成，输入为 `TrajectoryGenerator` 生成的轨迹点。
 
-## 8. 示例索引
+## 9. 示例目录
 
-- `examples/01_basic_usage.cpp`：最小连接和基础指令
+- `examples/01_basic_usage.cpp`：最小连接与基础指令
 - `examples/08_move.cpp`：运动控制
-- `examples/09_io_test.cpp`：IO 测试
+- `examples/09_io_test.cpp`：IO 读写
 - `examples/14_cri_trajectory.cpp`：CRI 实时控制完整流程
 
-## 9. 常见问题
+## 10. 常见问题
 
-### 为什么程序打印到 path 后像卡住？
+### 程序打印到 path 后长时间没有新输出
 
-`SendTrajectory` 会按周期逐点发送。几千个点、4ms 周期时，发送阶段会持续十几秒甚至更久。参考 `examples/14_cri_trajectory.cpp` 的 `send begin/send done` 日志确认是否还在发送。
+`SendTrajectory` 会按周期逐点发送。几千个点、4ms 周期时，发送阶段会持续十几秒。`examples/14_cri_trajectory.cpp` 已打印 `send begin/send done`，可用来判断是否仍在发送。
 
-### `Disconnect()` 是 void，如何判断是否返回？
+### 判断 `Disconnect()` 是否返回
 
 在调用前后打印日志：
 
@@ -241,18 +264,8 @@ robot.Disconnect();
 std::cout << "Disconnect end\n";
 ```
 
-看到后一行就说明已经返回。
+出现 `Disconnect end` 即表示已返回。
 
-### Windows 能不能用？
+### Windows 运动学说明
 
-Windows 下可以使用 TCP 指令、CRI、IO、寄存器和运动控制。当前仓库里的运动学第三方库是 Linux `.so`，Windows 运动学能力取决于是否提供对应 Windows 动态库。
-
-### 应包含哪个头文件？
-
-业务代码优先包含：
-
-```cpp
-#include "codroid/client.hpp"
-```
-
-底层兼容接口仍在 `include/Codroid/CodroidController.h`，但新代码建议优先使用 `CodroidClient`。
+Windows 下可使用 TCP 指令、CRI、IO、寄存器和运动控制。当前仓库内运动学第三方库是 Linux `.so`，Windows 无法使用。
