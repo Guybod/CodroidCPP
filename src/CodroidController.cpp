@@ -1,5 +1,12 @@
 #include "Codroid/CodroidController.h"
+#include <algorithm>
+#include <cmath>
+#include <chrono>
+#include <cstdint>
 #include <cstring>
+#include <functional>
+#include <future>
+#include <map>
 #include <random>
 
 // 跨平台网络底层头文件
@@ -13,6 +20,51 @@
 namespace Codroid {
 
 namespace {
+
+bool tryPopCompleteJson(std::string& sticky, std::string& out) {
+    size_t brace_count = 0;
+    int first_brace = -1;
+    for (int i = 0; i < static_cast<int>(sticky.length()); ++i) {
+        if (sticky[static_cast<std::size_t>(i)] == '{') {
+            if (first_brace == -1)
+                first_brace = i;
+            brace_count++;
+        } else if (sticky[static_cast<std::size_t>(i)] == '}') {
+            if (first_brace != -1) {
+                brace_count--;
+                if (brace_count == 0) {
+                    out = sticky.substr(static_cast<std::size_t>(first_brace),
+                                        static_cast<std::size_t>(i - first_brace + 1));
+                    sticky.erase(0, static_cast<std::size_t>(i + 1));
+                    return true;
+                }
+            }
+        }
+    }
+    return false;
+}
+
+bool tryExtractJsonRequestId(const nlohmann::json& j, int& out_id) {
+    if (!j.contains("id") || j["id"].is_null())
+        return false;
+    if (j["id"].is_number_integer()) {
+        out_id = j["id"].get<int>();
+        return true;
+    }
+    if (j["id"].is_number_unsigned()) {
+        out_id = static_cast<int>(j["id"].get<std::uint64_t>());
+        return true;
+    }
+    if (j["id"].is_string()) {
+        try {
+            out_id = std::stoi(j["id"].get<std::string>());
+            return true;
+        } catch (...) {
+            return false;
+        }
+    }
+    return false;
+}
 
 double readF64LE(const uint8_t* p) {
     double v;
@@ -32,7 +84,30 @@ uint16_t readU16LE(const uint8_t* p) {
     return v;
 }
 
+/** 与 `CriRealtimePacketParser.RoundToDecimals`（C#，`MidpointRounding.AwayFromZero`）一致，`decimals=3`。 */
+double cri_round_to_decimals_away(double value, int decimals) {
+    if (value == 0.0 || std::isnan(value) || !std::isfinite(value))
+        return value;
+    double factor = std::pow(10.0, static_cast<double>(decimals));
+    double rounded = std::round(value * factor) / factor;
+    return rounded == 0.0 ? 0.0 : rounded;
+}
+
+void cri_round_vec_in_place(std::vector<double>& v, int decimals) {
+    for (double& x : v)
+        x = cri_round_to_decimals_away(x, decimals);
+}
+
 } // namespace
+
+CodroidCommandException::CodroidCommandException(int request_id, std::string command_ty,
+                                                 std::string controller_error, std::string raw_response_json)
+    : CodroidException("CodroidCommandException (id=" + std::to_string(request_id) + ", ty=" + command_ty +
+                       "): " + controller_error)
+    , request_id_(request_id)
+    , command_ty_(std::move(command_ty))
+    , controller_error_(std::move(controller_error))
+    , raw_response_json_(std::move(raw_response_json)) {}
 
 bool CodroidController::isKinematicsModelInited_ = false;
 
@@ -62,29 +137,27 @@ RobotRealtimeState CodroidController::buildRobotRealtimeState_(const CriInternal
     if (!data_valid)
         return s;
 
-    s.joint_position_rad.assign(c.joint_pos_rad.begin(), c.joint_pos_rad.end());
-    s.joint_velocity_rad_s.assign(c.joint_vel_rad_s.begin(), c.joint_vel_rad_s.end());
-    s.tcp_pose.assign(c.tcp_pose.begin(), c.tcp_pose.end());
-    s.tcp_velocity.assign(c.tcp_vel.begin(), c.tcp_vel.end());
-    s.tcp_line_speed_m_s = c.tcp_line_speed_m_s;
-    s.joint_torque_nm.assign(c.joint_torque_nm.begin(), c.joint_torque_nm.end());
-    s.joint_external_torque_nm.assign(c.joint_external_torque_nm.begin(), c.joint_external_torque_nm.end());
+    constexpr int kDecimals = 3;
+    constexpr double kRadToDeg = 180.0 / 3.14159265358979323846;
+
+    s.status1_raw = c.status_word1;
+    s.status2_raw = c.status_word2;
 
     const uint16_t w1 = c.status_word1;
     s.project_running = (w1 & (1u << 0)) != 0;
     s.project_stopped = (w1 & (1u << 1)) != 0;
     s.project_paused = (w1 & (1u << 2)) != 0;
-    s.servo_on = (w1 & (1u << 3)) != 0;
-    s.servo_off = (w1 & (1u << 4)) != 0;
+    s.enabling = (w1 & (1u << 3)) != 0;
+    s.not_enabled = (w1 & (1u << 4)) != 0;
     s.manual_mode = (w1 & (1u << 5)) != 0;
     s.dragging = (w1 & (1u << 6)) != 0;
-    s.moving = (w1 & (1u << 7)) != 0;
+    s.in_motion = (w1 & (1u << 7)) != 0;
 
-    s.collision_stop = (w1 & (1u << 8)) != 0;
-    s.in_safe_position = (w1 & (1u << 9)) != 0;
-    s.alarm = (w1 & (1u << 10)) != 0;
+    s.collision_stopped = (w1 & (1u << 8)) != 0;
+    s.in_safety_position = (w1 & (1u << 9)) != 0;
+    s.has_alarm = (w1 & (1u << 10)) != 0;
     s.simulation_mode = (w1 & (1u << 11)) != 0;
-    s.emergency_stop = (w1 & (1u << 12)) != 0;
+    s.emergency_stop_pressed = (w1 & (1u << 12)) != 0;
     s.rescue_mode = (w1 & (1u << 13)) != 0;
     s.auto_mode = (w1 & (1u << 14)) != 0;
     s.remote_mode = (w1 & (1u << 15)) != 0;
@@ -92,12 +165,56 @@ RobotRealtimeState CodroidController::buildRobotRealtimeState_(const CriInternal
     const uint16_t w2 = c.status_word2;
     s.realtime_control_mode = (w2 & (1u << 0)) != 0;
     s.cri_error_code = static_cast<uint8_t>(w2 >> 8);
+
+    s.joint_position.resize(6);
+    s.joint_velocity.resize(6);
+    for (int i = 0; i < 6; ++i) {
+        s.joint_position[static_cast<size_t>(i)] = c.joint_pos_rad[static_cast<size_t>(i)] * kRadToDeg;
+        s.joint_velocity[static_cast<size_t>(i)] = c.joint_vel_rad_s[static_cast<size_t>(i)] * kRadToDeg;
+    }
+    cri_round_vec_in_place(s.joint_position, kDecimals);
+    cri_round_vec_in_place(s.joint_velocity, kDecimals);
+
+    s.tcp_pose.resize(6);
+    s.tcp_velocity.resize(6);
+    for (int i = 0; i < 3; ++i) {
+        s.tcp_pose[static_cast<size_t>(i)] = c.tcp_pose[static_cast<size_t>(i)] * M_TO_MM;
+        s.tcp_velocity[static_cast<size_t>(i)] = c.tcp_vel[static_cast<size_t>(i)] * M_TO_MM;
+    }
+    for (int i = 3; i < 6; ++i) {
+        s.tcp_pose[static_cast<size_t>(i)] = c.tcp_pose[static_cast<size_t>(i)] * kRadToDeg;
+        s.tcp_velocity[static_cast<size_t>(i)] = c.tcp_vel[static_cast<size_t>(i)] * kRadToDeg;
+    }
+    cri_round_vec_in_place(s.tcp_pose, kDecimals);
+    cri_round_vec_in_place(s.tcp_velocity, kDecimals);
+
+    s.tcp_linear_velocity_mm_s = cri_round_to_decimals_away(c.tcp_line_speed_m_s * M_TO_MM, kDecimals);
+
+    s.joint_output_torque.resize(6);
+    s.joint_external_force.resize(6);
+    for (int i = 0; i < 6; ++i) {
+        s.joint_output_torque[static_cast<size_t>(i)] =
+            cri_round_to_decimals_away(c.joint_torque_nm[static_cast<size_t>(i)], kDecimals);
+        s.joint_external_force[static_cast<size_t>(i)] =
+            cri_round_to_decimals_away(c.joint_external_torque_nm[static_cast<size_t>(i)], kDecimals);
+    }
+
+    s.external_axis_position.clear();
     return s;
 }
 
 RobotRealtimeState CodroidController::getRobotRealtimeState() const {
     std::lock_guard<std::mutex> lock(cri_cache_mtx_);
     return buildRobotRealtimeState_(cri_cache_, cri_cache_valid_);
+}
+
+void CodroidController::setCriDataReceivedHandler(CriDataReceivedHandler handler) {
+    std::lock_guard<std::mutex> lk(cri_handler_mtx_);
+    cri_data_received_handler_ = std::move(handler);
+}
+
+void CodroidController::setThrowOnCommandError(bool enable) {
+    throw_on_command_error_ = enable;
 }
 
 /**
@@ -110,25 +227,43 @@ RobotRealtimeState CodroidController::getRobotRealtimeState() const {
  * @return false 
  */
 bool CodroidController::connectTcpOnly(const std::string& ip, int port) {
+    std::lock_guard<std::recursive_mutex> life(lifecycle_mtx_);
+    stopTcpRecvAndDispatch_unlocked_();
     try {
         last_ip_ = ip;
         last_port_ = port;
 
-        if (cmd_socket_->is_open()) {
-            asio::error_code ec;
-            cmd_socket_->shutdown(asio::ip::tcp::socket::shutdown_both, ec);
-            cmd_socket_->close(ec);
-        }
+        if (!cmd_socket_)
+            cmd_socket_ = std::make_unique<asio::ip::tcp::socket>(io_context_);
 
         asio::ip::tcp::resolver resolver(io_context_);
         auto endpoints = resolver.resolve(ip, std::to_string(port));
         asio::connect(*cmd_socket_, endpoints);
         cmd_socket_->set_option(asio::ip::tcp::no_delay(true));
+
+        cmd_buffer_.clear();
+        tcp_recv_running_ = true;
+        publish_dispatch_running_ = true;
+        tcp_recv_thread_ = std::thread(&CodroidController::tcpRecvLoop_, this);
+        publish_dispatch_thread_ = std::thread(&CodroidController::publishDispatchLoop_, this);
         return true;
     } catch (const std::exception& e) {
         std::cerr << "[SDK] TCP connect failed: " << e.what() << std::endl;
+        stopTcpRecvAndDispatch_unlocked_();
         return false;
     }
+}
+
+int CodroidController::NextRequestId() {
+    for (;;) {
+        const int n = next_request_id_.fetch_add(1, std::memory_order_relaxed);
+        if (n != 0)
+            return n;
+    }
+}
+
+bool CodroidController::connectTcp(const std::string& ip, int port) {
+    return connectTcpOnly(ip, port);
 }
 
 bool CodroidController::connect(const std::string& ip, int port, std::string local_ip) {
@@ -163,11 +298,14 @@ void CodroidController::stopCriUdpReceiver_() {
     cri_udp_running_ = false;
     if (cri_udp_socket_) {
         asio::error_code ec;
+        // 先 shutdown 再 close，否则阻塞在 udp::receive 上的线程在部分系统上不会立刻被唤醒，join 卡死
+        cri_udp_socket_->shutdown(asio::socket_base::shutdown_receive, ec);
         cri_udp_socket_->close(ec);
     }
     if (cri_udp_thread_.joinable())
         cri_udp_thread_.join();
     cri_udp_socket_.reset();
+    cri_udp_port_ = 0;
 }
 
 void CodroidController::criUdpReceiveLoop_() {
@@ -223,9 +361,21 @@ void CodroidController::parseCriPushPacket_(const uint8_t* data, std::size_t len
         o += 8;
     }
 
-    std::lock_guard<std::mutex> lock(cri_cache_mtx_);
-    cri_cache_ = snap;
-    cri_cache_valid_ = true;
+    {
+        std::lock_guard<std::mutex> lock(cri_cache_mtx_);
+        cri_cache_ = snap;
+        cri_cache_valid_ = true;
+    }
+
+    const RobotRealtimeState delivered = buildRobotRealtimeState_(snap, true);
+
+    CriDataReceivedHandler h_copy;
+    {
+        std::lock_guard<std::mutex> hk(cri_handler_mtx_);
+        h_copy = cri_data_received_handler_;
+    }
+    if (h_copy)
+        h_copy(delivered);
 }
 
 bool CodroidController::startCriUdpPushSession_() {
@@ -273,6 +423,10 @@ bool CodroidController::startCriUdpPushSession_() {
 }
 
 void CodroidController::disconnect() {
+    {
+        std::lock_guard<std::mutex> plock(publish_mtx_);
+        publish_subs_.clear();
+    }
     if (cri_push_active_ && cmd_socket_ && cmd_socket_->is_open()) {
         json db;
         db["ip"] = local_ip_;
@@ -285,104 +439,414 @@ void CodroidController::disconnect() {
         std::lock_guard<std::mutex> lock(cri_cache_mtx_);
         cri_cache_valid_ = false;
     }
+    {
+        std::lock_guard<std::mutex> lk(cri_handler_mtx_);
+        cri_data_received_handler_ = {};
+    }
 
-    try {
-        if (cmd_socket_ && cmd_socket_->is_open()) {
-            cmd_socket_->shutdown(asio::ip::tcp::socket::shutdown_both);
-            cmd_socket_->close();
+    stopTcpRecvAndDispatch_();
+}
+
+void CodroidController::failAllPendingResponses_() {
+    std::map<int, std::shared_ptr<std::promise<std::string>>> swap_map;
+    {
+        std::lock_guard<std::mutex> plock(pending_mtx_);
+        swap_map.swap(pending_responses_);
+    }
+    for (auto& kv : swap_map) {
+        try {
+            kv.second->set_value("");
+        } catch (...) {
         }
-    } catch (...) {}
+    }
+}
+
+void CodroidController::stopTcpRecvAndDispatch_() {
+    std::lock_guard<std::recursive_mutex> life(lifecycle_mtx_);
+    stopTcpRecvAndDispatch_unlocked_();
+}
+
+void CodroidController::stopTcpRecvAndDispatch_unlocked_() {
+    tcp_recv_running_ = false;
+    if (cmd_socket_ && cmd_socket_->is_open()) {
+        asio::error_code ec;
+        cmd_socket_->shutdown(asio::socket_base::shutdown_both, ec);
+        cmd_socket_->close(ec);
+    }
+    if (tcp_recv_thread_.joinable())
+        tcp_recv_thread_.join();
+
+    {
+        std::lock_guard<std::mutex> lk(publish_queue_mtx_);
+        publish_dispatch_running_ = false;
+    }
+    publish_dispatch_cv_.notify_all();
+    if (publish_dispatch_thread_.joinable())
+        publish_dispatch_thread_.join();
+
+    {
+        std::lock_guard<std::mutex> lk(publish_queue_mtx_);
+        while (!publish_queue_.empty())
+            publish_queue_.pop();
+    }
+
+    cmd_buffer_.clear();
+    failAllPendingResponses_();
+
+    // 与 C# `Disconnect` 语义一致：会话结束 = 收包/分发线程已 join + TCP 套接字释放，避免进程退出后仍挂接 I/O
+    cmd_socket_.reset();
+}
+
+void CodroidController::stopTcpRecvThreadOnly_unlocked_() {
+    tcp_recv_running_ = false;
+    if (cmd_socket_ && cmd_socket_->is_open()) {
+        asio::error_code ec;
+        cmd_socket_->shutdown(asio::socket_base::shutdown_both, ec);
+        cmd_socket_->close(ec);
+    }
+    if (tcp_recv_thread_.joinable())
+        tcp_recv_thread_.join();
     cmd_buffer_.clear();
 }
 
+void CodroidController::startTcpRecvThreadAfterSocketConnected_unlocked_() {
+    cmd_buffer_.clear();
+    tcp_recv_running_ = true;
+    tcp_recv_thread_ = std::thread(&CodroidController::tcpRecvLoop_, this);
+}
+
+void CodroidController::tcpRecvLoop_() {
+    char chunk[4096];
+    while (tcp_recv_running_.load()) {
+        if (!cmd_socket_ || !cmd_socket_->is_open())
+            break;
+        asio::error_code ec;
+        std::size_t n = cmd_socket_->read_some(asio::buffer(chunk), ec);
+        if (ec || n == 0)
+            break;
+        cmd_buffer_.append(chunk, n);
+        if (cmd_buffer_.length() > 1024 * 512) {
+            cmd_buffer_.clear();
+            break;
+        }
+        while (true) {
+            std::string fragment;
+            if (!tryPopCompleteJson(cmd_buffer_, fragment))
+                break;
+            dispatchParsedJson_(fragment);
+        }
+    }
+    tcp_recv_running_ = false;
+}
+
+void CodroidController::publishDispatchLoop_() {
+    while (true) {
+        PublishQueueItem item;
+        bool has_item = false;
+        {
+            std::unique_lock<std::mutex> lk(publish_queue_mtx_);
+            publish_dispatch_cv_.wait(lk, [&] {
+                return !publish_queue_.empty() || !publish_dispatch_running_.load();
+            });
+            if (!publish_dispatch_running_.load() && publish_queue_.empty())
+                return;
+            if (!publish_queue_.empty()) {
+                item = std::move(publish_queue_.front());
+                publish_queue_.pop();
+                has_item = true;
+            }
+        }
+        if (has_item) {
+            for (auto& h : item.handlers) {
+                if (h) {
+                    try {
+                        h(item.notification);
+                    } catch (...) {
+                    }
+                }
+            }
+        }
+    }
+}
+
+void CodroidController::dispatchParsedJson_(const std::string& fragment) {
+    nlohmann::json j;
+    try {
+        j = nlohmann::json::parse(fragment);
+    } catch (...) {
+        return;
+    }
+
+    int msg_id = 0;
+    if (tryExtractJsonRequestId(j, msg_id)) {
+        std::shared_ptr<std::promise<std::string>> prom;
+        {
+            std::lock_guard<std::mutex> plock(pending_mtx_);
+            auto it = pending_responses_.find(msg_id);
+            if (it != pending_responses_.end()) {
+                prom = it->second;
+                pending_responses_.erase(it);
+            }
+        }
+        if (prom) {
+            try {
+                prom->set_value(fragment);
+            } catch (...) {
+            }
+            return;
+        }
+        return;
+    }
+
+    if (!j.contains("ty") || !j["ty"].is_string())
+        return;
+
+    const std::string ty = j["ty"].get<std::string>();
+    std::vector<PublishTopicHandler> handlers;
+    {
+        std::lock_guard<std::mutex> plock(publish_mtx_);
+        auto it = publish_subs_.find(ty);
+        if (it != publish_subs_.end()) {
+            for (const auto& pr : it->second)
+                handlers.push_back(pr.second);
+        }
+    }
+    if (handlers.empty())
+        return;
+
+    PublishQueueItem qitem;
+    qitem.notification.ty = ty;
+    qitem.notification.db =
+        (j.contains("db") && !j["db"].is_null()) ? j["db"] : nlohmann::json::object();
+    qitem.notification.raw_json = fragment;
+    qitem.handlers = std::move(handlers);
+    {
+        std::lock_guard<std::mutex> lk(publish_queue_mtx_);
+        publish_queue_.push(std::move(qitem));
+    }
+    publish_dispatch_cv_.notify_one();
+}
 
 /**
  * @brief Send a request to the Codroid server via the Command Channel
  *        通过指令通道向 Codroid 服务器发送请求并同步等待响应
- * 
+ *
  * @param type request type / 请求类型 (例如 "Robot/switchOn")
  * @param data request data / 请求数据 (JSON 对象)
  * @param id request ID / 请求 ID
  * @return Response / 响应结果结构体
  */
 Response CodroidController::sendCommand(const std::string& type, const nlohmann::json& data, int id) {
-    // 1. 加锁，保证指令通道的原子性
-    std::lock_guard<std::mutex> lock(cmd_mtx_);
+    auto prom = std::make_shared<std::promise<std::string>>();
+    std::future<std::string> fut = prom->get_future();
+
+    {
+        std::lock_guard<std::mutex> plock(pending_mtx_);
+        if (!pending_responses_.emplace(id, prom).second) {
+            throw CodroidException("Duplicate request id " + std::to_string(id) +
+                                   ". Use NextRequestId() for concurrent commands.");
+        }
+    }
 
     Response resp;
     resp.id = id;
     resp.ty = type;
 
-    // --- 逻辑 A: 发送前的连接自检 ---
-    if (!cmd_socket_ || !cmd_socket_->is_open()) {
-        std::cout << "[SDK] Socket closed. Attempting to reconnect..." << std::endl;
-        if (!this->connectTcpOnly(last_ip_, last_port_)) {
-            resp.error_msg = "Command socket is disconnected and reconnection failed.";
-            return resp;
+    const std::string& req_ty_capture = type;
+    auto finalize = [&](Response r, const std::string* raw_wire) -> Response {
+        if (raw_wire && !raw_wire->empty())
+            r.raw_json = *raw_wire;
+        if (throw_on_command_error_ && !r.error_msg.empty()) {
+            throw CodroidCommandException(r.id, r.ty.empty() ? req_ty_capture : r.ty, r.error_msg,
+                                          r.raw_json);
+        }
+        return r;
+    };
+
+    {
+        std::unique_lock<std::mutex> lock(cmd_mtx_);
+
+        if (!cmd_socket_ || !cmd_socket_->is_open()) {
+            std::cout << "[SDK] Socket closed. Attempting to reconnect..." << std::endl;
+            lock.unlock();
+            try {
+                std::lock_guard<std::recursive_mutex> life(lifecycle_mtx_);
+                if (!cmd_socket_)
+                    cmd_socket_ = std::make_unique<asio::ip::tcp::socket>(io_context_);
+                stopTcpRecvThreadOnly_unlocked_();
+                asio::ip::tcp::resolver resolver(io_context_);
+                auto endpoints = resolver.resolve(last_ip_, std::to_string(last_port_));
+                asio::connect(*cmd_socket_, endpoints);
+                cmd_socket_->set_option(asio::ip::tcp::no_delay(true));
+                startTcpRecvThreadAfterSocketConnected_unlocked_();
+            } catch (const std::exception& e) {
+                resp.error_msg =
+                    std::string("Command socket is disconnected and reconnection failed: ") + e.what();
+            }
+            lock.lock();
+        }
+
+        if (resp.error_msg.empty()) {
+            try {
+                nlohmann::json req_json;
+                req_json["id"] = id;
+                req_json["ty"] = type;
+                req_json["db"] = data.is_null() ? nlohmann::json::object() : data;
+
+                std::string request_str = req_json.dump() + "\n";
+
+                asio::error_code ec;
+                asio::write(*cmd_socket_, asio::buffer(request_str), ec);
+
+                if (ec) {
+                    std::cerr << "[SDK] Write failed (" << ec.message() << "). Retrying once..." << std::endl;
+                    lock.unlock();
+                    try {
+                        std::lock_guard<std::recursive_mutex> life(lifecycle_mtx_);
+                        stopTcpRecvThreadOnly_unlocked_();
+                        asio::ip::tcp::resolver resolver(io_context_);
+                        auto endpoints = resolver.resolve(last_ip_, std::to_string(last_port_));
+                        asio::connect(*cmd_socket_, endpoints);
+                        cmd_socket_->set_option(asio::ip::tcp::no_delay(true));
+                        startTcpRecvThreadAfterSocketConnected_unlocked_();
+                    } catch (const std::exception& ex) {
+                        resp.error_msg = std::string("Network error during reconnect: ") + ex.what();
+                    }
+                    lock.lock();
+                    if (resp.error_msg.empty()) {
+                        ec.clear();
+                        asio::write(*cmd_socket_, asio::buffer(request_str), ec);
+                        if (ec)
+                            resp.error_msg = "Network error during write: " + ec.message();
+                    }
+                }
+
+            } catch (const std::exception& e) {
+                resp.error_msg = std::string("Command Channel network Error: ") + e.what();
+                if (cmd_socket_) {
+                    asio::error_code ec2;
+                    cmd_socket_->close(ec2);
+                }
+            }
         }
     }
 
+    if (!resp.error_msg.empty()) {
+        std::lock_guard<std::mutex> plock(pending_mtx_);
+        pending_responses_.erase(id);
+        try {
+            prom->set_value("");
+        } catch (...) {
+        }
+        return finalize(resp, nullptr);
+    }
+
+    std::string response_str;
     try {
-        nlohmann::json req_json;
-        req_json["id"] = id;
-        req_json["ty"] = type;
-        req_json["db"] = data.is_null() ? nlohmann::json::object() : data;
-
-        std::string request_str = req_json.dump() + "\n"; 
-
-        // --- 逻辑 B: 尝试写入并处理闪断 ---
-        asio::error_code ec;
-        asio::write(*cmd_socket_, asio::buffer(request_str), ec);
-
-        if (ec) {
-            // 如果写入失败（例如 broken pipe），尝试最后一次重连重发
-            std::cerr << "[SDK] Write failed (" << ec.message() << "). Retrying once..." << std::endl;
-            if (this->connectTcpOnly(last_ip_, last_port_)) {
-                asio::write(*cmd_socket_, asio::buffer(request_str));
-            } else {
-                resp.error_msg = "Network error during write: " + ec.message();
-                return resp;
-            }
+        if (fut.wait_for(std::chrono::seconds(10)) != std::future_status::ready) {
+            std::lock_guard<std::mutex> plock(pending_mtx_);
+            pending_responses_.erase(id);
+            resp.error_msg = "Command receive timeout (10s).";
+            return finalize(resp, nullptr);
         }
+        response_str = fut.get();
+    } catch (...) {
+        std::lock_guard<std::mutex> plock(pending_mtx_);
+        pending_responses_.erase(id);
+        resp.error_msg = "Command wait interrupted.";
+        return finalize(resp, nullptr);
+    }
 
-        // 3. 接收回复
-        // 注意：此处 cmd_buffer_ 是类成员，用于分包拼接
-        std::string response_str = receiveRaw(*cmd_socket_, cmd_buffer_);
-        
-        if (response_str.empty()) {
-            resp.error_msg = "Command receive timeout or empty response from robot.";
-            return resp;
-        }
+    if (response_str.empty()) {
+        resp.error_msg = "Command socket disconnected while waiting for response.";
+        return finalize(resp, nullptr);
+    }
 
-        // 4. 解析响应 JSON
+    try {
         nlohmann::json j_resp = nlohmann::json::parse(response_str);
 
-        if (j_resp.contains("id")) resp.id = j_resp["id"].get<int>();
-        if (j_resp.contains("ty")) resp.ty = j_resp["ty"].get<std::string>();
+        int parsed_id = id;
+        if (tryExtractJsonRequestId(j_resp, parsed_id))
+            resp.id = parsed_id;
+        if (j_resp.contains("ty") && j_resp["ty"].is_string())
+            resp.ty = j_resp["ty"].get<std::string>();
 
-        // 5. 检查业务层错误 ("err" 字段)
         if (j_resp.contains("err") && !j_resp["err"].is_null()) {
-            if (j_resp["err"].is_string()) {
+            if (j_resp["err"].is_string())
                 resp.error_msg = j_resp["err"].get<std::string>();
-            } else {
+            else
                 resp.error_msg = j_resp["err"].dump();
-            }
         } else {
             resp.error_msg = "";
             resp.db = (j_resp.contains("db") && !j_resp["db"].is_null()) ? j_resp["db"] : nlohmann::json::object();
         }
-
     } catch (const nlohmann::json::parse_error& e) {
         resp.error_msg = std::string("JSON Parse Error: ") + e.what();
-    } catch (const std::exception& e) {
-        // 如果这里捕获到异常，说明链路在读取中途彻底崩了
-        resp.error_msg = std::string("Command Channel network Error: ") + e.what();
-        // 发生严重网络错误时，主动断开 socket 状态，方便下次重连
-        if (cmd_socket_) cmd_socket_->close(); 
     }
 
-    return resp;
-}   
+    return finalize(resp, &response_str);
+}
+
+PublishTopicSubscription CodroidController::subscribePublishTopic(std::string topicTy,
+                                                                PublishTopicHandler handler,
+                                                                int tc_milliseconds) {
+    if (topicTy.empty())
+        throw CodroidException("subscribePublishTopic: topicTy is empty");
+    if (tc_milliseconds <= 0)
+        tc_milliseconds = 100;
+
+    const uint64_t sid = publish_sub_seq_.fetch_add(1, std::memory_order_relaxed);
+    bool first_for_topic = false;
+
+    {
+        std::lock_guard<std::mutex> plock(publish_mtx_);
+        auto& vec = publish_subs_[topicTy];
+        first_for_topic = vec.empty();
+        vec.emplace_back(sid, std::move(handler));
+    }
+
+    auto unsubscribe = [this, topicTy, sid]() {
+        std::lock_guard<std::mutex> plock(publish_mtx_);
+        auto it = publish_subs_.find(topicTy);
+        if (it == publish_subs_.end())
+            return;
+        auto& vec = it->second;
+        vec.erase(std::remove_if(vec.begin(), vec.end(),
+                                 [sid](const auto& p) { return p.first == sid; }),
+                  vec.end());
+        if (vec.empty())
+            publish_subs_.erase(it);
+    };
+
+    if (!first_for_topic)
+        return PublishTopicSubscription(unsubscribe);
+
+    std::lock_guard<std::mutex> clock(cmd_mtx_);
+    if (!cmd_socket_ || !cmd_socket_->is_open()) {
+        unsubscribe();
+        throw CodroidException("subscribePublishTopic: not connected");
+    }
+
+    try {
+        json frame;
+        frame["ty"] = topicTy;
+        frame["tc"] = tc_milliseconds;
+        std::string line = frame.dump() + "\n";
+        asio::error_code ec;
+        asio::write(*cmd_socket_, asio::buffer(line), ec);
+        if (ec) {
+            unsubscribe();
+            throw CodroidException("subscribePublishTopic write failed: " + ec.message());
+        }
+    } catch (const CodroidException&) {
+        throw;
+    } catch (const std::exception& e) {
+        unsubscribe();
+        throw CodroidException(std::string("subscribePublishTopic: ") + e.what());
+    }
+
+    return PublishTopicSubscription(std::move(unsubscribe));
+}
 
 void CodroidController::printResponse(const Response& resp) {
     std::cout << "-----------------------" << std::endl;
@@ -400,54 +864,6 @@ void CodroidController::printResponse(const Response& resp) {
 }
 
 
-
-/**
- * @brief Receive raw data from the Codroid server
- *        从 Codroid 服务器接收原始数据
- * 
- * @return std::string 
- */
-/**
- * 通用的分包处理函数：通过 {} 配对检测 JSON 完整性
- */
-// 在类成员中定义：std::string sub_buffer_;
-std::string CodroidController::receiveRaw(asio::ip::tcp::socket& socket, std::string& sticky_buffer) {
-    char chunk[1024];
-    while (true) {
-        // 1. 尝试从当前缓冲区提取完整 JSON
-        size_t brace_count = 0;
-        int first_brace = -1;
-        bool found = false;
-
-        for (int i = 0; i < (int)sticky_buffer.length(); ++i) {
-            if (sticky_buffer[i] == '{') {
-                if (first_brace == -1) first_brace = i;
-                brace_count++;
-            } else if (sticky_buffer[i] == '}') {
-                if (first_brace != -1) {
-                    brace_count--;
-                    if (brace_count == 0) {
-                        // 提取从第一个 { 到匹配的 }
-                        std::string res = sticky_buffer.substr(first_brace, i - first_brace + 1);
-                        sticky_buffer.erase(0, i + 1); // 丢弃已处理部分
-                        return res;
-                    }
-                }
-            }
-        }
-
-        // 2. 缓冲区内没有完整 JSON，从网络读取
-        asio::error_code ec;
-        size_t length = socket.read_some(asio::buffer(chunk, sizeof(chunk)), ec);
-        if (ec || length == 0) return "";
-        sticky_buffer.append(chunk, length);
-
-        if (sticky_buffer.length() > 1024 * 512) {
-            sticky_buffer.clear();
-            throw std::runtime_error("Buffer overflow");
-        }
-    }
-}
 
 // --- 2.1 运行脚本 ---
 /**
@@ -967,7 +1383,7 @@ Response CodroidController::setManualSpeedRate(int speed, int id) {
         return resp;
     }
 
-    return sendCommand("Robot/setManualSpeedRate", speed, id);
+    return sendCommand("Robot/setManualMoveRate", speed, id);
 }
 
 // --- 11.7 设置自动运动倍率 ---
@@ -982,12 +1398,12 @@ Response CodroidController::setAutoSpeedRate(int speed, int id) {
     if (speed < 0 || speed > 100) {
         Response resp;
         resp.id = id;
-        resp.ty = "Robot/setAutoSpeedRate";
+        resp.ty = "Robot/setAutoMoveRate";
         resp.error_msg = "Invalid speed rate: " + std::to_string(speed) + ". Value must be between 0 and 100.";
         return resp;
     }
 
-    return sendCommand("Robot/setAutoSpeedRate", speed, id);
+    return sendCommand("Robot/setAutoMoveRate", speed, id);
 }
 
 // --- 11.8 运动指令(move) ---
@@ -1136,6 +1552,10 @@ Response CodroidController::toManual(int id) {
     return sendCommand("Robot/toManual", json::object(), id);
 }
 
+Response CodroidController::toManualDirect(int id) {
+    return sendCommand("Robot/toManual", json(""), id);
+}
+
 // --- 12.4 进入自动模式 ---
 /** 
  * @brief Enter automatic mode
@@ -1159,6 +1579,10 @@ Response CodroidController::toAuto(int id) {
 Response CodroidController::toRemote(int id) {
     sendCommand("Robot/toAuto", json::object(), id); // 先切自动，确保状态正确
     return sendCommand("Robot/toRemote", json::object(), id);
+}
+
+Response CodroidController::toRemoteDirect(int id) {
+    return sendCommand("Robot/toRemote", json(""), id);
 }
 
 // --- 12.7 进入仿真模式 ---
@@ -1218,7 +1642,7 @@ Response CodroidController::stopDrag(int id) {
  * @return Response / 响应结果
  */
 Response CodroidController::clearError(int id) {
-    return sendCommand("Robot/clearError", json::object(), id);
+    return sendCommand("System/clearError", json(""), id);
 }
 
 // --- 13.1 获取IO状态 ---
@@ -1487,8 +1911,10 @@ Response CodroidController::startDataPush(const std::string& ip, int port, int d
     db["ip"] = ip;
     db["port"] = port;
     db["duration"] = duration;
-    if (highPercision)
+    if (highPercision) {
         db["highPercision"] = true;
+        db["mask"] = 0xFFFF;
+    }
 
     return sendCommand("CRI/StartDataPush", db, id);
 }
@@ -1502,14 +1928,31 @@ Response CodroidController::startDataPush(const std::string& ip, int port, int d
  * @return Response 响应结果
  */
 Response CodroidController::stopDataPush(int id) {
-    return sendCommand("CRI/StopDataPush", nlohmann::json::object(), id);
+    Response r = sendCommand("CRI/StopDataPush", nlohmann::json::object(), id);
+    // 与 C# `StopCriDataPush` 一致：无论 TCP 成功与否都关闭本机 UDP（`AGENTS.md` / SDK 契约）
+    cri_push_active_ = false;
+    {
+        std::lock_guard<std::mutex> lock(cri_cache_mtx_);
+        cri_cache_valid_ = false;
+        cri_cache_ = CriInternalCache{};
+    }
+    stopCriUdpReceiver_();
+    return r;
 }
 
 Response CodroidController::stopDataPush(const std::string& ip, int port, int id) {
     nlohmann::json db;
     db["ip"] = ip;
     db["port"] = port;
-    return sendCommand("CRI/StopDataPush", db, id);
+    Response r = sendCommand("CRI/StopDataPush", db, id);
+    cri_push_active_ = false;
+    {
+        std::lock_guard<std::mutex> lock(cri_cache_mtx_);
+        cri_cache_valid_ = false;
+        cri_cache_ = CriInternalCache{};
+    }
+    stopCriUdpReceiver_();
+    return r;
 }
 
 // --- 17.4 开启实时控制 ---
@@ -1527,6 +1970,14 @@ Response CodroidController::startControl(int duration, int startBuffer, int filt
     // 校验指令间隔 (1-16ms)
     if (duration < 1 || duration > 16) {
         Response r; r.id = id; r.error_msg = "Real-time duration must be [1, 16] ms";
+        return r;
+    }
+    if (1000 % duration != 0) {
+        Response r; r.id = id; r.error_msg = "Real-time duration must divide 1000 ms evenly";
+        return r;
+    }
+    if (filterType < 0 || filterType > 3) {
+        Response r; r.id = id; r.error_msg = "filterType must be [0, 3]";
         return r;
     }
     // 校验缓冲点 (1-100)
@@ -1552,7 +2003,7 @@ Response CodroidController::startControl(int duration, int startBuffer, int filt
  * @return Response 响应结果
  */
 Response CodroidController::stopControl(int id){
-    return sendCommand("CRI/StopControl", nlohmann::json::object(), id);
+    return sendCommand("CRI/StopControl", json(""), id);
 }
 
 // --- 19.1 设置碰撞灵敏度 ---

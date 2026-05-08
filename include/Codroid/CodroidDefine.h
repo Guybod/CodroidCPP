@@ -26,69 +26,88 @@ namespace Codroid {
         std::string ty;       ///< @~english Request type @~chinese 请求类型
         json db;              ///< @~english Return data @~chinese 返回数据内容
         std::string error_msg; ///< @~english Error message (empty if success) @~chinese 错误信息（成功则为空）
+        /** 最近一次完整响应 JSON（成功或失败皆可），对齐 C# 侧排查惯例。 */
+        std::string raw_json;
         Response() : id(0), db(json::object()) {}
     };
 
     /**
-     * @brief CRI 实时推送的语义化快照（关节用 vector、状态用 bool）。
-     * @note 需在 CodroidController::connect(ip, port, local_ip) 中传入非空 local_ip 开启 UDP；
-     *       未收到数据前 data_valid 为 false，各 vector 为空。
+     * @brief CRI 实时快照（与 **`AGENTS.md` §2.3.4** / C# `CriRealTimeData`）：关节 **度**，末端 **mm+度**，速度毫米/秒与度/秒；
+     *        布尔位语义与 **`CriRealtimePacketParser`**（C#）一致。
+     * @note 需在 CodroidController::connect(ip, port, local_ip) 中传入非空 local_ip 开启 UDP；未收到帧前 data_valid 为 false。
      */
     struct RobotRealtimeState {
         int64_t timestamp_ms = 0;
-        /** 是否已收到过至少一帧有效 CRI 数据 */
         bool data_valid = false;
 
-        /** 关节位置，单位 rad */
-        std::vector<double> joint_position_rad;
-        /** 关节速度，单位 rad/s */
-        std::vector<double> joint_velocity_rad_s;
-        /**
-         * 末端位姿 [x,y,z, rx,ry,rz]：x,y,z 单位 m；rx,ry,rz 单位 rad。
-         */
-        std::vector<double> tcp_pose;
-        /** 末端速度（线速度 m/s，角速度 rad/s，与协议一致） */
-        std::vector<double> tcp_velocity;
-        /** TCP 线速度标量，单位 m/s */
-        double tcp_line_speed_m_s = 0;
-        /** 关节输出力矩，单位 Nm */
-        std::vector<double> joint_torque_nm;
-        /** 关节外力矩，单位 Nm */
-        std::vector<double> joint_external_torque_nm;
+        uint16_t status1_raw = 0;
+        uint16_t status2_raw = 0;
 
-        // --- 状态数据 1：低 8 位（协议位 0~7）---
+        /** 关节位置（度），六轴。 */
+        std::vector<double> joint_position;
+        /** 关节速度（度/秒）。 */
+        std::vector<double> joint_velocity;
+        /** TCP [x,y,z,rx,ry,rz]，前三 mm，后三度（固定欧拉 XYZ 外旋）。 */
+        std::vector<double> tcp_pose;
+        /** 线分量 mm/s，角分量 °/s。 */
+        std::vector<double> tcp_velocity;
+        double tcp_linear_velocity_mm_s = 0.0;
+        /** 关节输出力矩（协议原始数值）。 */
+        std::vector<double> joint_output_torque;
+        /** 关节外力（协议原始数值）。 */
+        std::vector<double> joint_external_force;
+
+        /** 附加轴位置；当前固定解析策略下恒为空。 */
+        std::vector<double> external_axis_position;
+
         bool project_running = false;
         bool project_stopped = false;
         bool project_paused = false;
-        bool servo_on = false;
-        bool servo_off = false;
+        bool enabling = false;
+        bool not_enabled = false;
         bool manual_mode = false;
         bool dragging = false;
-        bool moving = false;
+        bool in_motion = false;
 
-        // --- 状态数据 1：高 8 位（协议位 8~15）---
-        bool collision_stop = false;
-        bool in_safe_position = false;
-        bool alarm = false;
+        bool collision_stopped = false;
+        bool in_safety_position = false;
+        bool has_alarm = false;
         bool simulation_mode = false;
-        bool emergency_stop = false;
+        bool emergency_stop_pressed = false;
         bool rescue_mode = false;
         bool auto_mode = false;
         bool remote_mode = false;
 
-        // --- 状态数据 2 ---
         bool realtime_control_mode = false;
-        /** 高 8 位：实时控制接口错误码 */
         uint8_t cri_error_code = 0;
     };
 
-    /**
-     * @brief @~english Codroid SDK Exception class @~chinese Codroid SDK 专用异常类
-     */
+    /** @brief 通用运行时错误。 */
     class CodroidException : public std::runtime_error {
     public:
-        explicit CodroidException(const std::string& message) 
+        explicit CodroidException(const std::string& message)
             : std::runtime_error(message) {}
+    };
+
+    /**
+     * @brief TCP 指令失败：**err 非空**、超时类错误；对齐 C# **`CodroidCommandException`**。
+     * @note 默认 **`CodroidController::sendCommand`** 返回 **`Response.error_msg`**；调用 **`setThrowOnCommandError(true)`**（经 CodroidClient 暴露）时改为抛异常。
+     */
+    class CODROID_API CodroidCommandException : public CodroidException {
+    public:
+        CodroidCommandException(int request_id, std::string command_ty, std::string controller_error,
+                                std::string raw_response_json);
+
+        int request_id() const noexcept { return request_id_; }
+        const std::string& command_ty() const noexcept { return command_ty_; }
+        const std::string& controller_error() const noexcept { return controller_error_; }
+        const std::string& raw_response_json() const noexcept { return raw_response_json_; }
+
+    private:
+        int request_id_{};
+        std::string command_ty_;
+        std::string controller_error_;
+        std::string raw_response_json_;
     };
 
     // ========================================================================
@@ -349,8 +368,67 @@ namespace Codroid {
         RegisterInfo() = default;
     };
 
-    // 回调函数定义：参数1是主题名称(ty)，参数2是具体数据内容(db)
-    using TopicCallback = std::function<void(const std::string&, const nlohmann::json&)>;
+    /**
+     * @brief 主题推送内容（与 C# PublishNotification 对齐：ty / db / 原始 JSON）。
+     */
+    struct PublishNotification {
+        std::string ty;
+        nlohmann::json db;
+        std::string raw_json;
+    };
+
+    using PublishTopicHandler = std::function<void(const PublishNotification&)>;
+
+    /**
+     * @brief 订阅句柄：析构或 Dispose 时仅移除本地回调，不向控制器发退订（与 C# 一致）。
+     */
+    class PublishTopicSubscription {
+        std::function<void()> dispose_;
+
+    public:
+        PublishTopicSubscription() = default;
+        explicit PublishTopicSubscription(std::function<void()> d) : dispose_(std::move(d)) {}
+
+        ~PublishTopicSubscription() { reset(); }
+
+        PublishTopicSubscription(const PublishTopicSubscription&) = delete;
+        PublishTopicSubscription& operator=(const PublishTopicSubscription&) = delete;
+
+        PublishTopicSubscription(PublishTopicSubscription&& o) noexcept : dispose_(std::move(o.dispose_)) {
+            o.dispose_ = nullptr;
+        }
+
+        PublishTopicSubscription& operator=(PublishTopicSubscription&& o) noexcept {
+            if (this != &o) {
+                reset();
+                dispose_ = std::move(o.dispose_);
+                o.dispose_ = nullptr;
+            }
+            return *this;
+        }
+
+        void Dispose() { reset(); }
+
+    private:
+        void reset() {
+            if (dispose_) {
+                auto f = std::move(dispose_);
+                dispose_ = nullptr;
+                f();
+            }
+        }
+    };
+
+    /** @brief 协议 15.x 主题字面量（与 AGENTS.md 完全一致） */
+    struct PublishTopics {
+        static constexpr const char* ProjectState = "publish/ProjectState";
+        static constexpr const char* VarUpdate = "publish/VarUpdate";
+        static constexpr const char* RobotStatus = "publish/RobotStatus";
+        static constexpr const char* RobotPosture = "publish/RobotPosture";
+        static constexpr const char* RobotCoordinate = "publish/RobotCoordinate";
+        static constexpr const char* Log = "publish/Log";
+        static constexpr const char* Error = "publish/Error";
+    };
 
     // ========================================================================
     // 5. 脚本参数 (script)

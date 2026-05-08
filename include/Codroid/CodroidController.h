@@ -7,6 +7,12 @@
 #define CODROID_CONTROLLER_H
 
 #include "CodroidDefine.h"
+#include <condition_variable>
+#include <functional>
+#include <future>
+#include <map>
+#include <queue>
+#include <unordered_map>
 #include <unordered_set>
 #include <asio.hpp>
 #include <memory>
@@ -24,6 +30,17 @@
 #include "../../kinematics/robotModel.h"
 
 namespace Codroid {
+
+/**
+ * @section codroid_threading 线程安全（仅用本 SDK 时的约定）
+ *
+ * - **可多线程并发**调用 `sendCommand` 及所有最终走 TCP 的高层 API，前提是：同一时刻任意两条在途请求使用 **不同的** `id`。
+ *   请使用 `NextRequestId()` 生成单调递增 id（与 C# `NextId` 语义一致）。若重复注册同一 `id`，将抛出 `CodroidException`。
+ * - **`connect` / `connectTcpOnly` / `disconnect`** 与 **收包线程生命周期** 由内部 `lifecycle_mtx_` 串行化；不要在多线程上同时调用 `disconnect` 与其它指令而不做外部同步（单客户端实例通常单线程断开即可）。
+ * - **`getRobotRealtimeState`** 与 CRI 缓存使用独立互斥量，可与指令线程并发读取。
+ * - **推送回调**在专用分发线程上执行；回调内可再调 `sendCommand`，但请避免在回调内长时间阻塞或自旋，否则会积压推送。SDK **不保证** 用户在回调或业务层自造的死锁/竞态。
+ * - **“绝对”安全**：无法保证（用户可在回调里与其它锁乱序）。在遵守上述约定且仅通过本 SDK 公开 API 访问控制器时，SDK 内部对 TCP 写、pending 匹配、连接/收包线程启停做了互斥保护。
+ */
 
 // 使用 C++17 的 inline constexpr，避免重复定义错误，且效率最高
 #ifndef M_PI
@@ -60,7 +77,13 @@ public:
      *         @~chinese 连接成功返回 true。
      */
     bool connect(const std::string& ip, int port = 9001, std::string local_ip = {});
-    /** @brief @~english Disconnect from the robot @~chinese 断开与机器人的连接 */
+    /**
+     * @brief @~english TCP connect only (no mode switch, no CRI). Matches C# Connect. @~chinese 仅建立 TCP，不切模式、不启 CRI；与 C# Connect 对齐。
+     */
+    bool connectTcp(const std::string& ip, int port = 9001);
+    /**
+     * @brief 结束会话：停 CRI UDP、**join** TCP 收包与主题分发线程、关闭并释放指令套接字（可再次 `connect`）。
+     */
     void disconnect();
 
     /** @brief @~english Send a command to the robot @~chinese 向机器人发送指令
@@ -77,6 +100,12 @@ public:
      */
     Response sendCommand(const std::string& type, const json& data, int id);
 
+    /**
+     * @brief 为并发 `sendCommand` 生成唯一请求 id（原子递增，与 C# NextId 对齐）。
+     * @note 多线程发指令时请使用本方法，勿手写重复 id。
+     */
+    int NextRequestId();
+
     /** @brief @~english Print the response of a command @~chinese 打印指令的响应
      * @~english
      * @param action Action name.
@@ -86,6 +115,13 @@ public:
      * @param resp 响应对象。
      */
     static void printResponse(const Response& resp);
+
+    /**
+     * @brief @~english Subscribe to a publish topic (protocol 15.x). First subscription for @p topicTy sends `{ty,tc}` without id. @~chinese 订阅推送主题；该 topic 首次订阅时下发 `{ty,tc}`，无 id。
+     */
+    PublishTopicSubscription subscribePublishTopic(std::string topicTy,
+                                                   PublishTopicHandler handler,
+                                                   int tc_milliseconds = 100);
 
     // --- 2.1 运行脚本
         /** @brief @~english run script on the robot @~chinese 在机器人上运行脚本
@@ -603,6 +639,8 @@ public:
      *         @~chinese  包含指令执行结果的响应对象。
      */
     Response toManual(int id = 1);
+    /** @brief @~english Robot/toManual only (no prior ToAuto). C# ToManual. @~chinese 仅下发 Robot/toManual，不先切自动。 */
+    Response toManualDirect(int id = 1);
 
     // --- 12.4 进入自动模式
     /** @brief @~english Enter automatic mode on the robot @~chinese 进入机器人的自动模式
@@ -625,6 +663,8 @@ public:
      *         @~chinese  包含指令执行结果的响应对象。
      */
     Response toRemote(int id = 1);
+    /** @brief @~english Robot/toRemote only (no prior ToAuto). C# ToRemote. @~chinese 仅下发 Robot/toRemote，不先切自动。 */
+    Response toRemoteDirect(int id = 1);
 
     // --- 12.7 进入仿真模式 ---
     /** @brief @~english Enter simulation mode on the robot @~chinese 进入机器人的仿真模式
@@ -889,8 +929,23 @@ public:
      */
     Response stopDataPush(const std::string& ip, int port, int id = 1);
 
-    /** @brief @~english Latest CRI realtime state (joints as vectors, flags as bool). @~chinese 线程安全读取最近一帧 CRI 数据（语义化结构体）。 */
+    /** @brief 线程安全快照；UDP 载荷经解析后为 **毫米/度**（与 C# **`CriData`**、`AGENTS.md` §2.3.4 一致）。 */
     RobotRealtimeState getRobotRealtimeState() const;
+
+    /**
+     * @brief 等价于 C# **`CriDataReceived`**：每帧 308 字节解析成功后回调；在工作线程触发，请勿阻塞。
+     * @note 传入独立快照副本，可与 **`getRobotRealtimeState`** 并行使用。
+     */
+    using CriDataReceivedHandler = std::function<void(const RobotRealtimeState&)>;
+    void setCriDataReceivedHandler(CriDataReceivedHandler handler);
+
+    /** 若为 true：**`sendCommand`** 在 **`error_msg` 非空**（含超时/网络）时 **`throw CodroidCommandException`**；默认 **false** 保持仅用 Response。 */
+    void setThrowOnCommandError(bool enable);
+    /** @copydoc setThrowOnCommandError */
+    bool getThrowOnCommandError() const noexcept { return throw_on_command_error_; }
+
+    /** @brief @~english UDP port bound for CRI push when connect(ip,port,local_ip) started push; 0 if disabled. @~chinese 开启 CRI 推送时本机绑定端口，用于 StopDataPush(ip, port)；未开启为 0。 */
+    int getCriUdpListenPort() const { return cri_udp_port_; }
 
     // --- 17.4 开启实时控制 ---
     /** @brief @~english Start real-time control on the robot with specified parameters @~chinese 以指定参数开启机器人的实时控制
@@ -1012,9 +1067,42 @@ private:
     std::unique_ptr<asio::ip::tcp::socket> cmd_socket_;
     std::mutex cmd_mtx_; // 指令通道加锁，保证请求-响应不交叉
 
-    std::string cmd_buffer_; // 指令通道的粘包缓冲区
-    // 内部辅助：接收完整 JSON
-    std::string receiveRaw(asio::ip::tcp::socket& socket, std::string& sticky_buffer);
+    std::string cmd_buffer_; // 仅由 tcpRecvLoop_ 写入与切分
+
+    std::mutex publish_mtx_;
+    std::unordered_map<std::string, std::vector<std::pair<uint64_t, PublishTopicHandler>>> publish_subs_;
+    std::atomic<uint64_t> publish_sub_seq_{1};
+
+    // --- TCP 收包线程 + 推送分发线程（与 C# FutureTcpClient 收包模型对齐）---
+    std::thread tcp_recv_thread_;
+    std::atomic<bool> tcp_recv_running_{false};
+
+    struct PublishQueueItem {
+        PublishNotification notification;
+        std::vector<PublishTopicHandler> handlers;
+    };
+    std::thread publish_dispatch_thread_;
+    std::atomic<bool> publish_dispatch_running_{false};
+    std::mutex publish_queue_mtx_;
+    std::condition_variable publish_dispatch_cv_;
+    std::queue<PublishQueueItem> publish_queue_;
+
+    std::mutex pending_mtx_;
+    std::map<int, std::shared_ptr<std::promise<std::string>>> pending_responses_;
+    std::atomic<int> next_request_id_{1};
+
+    /** 保护 connect / disconnect / 收包线程启停及 sendCommand 内重连临界区（可重入）。 */
+    std::recursive_mutex lifecycle_mtx_;
+
+    void tcpRecvLoop_();
+    void publishDispatchLoop_();
+    void dispatchParsedJson_(const std::string& fragment);
+    /** 停止 TCP 收包/推送分发线程并关闭指令 socket；会唤醒所有等待中的 sendCommand。 */
+    void stopTcpRecvAndDispatch_();
+    void stopTcpRecvAndDispatch_unlocked_();
+    void stopTcpRecvThreadOnly_unlocked_();
+    void startTcpRecvThreadAfterSocketConnected_unlocked_();
+    void failAllPendingResponses_();
 
     // --- 新增：用于记录连接信息，实现重连 ---
     std::string last_ip_;
@@ -1034,6 +1122,10 @@ private:
     mutable std::mutex cri_cache_mtx_;
     CriInternalCache cri_cache_{};
     bool cri_cache_valid_ = false;
+
+    std::mutex cri_handler_mtx_;
+    CriDataReceivedHandler cri_data_received_handler_;
+    bool throw_on_command_error_{false};
 
     bool connectTcpOnly(const std::string& ip, int port);
     void stopCriUdpReceiver_();

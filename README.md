@@ -2,6 +2,11 @@
 
 Codroid SDK 是一个用于机械臂远程控制的跨平台 C++ 开发工具包。它通过 TCP 通信协议实现与机器人的交互，涵盖了运动控制（movJ/movL/movC）、IO 管理、寄存器操作、数据流订阅及实时控制等核心功能。
 
+## 📚 文档导航
+
+- 使用文档：`SDK_GUIDE.md`
+- API 在线手册：[金山文档](https://www.kdocs.cn/l/cqlm2DOsjGRp)
+
 ## 🌟 特点
 
 - **开箱即用**：底层依赖库（Asio 和 nlohmann/json）已内置于 `third_party` 文件夹中，克隆仓库后无需额外安装系统依赖即可直接编译。
@@ -147,7 +152,7 @@ endif()
 ```
 
 ## 🛠️ 构建指南 -> Windows (Visual Studio / MSVC)
-在 Windows 平台上，本 SDK 使用 MSVC 编译器，建议使用 Visual Studio 2019 或 2022。
+在 Windows 平台上，本 SDK 使用 MSVC 编译器，支持 Visual Studio 2019 / 2022 / 2026（由 `build_msvc.bat` 选择）。
 #### 第一阶段：准备基础编译环境
 
 1. **安装 CMake：** 前往[CMake 官网](https://cmake.org/download/)下载并安装（建议版本 ≥ 3.10）。安装时请勾选“Add CMake to the system PATH”。

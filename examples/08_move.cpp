@@ -63,21 +63,21 @@ int main() {
     std::thread cri_thread([&]() {
         while (cri_poll.load()) {
             auto s = robot.getRobotRealtimeState();
-            if (s.data_valid && !s.joint_position_rad.empty()) {
+            if (s.data_valid && !s.joint_position.empty()) {
                 std::cout << "\rtimestamp=" << s.timestamp_ms 
-                          << " joint1(rad)=" << std::fixed
-                          << std::setprecision(4) << s.joint_position_rad[0] 
-                          << " joint2(rad)=" << std::fixed
-                          << std::setprecision(4) << s.joint_position_rad[1]
-                          << " joint3(rad)=" << std::fixed
-                          << std::setprecision(4) << s.joint_position_rad[2]
-                          << " joint4(rad)=" << std::fixed
-                          << std::setprecision(4) << s.joint_position_rad[3]
-                          << " joint5(rad)=" << std::fixed
-                          << std::setprecision(4) << s.joint_position_rad[4]
-                          << " joint6(rad)=" << std::fixed
-                          << std::setprecision(4) << s.joint_position_rad[5]
-                          << " moving=" << (s.moving ? "Y" : "N") << "    " << std::flush;
+                          << " joint1(deg)=" << std::fixed
+                          << std::setprecision(4) << s.joint_position[0] 
+                          << " joint2(deg)=" << std::fixed
+                          << std::setprecision(4) << s.joint_position[1]
+                          << " joint3(deg)=" << std::fixed
+                          << std::setprecision(4) << s.joint_position[2]
+                          << " joint4(deg)=" << std::fixed
+                          << std::setprecision(4) << s.joint_position[3]
+                          << " joint5(deg)=" << std::fixed
+                          << std::setprecision(4) << s.joint_position[4]
+                          << " joint6(deg)=" << std::fixed
+                          << std::setprecision(4) << s.joint_position[5]
+                          << " in_motion=" << (s.in_motion ? "Y" : "N") << "    " << std::flush;
             }
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }

@@ -3,6 +3,10 @@
 # 开启严格模式：遇到错误立即停止
 set -e
 
+# 始终从脚本所在目录执行，避免相对路径问题
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "${SCRIPT_DIR}"
+
 echo "=================================================="
 echo "      Codroid SDK Linux 构建脚本 (Ubuntu .so)      "
 echo "=================================================="
@@ -40,9 +44,9 @@ echo "[2/2] 开始编译 Linux 动态库 (.so) 及示例程序..."
 rm -rf build_linux
 mkdir -p build_linux && cd build_linux
 
-# 运行 CMake 和 Make
+# 运行 CMake 和 Build
 cmake ..
-make -j$(nproc)
+cmake --build . -j"$(nproc)"
 
 cd ..
 
@@ -56,5 +60,5 @@ echo ""
 echo "▶ 快速运行 move_test:"
 echo "   cd build_linux"
 echo "   export LD_LIBRARY_PATH=.:\$LD_LIBRARY_PATH"
-echo "   ./move_test"
+echo "   ./14_cri_trajectory"
 echo "=================================================="

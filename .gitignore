@@ -1,5 +1,7 @@
 # === 编译产物目录 (Build Directories) ===
 build/
+build_judge/
+build-linux/
 build_linux/
 build_windows/
 build_msvc/
@@ -38,6 +40,9 @@ mingw-toolchain.cmake
 .vscode/tasks.json
 .vscode/launch.json
 .vscode/c_cpp_properties.json
+# JetBrains / CLion
+.idea/
+
 # Visual Studio (MSVC)
 .vs/
 *.sln
@@ -68,15 +73,10 @@ venv/
 
 # 编译输出
 dist/
-build/
 *.egg-info/
 
 # 文档输出
 site/
-
-# IDE 设置
-.vscode/
-.idea/
 
 # 单元测试与覆盖率
 .pytest_cache/
@@ -86,3 +86,8 @@ htmlcov/
 
 # 本地环境配置文件
 .env
+
+# Markdown：除 README.md 外不入库
+*.md
+!README.md
+!SDK_GUIDE.md

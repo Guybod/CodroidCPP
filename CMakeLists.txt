@@ -39,7 +39,11 @@ include_directories(SYSTEM third_party)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 # 4. 定义源文件
-set(LIB_SOURCES src/CodroidController.cpp
+set(LIB_SOURCES
+    src/CodroidController.cpp
+    src/client.cpp
+    src/cri_realtime_dispatcher.cpp
+    src/trajectory_generator.cpp
 )
 
 # 5. 构建动态库
