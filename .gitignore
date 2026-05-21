@@ -27,11 +27,7 @@ docs/
 *.tar.gz
 *.zip
 *.7z
-# 版本发布产物（随 tag 入库）
-!releases/
-!releases/**/
-!releases/**/*.tar.gz
-!releases/**/*.zip
+releases/
 
 # 本地发布脚本
 build_mingw.bat

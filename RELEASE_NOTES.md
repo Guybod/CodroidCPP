@@ -48,10 +48,8 @@
 
 - **头文件路径**：统一为 `#include "Codroid/client.hpp"`（目录 `include/Codroid/`）。
 - **Linux 示例/库运行时**：示例程序 RUNPATH 已包含 `kinematics/`，便于加载 `libkdl.so`、`libFk_Ik_so.so`；亦可设置 `LD_LIBRARY_PATH=.:../kinematics`。
-- **打包脚本**：`package_linux.sh`、`package_msvc.bat`、`package_mingw.bat` 在生成目录后自动产出压缩包；本 tag 预置产物见 `releases/v2.1.0/`：
-  - `CodroidSDK-Linux-x64.tar.gz`
-  - `CodroidSDK-Windows-MSVC-x64.zip`
-  - `CodroidSDK-Windows-MinGW-x64.zip`
+- **打包脚本**：`package_linux.sh`、`package_msvc.bat`、`package_mingw.bat` 在生成目录后自动产出压缩包。
+- **预编译下载**：见 GitHub [Releases v2.1.0](https://github.com/Guybod/CodroidCPP/releases/tag/v2.1.0) 附件（不入库源码）。
 
 ---
 
