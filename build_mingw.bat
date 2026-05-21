@@ -36,27 +36,48 @@ if "%TYPE_CHOICE%"=="1" (
     goto CHOOSE_TYPE
 )
 
-:: Check toolchain availability
-where gcc >nul 2>nul
-if %errorlevel% neq 0 (
-    echo [Error] gcc not found in PATH. Please open MinGW shell or add MinGW bin to PATH.
-    goto ERROR
+:: Check MinGW toolchain (CMake MinGW Makefiles needs gcc, g++, and make)
+call :CHECK_TOOL gcc
+if errorlevel 1 goto ERROR
+call :CHECK_TOOL g++
+if errorlevel 1 goto ERROR
+
+set MAKE_PROG=
+where mingw32-make >nul 2>nul
+if not errorlevel 1 (
+    for /f "delims=" %%M in ('where mingw32-make 2^>nul') do (
+        set MAKE_PROG=%%M
+        goto MAKE_FOUND
+    )
 )
+where make >nul 2>nul
+if not errorlevel 1 (
+    for /f "delims=" %%M in ('where make 2^>nul') do (
+        set MAKE_PROG=%%M
+        goto MAKE_FOUND
+    )
+)
+echo [Error] mingw32-make or make not found in PATH.
+echo         Add MinGW-w64 bin directory to PATH, e.g. MSYS2: mingw64\bin
+goto ERROR
+
+:MAKE_FOUND
+echo [toolchain] make: !MAKE_PROG!
 
 where cmake >nul 2>nul
-if %errorlevel% neq 0 (
+if errorlevel 1 (
     echo [Error] cmake not found in PATH.
     goto ERROR
 )
 
 if /I "%BUILD_TYPE%"=="Both" (
     call :BUILD_ONE Debug
-    if %errorlevel% neq 0 goto ERROR
+    if errorlevel 1 goto ERROR
     call :BUILD_ONE Release
-    if %errorlevel% neq 0 goto ERROR
+    if errorlevel 1 goto ERROR
 ) else (
     call :BUILD_ONE %BUILD_TYPE%
-    if %errorlevel% neq 0 goto ERROR
+    if errorlevel 1 goto ERROR
 )
 
 echo.
@@ -86,12 +107,26 @@ echo ==================================================
 pause
 exit /b 0
 
+:CHECK_TOOL
+where %~1 >nul 2>nul
+if errorlevel 1 (
+    echo [Error] %~1 not found in PATH. Open "MinGW64" / "MSYS2 MinGW" shell or add its bin to PATH.
+    exit /b 1
+)
+for /f "delims=" %%T in ('where %~1 2^>nul') do (
+    echo [toolchain] %~1: %%T
+    exit /b 0
+)
+echo [Error] %~1 not found in PATH.
+exit /b 1
+
 :BUILD_ONE
 set CFG=%~1
 set CFG_LC=%CFG%
 if /I "%CFG%"=="Debug" set CFG_LC=debug
 if /I "%CFG%"=="Release" set CFG_LC=release
 set CFG_DIR=%BUILD_DIR%\%CFG_LC%
+set OUT_DLL=%CFG_DIR%\libCodroid.dll
 
 if exist "%CFG_DIR%" (
     echo [clean] Removing old %CFG% build directory...
@@ -99,13 +134,22 @@ if exist "%CFG_DIR%" (
 )
 
 echo [configure] %CFG% with MinGW Makefiles...
-cmake -S . -B "%CFG_DIR%" -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=%CFG%
-if %errorlevel% neq 0 exit /b %errorlevel%
+cmake -S . -B "%CFG_DIR%" -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=%CFG% ^
+    -DCMAKE_MAKE_PROGRAM="!MAKE_PROG!" ^
+    -DCMAKE_C_COMPILER=gcc ^
+    -DCMAKE_CXX_COMPILER=g++
+if errorlevel 1 exit /b 1
 
 echo [build] %CFG%...
 cmake --build "%CFG_DIR%" -j
-if %errorlevel% neq 0 exit /b %errorlevel%
+if errorlevel 1 exit /b 1
 
+if not exist "%OUT_DLL%" (
+    echo [Error] expected output missing: %OUT_DLL%
+    exit /b 1
+)
+
+echo [ok] %OUT_DLL%
 exit /b 0
 
 :ERROR
@@ -113,4 +157,4 @@ echo.
 echo !!!!!!!!!!!!!!! BUILD FAILED !!!!!!!!!!!!!!!
 echo.
 pause
-exit /b %errorlevel%
+exit /b 1
