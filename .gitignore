@@ -27,6 +27,11 @@ docs/
 *.tar.gz
 *.zip
 *.7z
+# 版本发布产物（随 tag 入库）
+!releases/
+!releases/**/
+!releases/**/*.tar.gz
+!releases/**/*.zip
 
 # 本地发布脚本
 build_mingw.bat
@@ -100,3 +105,4 @@ htmlcov/
 *.md
 !README.md
 !SDK_GUIDE.md
+!RELEASE_NOTES.md

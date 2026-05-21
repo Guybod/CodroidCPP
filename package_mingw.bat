@@ -35,20 +35,20 @@ mkdir "%PKG_DIR%\lib"
 mkdir "%PKG_DIR%\examples"
 mkdir "%PKG_DIR%\docs"
 
-echo [1/4] Copy headers...
+echo [1/5] Copy headers...
 xcopy /y /i include\Codroid\* "%PKG_DIR%\include\Codroid\" >nul
 
-echo [2/4] Copy binaries...
+echo [2/5] Copy binaries...
 copy /y "%BUILD_DIR%\libCodroid.dll" "%PKG_DIR%\bin\Codroid.dll" >nul
 copy /y "%BUILD_DIR%\libCodroid.dll.a" "%PKG_DIR%\lib\libCodroid.dll.a" >nul
 
-echo [3/4] Copy examples and docs...
+echo [3/5] Copy examples and docs...
 copy /y examples_client\*.cpp "%PKG_DIR%\examples\" >nul
 copy /y README.md "%PKG_DIR%\" >nul
 copy /y SDK_GUIDE.md "%PKG_DIR%\docs\" >nul
 if exist LICENSE copy /y LICENSE "%PKG_DIR%\" >nul
 
-echo [4/4] Generate package guide...
+echo [4/5] Generate package guide...
 (
 echo # Codroid SDK Windows MinGW x64 Package
 echo.
@@ -79,8 +79,19 @@ echo.
 echo - Copy `bin\Codroid.dll` beside your `.exe`, or add `bin\` to PATH.
 ) > "%PKG_DIR%\README_PACKAGE.md"
 
+set ARCHIVE=%PKG_ROOT%\CodroidSDK-Windows-MinGW-x64.zip
+echo [5/5] Create archive...
+if exist "%ARCHIVE%" del /f /q "%ARCHIVE%"
+powershell -NoProfile -Command "Compress-Archive -LiteralPath '%CD%\%PKG_DIR%' -DestinationPath '%CD%\%ARCHIVE%' -Force"
+if errorlevel 1 (
+    echo [Error] Failed to create %ARCHIVE%
+    goto ERROR
+)
+
 echo ==================================================
-echo Package created: %PKG_DIR%
+echo Package created:
+echo   dir : %PKG_DIR%
+echo   zip : %ARCHIVE%
 echo ==================================================
 pause
 exit /b 0

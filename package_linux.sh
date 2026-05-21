@@ -25,15 +25,15 @@ mkdir -p "${PKG_DIR}/lib"
 mkdir -p "${PKG_DIR}/examples"
 mkdir -p "${PKG_DIR}/docs"
 
-echo "[1/4] Copy headers..."
+echo "[1/5] Copy headers..."
 cp -a include/Codroid/. "${PKG_DIR}/include/Codroid/"
 
-echo "[2/4] Copy runtime libraries..."
+echo "[2/5] Copy runtime libraries..."
 cp "${BUILD_DIR}/libCodroid.so" "${PKG_DIR}/lib/"
 cp kinematics/libFk_Ik_so.so "${PKG_DIR}/lib/"
 cp kinematics/libkdl.so "${PKG_DIR}/lib/"
 
-echo "[3/4] Copy examples and docs..."
+echo "[3/5] Copy examples and docs..."
 cp examples_client/*.cpp "${PKG_DIR}/examples/"
 cp README.md "${PKG_DIR}/"
 cp SDK_GUIDE.md "${PKG_DIR}/docs/"
@@ -41,7 +41,7 @@ if [ -f LICENSE ]; then
     cp LICENSE "${PKG_DIR}/"
 fi
 
-echo "[4/4] Generate package guide..."
+echo "[4/5] Generate package guide..."
 cat > "${PKG_DIR}/README_PACKAGE.md" <<'EOF'
 # Codroid SDK Linux x64 Package
 
@@ -83,6 +83,13 @@ Keep these files reachable by the executable:
 They can be placed beside the executable or found through `LD_LIBRARY_PATH` / RPATH.
 EOF
 
+ARCHIVE="${PKG_ROOT}/CodroidSDK-Linux-x64.tar.gz"
+echo "[5/5] Create archive..."
+rm -f "${ARCHIVE}"
+tar -czf "${ARCHIVE}" -C "${PKG_ROOT}" "$(basename "${PKG_DIR}")"
+
 echo "=================================================="
-echo "Package created: ${PKG_DIR}"
+echo "Package created:"
+echo "  dir : ${PKG_DIR}"
+echo "  tar : ${ARCHIVE}"
 echo "=================================================="
