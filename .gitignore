@@ -29,9 +29,6 @@ docs/
 *.7z
 releases/
 
-# 本地发布脚本
-build_mingw.bat
-
 # === CMake 产生的中间文件 (CMake Artifacts) ===
 CMakeCache.txt
 CMakeFiles/
