@@ -79,7 +79,9 @@ build_msvc.bat
 准备环境：
 
 - CMake 已加入 PATH
-- MinGW-w64（包含 `gcc`、`g++`、`mingw32-make`）已加入 PATH
+- **同一套** MinGW-w64 工具链（`gcc`、`g++`、`mingw32-make` 须在**同一 `bin` 目录**）
+- MSYS2 推荐：`C:\msys64\mingw64\bin`（勿把 `ucrt64\bin` 与 `mingw64\bin` 混在 PATH 里）
+- 可选：设置环境变量 `MINGW_BIN=C:\msys64\mingw64\bin` 指定工具链根目录
 - 目标平台使用 x64
 
 编译：

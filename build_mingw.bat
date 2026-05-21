@@ -36,33 +36,9 @@ if "%TYPE_CHOICE%"=="1" (
     goto CHOOSE_TYPE
 )
 
-:: Check MinGW toolchain (CMake MinGW Makefiles needs gcc, g++, and make)
-call :CHECK_TOOL gcc
+:: Resolve gcc/g++/make from ONE MinGW bin directory (do not mix ucrt64 and mingw64)
+call :RESOLVE_TOOLCHAIN
 if errorlevel 1 goto ERROR
-call :CHECK_TOOL g++
-if errorlevel 1 goto ERROR
-
-set MAKE_PROG=
-where mingw32-make >nul 2>nul
-if not errorlevel 1 (
-    for /f "delims=" %%M in ('where mingw32-make 2^>nul') do (
-        set MAKE_PROG=%%M
-        goto MAKE_FOUND
-    )
-)
-where make >nul 2>nul
-if not errorlevel 1 (
-    for /f "delims=" %%M in ('where make 2^>nul') do (
-        set MAKE_PROG=%%M
-        goto MAKE_FOUND
-    )
-)
-echo [Error] mingw32-make or make not found in PATH.
-echo         Add MinGW-w64 bin directory to PATH, e.g. MSYS2: mingw64\bin
-goto ERROR
-
-:MAKE_FOUND
-echo [toolchain] make: !MAKE_PROG!
 
 where cmake >nul 2>nul
 if errorlevel 1 (
@@ -107,18 +83,60 @@ echo ==================================================
 pause
 exit /b 0
 
-:CHECK_TOOL
-where %~1 >nul 2>nul
-if errorlevel 1 (
-    echo [Error] %~1 not found in PATH. Open "MinGW64" / "MSYS2 MinGW" shell or add its bin to PATH.
+:RESOLVE_TOOLCHAIN
+set MINGW_BIN=
+set GCC=
+set GXX=
+set MAKE_PROG=
+
+:: Optional override: set MINGW_BIN=C:\msys64\mingw64\bin
+if defined MINGW_BIN (
+    if exist "!MINGW_BIN!\gcc.exe" goto TOOLCHAIN_VALIDATE
+    echo [Error] MINGW_BIN is set but gcc.exe not found: !MINGW_BIN!
     exit /b 1
 )
-for /f "delims=" %%T in ('where %~1 2^>nul') do (
-    echo [toolchain] %~1: %%T
-    exit /b 0
+
+:: Prefer MSYS2 mingw64 (recommended), then ucrt64, else first gcc on PATH
+if exist "C:\msys64\mingw64\bin\gcc.exe" set "MINGW_BIN=C:\msys64\mingw64\bin"
+if not defined MINGW_BIN if exist "C:\msys64\ucrt64\bin\gcc.exe" set "MINGW_BIN=C:\msys64\ucrt64\bin"
+if not defined MINGW_BIN (
+    for /f "delims=" %%G in ('where gcc 2^>nul') do (
+        for %%D in ("%%G") do set "MINGW_BIN=%%~dpD"
+        set "MINGW_BIN=!MINGW_BIN:~0,-1!"
+        goto TOOLCHAIN_VALIDATE
+    )
+    echo [Error] gcc not found. Open MSYS2 "MinGW x86_64" shell or add mingw64\bin to PATH.
+    exit /b 1
 )
-echo [Error] %~1 not found in PATH.
-exit /b 1
+
+:TOOLCHAIN_VALIDATE
+set "GCC=%MINGW_BIN%\gcc.exe"
+set "GXX=%MINGW_BIN%\g++.exe"
+
+if not exist "%GCC%" (
+    echo [Error] gcc not found: %GCC%
+    exit /b 1
+)
+if not exist "%GXX%" (
+    echo [Error] g++ not found: %GXX%
+    exit /b 1
+)
+
+if exist "%MINGW_BIN%\mingw32-make.exe" (
+    set "MAKE_PROG=%MINGW_BIN%\mingw32-make.exe"
+) else if exist "%MINGW_BIN%\make.exe" (
+    set "MAKE_PROG=%MINGW_BIN%\make.exe"
+) else (
+    echo [Error] mingw32-make.exe / make.exe not found in: %MINGW_BIN%
+    echo         MSYS2: pacman -S mingw-w64-x86_64-toolchain
+    exit /b 1
+)
+
+echo [toolchain] bin: %MINGW_BIN%
+echo [toolchain] gcc: %GCC%
+echo [toolchain] g++: %GXX%
+echo [toolchain] make: %MAKE_PROG%
+exit /b 0
 
 :BUILD_ONE
 set CFG=%~1
@@ -135,9 +153,9 @@ if exist "%CFG_DIR%" (
 
 echo [configure] %CFG% with MinGW Makefiles...
 cmake -S . -B "%CFG_DIR%" -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=%CFG% ^
-    -DCMAKE_MAKE_PROGRAM="!MAKE_PROG!" ^
-    -DCMAKE_C_COMPILER=gcc ^
-    -DCMAKE_CXX_COMPILER=g++
+    -DCMAKE_MAKE_PROGRAM="%MAKE_PROG%" ^
+    -DCMAKE_C_COMPILER="%GCC%" ^
+    -DCMAKE_CXX_COMPILER="%GXX%"
 if errorlevel 1 exit /b 1
 
 echo [build] %CFG%...
@@ -155,6 +173,9 @@ exit /b 0
 :ERROR
 echo.
 echo !!!!!!!!!!!!!!! BUILD FAILED !!!!!!!!!!!!!!!
+echo.
+echo Tip: use ONE MSYS2 toolchain only, e.g. C:\msys64\mingw64\bin
+echo      Do not mix ucrt64 gcc with mingw64 mingw32-make in PATH.
 echo.
 pause
 exit /b 1
