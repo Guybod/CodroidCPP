@@ -28,11 +28,8 @@ docs/
 *.zip
 *.7z
 
-# 本地发布脚本（不对外）
-package_linux.sh
-package_msvc.bat
+# 本地发布脚本
 build_mingw.bat
-package_mingw.bat
 
 # === CMake 产生的中间文件 (CMake Artifacts) ===
 CMakeCache.txt
