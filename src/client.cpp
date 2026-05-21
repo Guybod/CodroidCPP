@@ -388,17 +388,35 @@ CommandResult CodroidClient::SetUserCoordinateFrame(int frame_id, const ClientRo
     return to_client_result(impl_->controller.setUserCoordinateFrame(frame_id, to_internal_frame(frame), id));
 }
 
-CommandResult CodroidClient::MovJ(const std::vector<double>& joints_deg, double speed, double acceleration, int id) {
-    return to_client_result(impl_->controller.movJ(joints_deg, speed, acceleration, id));
+CommandResult CodroidClient::MovJ(const ClientJointPoint& target, double speed, double acceleration, int id) {
+    return to_client_result(impl_->controller.movJ(target, speed, acceleration, id));
 }
 
-CommandResult CodroidClient::MovL(const std::vector<double>& pose_mm_deg, double speed, double acceleration,
+CommandResult CodroidClient::MovJ(const ClientCartesianPoint& target, double speed, double acceleration, int id) {
+    return to_client_result(impl_->controller.movJ(target, speed, acceleration, id));
+}
+
+CommandResult CodroidClient::MovJ(const ClientMovePoint& target, double speed, double acceleration, int id) {
+    return to_client_result(impl_->controller.movJ(to_internal_point(target), speed, acceleration, id));
+}
+
+CommandResult CodroidClient::MovL(const ClientCartesianPoint& target, double speed, double acceleration,
                                   const std::vector<double>& coor, const std::vector<double>& tool, int id) {
-    return to_client_result(impl_->controller.movL(pose_mm_deg, speed, acceleration, coor, tool, id));
+    return to_client_result(impl_->controller.movL(target, speed, acceleration, coor, tool, id));
 }
 
-CommandResult CodroidClient::MovC(const std::vector<double>& middle_pose_mm_deg,
-                                  const std::vector<double>& target_pose_mm_deg,
+CommandResult CodroidClient::MovL(const ClientJointPoint& target, double speed, double acceleration,
+                                  const std::vector<double>& coor, const std::vector<double>& tool, int id) {
+    return to_client_result(impl_->controller.movL(target, speed, acceleration, coor, tool, id));
+}
+
+CommandResult CodroidClient::MovL(const ClientMovePoint& target, double speed, double acceleration,
+                                  const std::vector<double>& coor, const std::vector<double>& tool, int id) {
+    return to_client_result(impl_->controller.movL(to_internal_point(target), speed, acceleration, coor, tool, id));
+}
+
+CommandResult CodroidClient::MovC(const ClientCartesianPoint& middle,
+                                  const ClientCartesianPoint& target,
                                   double speed,
                                   double acceleration,
                                   int id) {
@@ -406,13 +424,15 @@ CommandResult CodroidClient::MovC(const std::vector<double>& middle_pose_mm_deg,
     inst.type = ClientMoveType::MovC;
     inst.speed = speed;
     inst.acceleration = acceleration;
-    inst.middle = ClientMovePoint::Cartesian(middle_pose_mm_deg);
-    inst.target = ClientMovePoint::Cartesian(target_pose_mm_deg);
+    ClientCartesianPoint mid = middle;
+    ClientCartesianPoint tgt = target;
+    inst.middle = ClientMovePoint::Cartesian(std::move(mid));
+    inst.target = ClientMovePoint::Cartesian(std::move(tgt));
     return MovePath({inst}, id);
 }
 
-CommandResult CodroidClient::MovCircle(const std::vector<double>& middle_pose_mm_deg,
-                                       const std::vector<double>& target_pose_mm_deg,
+CommandResult CodroidClient::MovCircle(const ClientCartesianPoint& middle,
+                                       const ClientCartesianPoint& target,
                                        int circle_num,
                                        double speed,
                                        double acceleration,
@@ -422,8 +442,10 @@ CommandResult CodroidClient::MovCircle(const std::vector<double>& middle_pose_mm
     inst.speed = speed;
     inst.acceleration = acceleration;
     inst.circle_num = circle_num;
-    inst.middle = ClientMovePoint::Cartesian(middle_pose_mm_deg);
-    inst.target = ClientMovePoint::Cartesian(target_pose_mm_deg);
+    ClientCartesianPoint mid = middle;
+    ClientCartesianPoint tgt = target;
+    inst.middle = ClientMovePoint::Cartesian(std::move(mid));
+    inst.target = ClientMovePoint::Cartesian(std::move(tgt));
     return MovePath({inst}, id);
 }
 

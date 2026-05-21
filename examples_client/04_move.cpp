@@ -38,11 +38,10 @@ int main() {
     print_result("StopRobotMove", robot.StopRobotMove(robot.NextRequestId()));
     wait_motion_hint();
 
-    // MovJ 使用关节角，单位 deg。
-    const std::vector<double> joint_p1{0.0, 0.0, 90.0, 0.0, 90.0, 0.0};
-    const std::vector<double> joint_p2{0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+    const auto joint_p1 = Codroid::JointPoint::Degrees({0.0, 0.0, 90.0, 0.0, 90.0, 0.0});
+    const auto joint_p2 = Codroid::JointPoint::Degrees({0.0, 0.0, 0.0, 0.0, 0.0, 0.0});
 
-    print_result("MovJ P1", robot.MovJ(joint_p1, 40.0, 100.0, robot.NextRequestId()));
+    print_result("MovJ P1 (jp)", robot.MovJ(joint_p1, 40.0, 100.0, robot.NextRequestId()));
     wait_motion_hint();
 
     print_result("MovJ P2", robot.MovJ(joint_p2, 40.0, 100.0, robot.NextRequestId()));
@@ -51,22 +50,28 @@ int main() {
     print_result("MovJ P1 again", robot.MovJ(joint_p1, 40.0, 100.0, robot.NextRequestId()));
     wait_motion_hint();
 
-    // MovL / MovC 使用 TCP 位姿 [x,y,z,rx,ry,rz]，前三位 mm，后三位 deg。
-    const std::vector<double> line_p1{927.511, 214.489, 486.524, 179.999, 0.0, -89.999};
-    const std::vector<double> line_p2{927.516, -160.239, 486.534, 180.0, 0.0, -89.999};
-    const std::vector<double> line_p3{927.515, -160.238, 1111.244, -179.999, 0.0, -89.999};
+    const auto line_p1 =
+        Codroid::CartesianPoint::MmDeg({927.511, 214.489, 486.524, 179.999, 0.0, -89.999});
+    const auto line_p2 =
+        Codroid::CartesianPoint::MmDeg({927.516, -160.239, 486.534, 180.0, 0.0, -89.999});
+    const auto line_p3 =
+        Codroid::CartesianPoint::MmDeg({927.515, -160.238, 1111.244, -179.999, 0.0, -89.999});
 
-    print_result("MovL P1", robot.MovL(line_p1, 150.0, 500.0, {}, {}, robot.NextRequestId()));
+    print_result("MovL P1 (cp)", robot.MovL(line_p1, 150.0, 500.0, {}, {}, robot.NextRequestId()));
     wait_motion_hint();
 
-    print_result("MovL P2", robot.MovL(line_p2, 150.0, 500.0, {}, {}, robot.NextRequestId()));
+    print_result("MovJ cart (cp)", robot.MovJ(line_p1, 40.0, 100.0, robot.NextRequestId()));
     wait_motion_hint();
 
-    // MovC 的第一个点是圆弧中间点，第二个点是圆弧终点。
+    print_result("MovL joint (jp)", robot.MovL(joint_p2, 150.0, 500.0, {}, {}, robot.NextRequestId()));
+    wait_motion_hint();
+
+    print_result("MovL P2 (cp)", robot.MovL(line_p2, 150.0, 500.0, {}, {}, robot.NextRequestId()));
+    wait_motion_hint();
+
     print_result("MovC P2 -> P3", robot.MovC(line_p2, line_p3, 120.0, 400.0, robot.NextRequestId()));
     wait_motion_hint();
 
-    // MovePath 一次下发多条运动指令，控制器按数组顺序执行。
     std::vector<Codroid::ClientMoveInstruction> path;
     Codroid::ClientMoveInstruction path_j;
     path_j.type = Codroid::ClientMoveType::MovJ;

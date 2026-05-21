@@ -516,7 +516,15 @@ public:
      * @return @~english  Response object containing the result of the command execution.
      *         @~chinese  包含指令执行结果的响应对象。
      */
-    Response movJ(const std::vector<double>& jp, double speed, double acc, int id = 1);
+    /** @brief @~english Joint motion to joint-space target (deg) @~chinese 关节运动到关节目标点 */
+    Response movJ(const JointPoint& target, double speed, double acc, int id = 1);
+    /**
+     * @brief @~english Joint motion to a Cartesian target (controller IK) @~chinese 关节运动到笛卡尔目标点
+     * @param target TCP pose mm+deg; optional @p target.rj reference joints (deg).
+     */
+    Response movJ(const CartesianPoint& target, double speed, double acc, int id = 1);
+    /** @brief @~english Joint motion using an explicit @ref MovePoint (Joint or Cartesian) @~chinese 使用 MovePoint 的关节运动 */
+    Response movJ(const MovePoint& target, double speed, double acc, int id = 1);
 
     // --- movL 重载 ---
     /** @brief @~english Move the robot along a linear path @~chinese 按直线路径移动机器人
@@ -548,9 +556,16 @@ public:
      * @return @~english  Response object containing the result of the command execution.
      *         @~chinese  包含指令执行结果的响应对象。
      */
-    Response movL(const std::vector<double>& cp, double speed, double acc, 
+    /** @brief @~english Linear motion to Cartesian target (mm+deg) @~chinese 直线运动到笛卡尔目标点 */
+    Response movL(const CartesianPoint& target, double speed, double acc,
                   const std::vector<double>& coor = {}, const std::vector<double>& tool = {}, int id = 1);
-    
+    /** @brief @~english Linear motion to a joint-space target @~chinese 直线运动到关节目标点 */
+    Response movL(const JointPoint& target, double speed, double acc,
+                  const std::vector<double>& coor = {}, const std::vector<double>& tool = {}, int id = 1);
+    /** @brief @~english Linear motion using an explicit @ref MovePoint (Joint or Cartesian) @~chinese 使用 MovePoint 的直线运动 */
+    Response movL(const MovePoint& target, double speed, double acc,
+                  const std::vector<double>& coor = {}, const std::vector<double>& tool = {}, int id = 1);
+
     // --- movC 重载 ---
     /** @brief @~english Move the robot along a circular path @~chinese 按圆弧路径移动机器人
      * @~english

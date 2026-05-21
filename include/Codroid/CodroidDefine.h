@@ -177,7 +177,43 @@ namespace Codroid {
     // ========================================================================
 
     /**
-     * @brief @~english Pose point definition @~chinese 运动位姿点定义
+     * @brief @~english Joint-space target (deg, 6 axes) @~chinese 关节空间目标点（度）
+     * @note 关节空间目标；用于 `movJ` / `movL(JointPoint)` 等 API。
+     */
+    struct JointPoint {
+        std::vector<double> jp;
+
+        static JointPoint Degrees(std::vector<double> joints_deg) {
+            JointPoint p;
+            p.jp = std::move(joints_deg);
+            return p;
+        }
+    };
+
+    /**
+     * @brief @~english Cartesian TCP target (mm + deg) @~chinese 笛卡尔末端目标点
+     * @note 笛卡尔 TCP 目标；用于 `movL` / `movJ(CartesianPoint)` 等 API；@p rj 为空时由 SDK 发默认参考关节。
+     */
+    struct CartesianPoint {
+        std::vector<double> cp;
+        std::vector<double> rj;
+
+        static CartesianPoint MmDeg(std::vector<double> pose_mm_deg) {
+            CartesianPoint p;
+            p.cp = std::move(pose_mm_deg);
+            return p;
+        }
+
+        static CartesianPoint MmDegWithRef(std::vector<double> pose_mm_deg, std::vector<double> ref_joints_deg) {
+            CartesianPoint p;
+            p.cp = std::move(pose_mm_deg);
+            p.rj = std::move(ref_joints_deg);
+            return p;
+        }
+    };
+
+    /**
+     * @brief @~english Pose point definition @~chinese 运动位姿点定义（路径/复合指令用）
      */
     struct MovePoint {
         std::vector<double> jp; ///< @~english Joint positions (deg) @~chinese 关节角 (单位:度)
@@ -186,8 +222,19 @@ namespace Codroid {
         std::vector<double> ep; ///< @~english External axes @~chinese 附加轴位置
 
         MovePoint() = default;
-        static MovePoint Joint(const std::vector<double>& v) { MovePoint p; p.jp = v; return p; }
-        static MovePoint Cartesian(const std::vector<double>& v) { MovePoint p; p.cp = v; return p; }
+
+        static MovePoint Joint(JointPoint joint) {
+            MovePoint p;
+            p.jp = std::move(joint.jp);
+            return p;
+        }
+
+        static MovePoint Cartesian(CartesianPoint cart) {
+            MovePoint p;
+            p.cp = std::move(cart.cp);
+            p.rj = std::move(cart.rj);
+            return p;
+        }
     };
 
     /**
@@ -279,11 +326,17 @@ namespace Codroid {
         std::vector<double> cp; ///< @~english [Optional] End effector position [x,y,z,a,b,c] @~chinese [可选] 末端位置 [x,y,z,a,b,c]
         std::vector<double> jp; ///@~english [Optional] Reference joint angle @~chinese [可选] 关节位置 [j1..j6]
         MoveToTarget() = default;
-        static MoveToTarget Joint(const std::vector<double>& j) {
-            MoveToTarget t; t.jp = j; return t;
+        static MoveToTarget Joint(JointPoint joint) {
+            MoveToTarget t;
+            t.jp = std::move(joint.jp);
+            t.cp.clear();
+            return t;
         }
-        static MoveToTarget Cartesian(const std::vector<double>& c) {
-            MoveToTarget t; t.cp = c; return t;
+        static MoveToTarget Cartesian(CartesianPoint cart) {
+            MoveToTarget t;
+            t.cp = std::move(cart.cp);
+            t.jp.clear();
+            return t;
         }
     };
 

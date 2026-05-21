@@ -1445,11 +1445,29 @@ Response CodroidController::movJ(const MoveInstruction& inst, int id) {
  * @param id Request ID / 请求ID
  * @return Response Standard response / 标准响应
  */
-Response CodroidController::movJ(const std::vector<double>& jp, double speed, double acc, int id) {
+Response CodroidController::movJ(const JointPoint& target, double speed, double acc, int id) {
+    JointPoint joint = target;
+    return movJ(MovePoint::Joint(std::move(joint)), speed, acc, id);
+}
+
+Response CodroidController::movJ(const CartesianPoint& target, double speed, double acc, int id) {
+    MovePoint point;
+    point.cp = target.cp;
+    point.rj = target.rj;
+    return movJ(point, speed, acc, id);
+}
+
+Response CodroidController::movJ(const MovePoint& target, double speed, double acc, int id) {
+    if (target.jp.empty() && target.cp.empty()) {
+        Response err;
+        err.id = id;
+        err.error_msg = "movJ Failed: target must be Joint or Cartesian (jp or cp).";
+        return err;
+    }
     MoveInstruction inst;
-    inst.targetPoint.jp = jp;
-    inst.speed = speed; inst.acc = acc;
-    // 注意：此处 inst.blend 默认为 -1，所以 packInstruction 不会发 blend 字段
+    inst.targetPoint = target;
+    inst.speed = speed;
+    inst.acc = acc;
     return movJ(inst, id);
 }
 
@@ -1476,12 +1494,34 @@ Response CodroidController::movL(const MoveInstruction& inst, int id) {
  * @param id Request ID / 请求ID
  * @return Response Standard response / 标准响应
  */
-Response CodroidController::movL(const std::vector<double>& cp, double speed, double acc, 
-                                      const std::vector<double>& coor, const std::vector<double>& tool, int id) {
+Response CodroidController::movL(const CartesianPoint& target, double speed, double acc,
+                                 const std::vector<double>& coor, const std::vector<double>& tool, int id) {
+    MovePoint point;
+    point.cp = target.cp;
+    point.rj = target.rj;
+    return movL(point, speed, acc, coor, tool, id);
+}
+
+Response CodroidController::movL(const JointPoint& target, double speed, double acc,
+                                 const std::vector<double>& coor, const std::vector<double>& tool, int id) {
+    JointPoint joint = target;
+    return movL(MovePoint::Joint(std::move(joint)), speed, acc, coor, tool, id);
+}
+
+Response CodroidController::movL(const MovePoint& target, double speed, double acc,
+                                 const std::vector<double>& coor, const std::vector<double>& tool, int id) {
+    if (target.jp.empty() && target.cp.empty()) {
+        Response err;
+        err.id = id;
+        err.error_msg = "movL Failed: target must be Joint or Cartesian (jp or cp).";
+        return err;
+    }
     MoveInstruction inst;
-    inst.targetPoint.cp = cp;
-    inst.speed = speed; inst.acc = acc;
-    inst.coor = coor; inst.tool = tool;
+    inst.targetPoint = target;
+    inst.speed = speed;
+    inst.acc = acc;
+    inst.coor = coor;
+    inst.tool = tool;
     return movL(inst, id);
 }
 

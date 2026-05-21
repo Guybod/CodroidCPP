@@ -8,10 +8,11 @@
 void moveToExample(Codroid::CodroidController& robot) {
     // 场景：规划运动到指定点
     // 关节角度
-    auto jointtarget = Codroid::MoveToTarget::Joint({0, 0, 90, 0, 90, 0});
+    auto jointtarget = Codroid::MoveToTarget::Joint(
+        Codroid::JointPoint::Degrees({0, 0, 90, 0, 90, 0}));
 
-    // 笛卡尔位置    
-    auto cartesiantarget = Codroid::MoveToTarget::Cartesian({278.823,335.857,1018.803,-101.953,23.121,-28.329});
+    auto cartesiantarget = Codroid::MoveToTarget::Cartesian(Codroid::CartesianPoint::MmDeg(
+        {278.823, 335.857, 1018.803, -101.953, 23.121, -28.329}));
 
     // Linear motion to joint angle point / 直线运动到关节角度
     Codroid::MoveToParams params1(Codroid::MoveToType::Line, jointtarget);

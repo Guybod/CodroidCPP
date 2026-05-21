@@ -17,6 +17,7 @@
 #define CODROID_SDK_CLIENT_HPP
 
 #include "Codroid/CodroidExport.h"
+#include "Codroid/CodroidDefine.h"
 
 #include <cstdint>
 #include <functional>
@@ -98,9 +99,12 @@ enum class ClientMoveType {
     MovCircle   ///< 整圆/多圈（`circle_num`）
 };
 
+using ClientJointPoint = JointPoint;
+using ClientCartesianPoint = CartesianPoint;
+
 /**
  * @brief 运动目标点：`jp` 关节度；`cp` 笛卡尔 mm+度；`rj`/`ep` 按协议可选。
- * @note `ClientMovePoint::Joint` / `Cartesian` 为便捷工厂，填充对应字段。
+ * @note 请用 `Joint` / `Cartesian` 工厂，避免 jp 与 cp 同时非空。
  */
 struct ClientMovePoint {
     std::vector<double> jp;
@@ -108,16 +112,16 @@ struct ClientMovePoint {
     std::vector<double> rj;
     std::vector<double> ep;
 
-    /** @brief 构造关节点（度）。 */
-    static ClientMovePoint Joint(std::vector<double> joints_deg) {
+    static ClientMovePoint Joint(ClientJointPoint joint) {
         ClientMovePoint out;
-        out.jp = std::move(joints_deg);
+        out.jp = std::move(joint.jp);
         return out;
     }
-    /** @brief 构造笛卡尔点（mm+度）。 */
-    static ClientMovePoint Cartesian(std::vector<double> pose_mm_deg) {
+
+    static ClientMovePoint Cartesian(ClientCartesianPoint cart) {
         ClientMovePoint out;
-        out.cp = std::move(pose_mm_deg);
+        out.cp = std::move(cart.cp);
+        out.rj = std::move(cart.rj);
         return out;
     }
 };
@@ -286,27 +290,27 @@ public:
     /** @brief 修改单个用户坐标系（先读后改；@p frame_id 为 1~15）。 */
     CommandResult SetUserCoordinateFrame(int frame_id, const ClientRobotFrame& frame, int id = 1);
 
-    /** @brief 关节运动：@p joints_deg 六轴度，@p speed @p acceleration 为控制器约定参数。 */
-    CommandResult MovJ(const std::vector<double>& joints_deg, double speed, double acceleration, int id = 1);
-    /**
-     * @brief 直线运动：@p pose_mm_deg 为 mm+度；@p coor @p tool 可选。
-     */
-    CommandResult MovL(const std::vector<double>& pose_mm_deg, double speed, double acceleration,
+    /** @brief 关节运动到关节目标（度）。 */
+    CommandResult MovJ(const ClientJointPoint& target, double speed, double acceleration, int id = 1);
+    /** @brief 关节运动到笛卡尔目标（mm+度）；@p target.rj 建议填当前关节参考。 */
+    CommandResult MovJ(const ClientCartesianPoint& target, double speed, double acceleration, int id = 1);
+    /** @brief 关节运动；@p target 须为 `ClientMovePoint::Joint` 或 `Cartesian`。 */
+    CommandResult MovJ(const ClientMovePoint& target, double speed, double acceleration, int id = 1);
+    /** @brief 直线运动到笛卡尔目标（mm+度）。 */
+    CommandResult MovL(const ClientCartesianPoint& target, double speed, double acceleration,
                        const std::vector<double>& coor = {}, const std::vector<double>& tool = {}, int id = 1);
-    /**
-     * @brief 圆弧：经过 @p middle_pose_mm_deg，到达 @p target_pose_mm_deg（均为 mm+度）。
-     */
-    CommandResult MovC(const std::vector<double>& middle_pose_mm_deg, const std::vector<double>& target_pose_mm_deg,
+    /** @brief 直线运动到关节目标（度）。 */
+    CommandResult MovL(const ClientJointPoint& target, double speed, double acceleration,
+                       const std::vector<double>& coor = {}, const std::vector<double>& tool = {}, int id = 1);
+    /** @brief 直线运动；@p target 须为 `ClientMovePoint::Joint` 或 `Cartesian`。 */
+    CommandResult MovL(const ClientMovePoint& target, double speed, double acceleration,
+                       const std::vector<double>& coor = {}, const std::vector<double>& tool = {}, int id = 1);
+    /** @brief 圆弧：中间点与目标点均为笛卡尔（mm+度）。 */
+    CommandResult MovC(const ClientCartesianPoint& middle, const ClientCartesianPoint& target,
                        double speed, double acceleration, int id = 1);
-    /**
-     * @brief 整圆/多圈：中间点、目标点、圈数 @p circle_num。
-     */
-    CommandResult MovCircle(const std::vector<double>& middle_pose_mm_deg,
-                            const std::vector<double>& target_pose_mm_deg,
-                            int circle_num,
-                            double speed,
-                            double acceleration,
-                            int id = 1);
+    /** @brief 整圆/多圈：中间点、目标点为笛卡尔（mm+度）。 */
+    CommandResult MovCircle(const ClientCartesianPoint& middle, const ClientCartesianPoint& target,
+                            int circle_num, double speed, double acceleration, int id = 1);
     /** @brief 多段路径，按顺序下发为一条 `Robot/move`（或等价）指令。 */
     CommandResult MovePath(const std::vector<ClientMoveInstruction>& path, int id = 1);
     CommandResult PauseRobotMotion(int id = 1);

@@ -35,14 +35,14 @@ void startMove(Codroid::CodroidController& robot) {
         std::this_thread::sleep_for(std::chrono::milliseconds(200));
         std::vector<double> homeJoints = {0.0, 0.0, 90.0, 0.0, 90.0, 0.0};
         std::cout << "\n" << now() << "1. Sending movJ non-blocking array mode" << std::endl;
-        auto res1 = robot.movJ(homeJoints, 50, 100);
+        auto res1 = robot.movJ(Codroid::JointPoint::Degrees(homeJoints), 50, 100);
         checkResponse("movJ Array", res1);
 
         std::this_thread::sleep_for(std::chrono::seconds(2));
 
         std::vector<double> handelJoints = {927.504,214.495,598.998,179.999,0,-90};
         std::cout << "\n" << now() << "2. Sending movL non-blocking array mode" << std::endl;
-        auto res2 = robot.movL(handelJoints, 500, 1000);
+        auto res2 = robot.movL(Codroid::CartesianPoint::MmDeg(handelJoints), 500, 1000);
         checkResponse("movL Array", res2);
 
         std::this_thread::sleep_for(std::chrono::seconds(2));
