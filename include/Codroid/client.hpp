@@ -7,13 +7,16 @@
  * - CRI 上行 UDP（308 字节）线上为 SI；本 SDK 在内部解析后，`ClientRealtimeState` 已为 **mm/度**。
  * - CRI **实时控制**下发（`StartCriControl` + `CriRealtimeDispatcher`）：周期须与 `durationMs` 一致（见 `cri_realtime_dispatcher.hpp`、`AGENTS.md` §6）。
  *
+ * @par 固件要求
+ * - 本 SDK **所有对外接口**均要求控制器固件 **≥ 2.3.3.43**（见 `MinControllerFirmware`）。
+ *
  * @note 本头仅依赖标准库与 `CodroidExport.h`；Asio / nlohmann 留在实现编译单元，客户工程无需引入。
  */
 
 #ifndef CODROID_SDK_CLIENT_HPP
 #define CODROID_SDK_CLIENT_HPP
 
-#include "codroid/CodroidExport.h"
+#include "Codroid/CodroidExport.h"
 
 #include <cstdint>
 #include <functional>
@@ -222,7 +225,66 @@ public:
     CommandResult SetManualMoveRate(int pct, int id = 1);
     CommandResult SetAutoMoveRate(int pct, int id = 1);
     CommandResult SetCollisionSensitivity(int sensitivity, int id = 1);
+    /** @brief 运行时切换当前负载（`Robot/setPayload`）。 */
     CommandResult SetPayload(int payloadId, int id = 1);
+
+    // --- 19.2~19.7 机器人设置界面参数（`Robot/GetRobotParameter`、`Robot/SaveRobotParameter`）---
+    // 负载/工具/用户坐标系序号及默认编号：SDK 仅接受 **1~15**。
+
+    /** @brief 工具/负载/用户坐标系单帧（x,y,z,a,b,c）。 */
+    struct ClientRobotFrame {
+        int id = 0;
+        double x = 0.0;
+        double y = 0.0;
+        double z = 0.0;
+        double a = 0.0;
+        double b = 0.0;
+        double c = 0.0;
+    };
+
+    /** @brief 负载坐标系单帧（m, mx, my, mz）。 */
+    struct ClientRobotPayload {
+        int id = 0;
+        double m = 0.0;
+        double mx = 0.0;
+        double my = 0.0;
+        double mz = 0.0;
+    };
+
+    /** @brief `Robot/GetRobotParameter` 快照；失败时 `valid` 为 false（未开抛错模式）。 */
+    struct ClientRobotParameters {
+        bool valid = false;
+        int default_tool_id = 0;
+        int default_payload_id = 0;
+        int default_coordinate_id = 0;
+        double max_payload = 0.0;
+        std::vector<ClientRobotFrame> tool;
+        std::vector<ClientRobotPayload> payload;
+        std::vector<ClientRobotFrame> coordinate;
+    };
+
+    /** @brief 获取设置界面参数（19.7）。 */
+    ClientRobotParameters GetRobotParameters(int id = 1);
+
+    /** @brief 设置默认负载编号（19.2，仅 `defaultPayloadId`）。 */
+    CommandResult SetDefaultPayloadId(int payloadId, int id = 1);
+    /** @brief 设置默认工具坐标系编号（19.3，仅 `defaultToolId`）。 */
+    CommandResult SetDefaultToolId(int toolId, int id = 1);
+    /** @brief 设置默认用户坐标系编号（19.6 默认编号部分，仅 `defaultCoordinateId`）。 */
+    CommandResult SetDefaultUserCoordinateId(int coordinateId, int id = 1);
+
+    /** @brief 直接下发完整工具坐标系表（19.4）。 */
+    CommandResult SaveToolFrames(const std::vector<ClientRobotFrame>& frames, int id = 1);
+    /** @brief 修改单个工具坐标系（先读后改；@p frame_id 为 1~15）。 */
+    CommandResult SetToolFrame(int frame_id, const ClientRobotFrame& frame, int id = 1);
+
+    /** @brief 直接下发完整负载坐标系表（19.5）。 */
+    CommandResult SavePayloadFrames(const std::vector<ClientRobotPayload>& frames, int id = 1);
+    /** @brief 修改单个负载坐标系（先读后改；@p frame_id 为 1~15）。 */
+    CommandResult SetPayloadFrame(int frame_id, const ClientRobotPayload& frame, int id = 1);
+
+    /** @brief 修改单个用户坐标系（先读后改；@p frame_id 为 1~15）。 */
+    CommandResult SetUserCoordinateFrame(int frame_id, const ClientRobotFrame& frame, int id = 1);
 
     /** @brief 关节运动：@p joints_deg 六轴度，@p speed @p acceleration 为控制器约定参数。 */
     CommandResult MovJ(const std::vector<double>& joints_deg, double speed, double acceleration, int id = 1);

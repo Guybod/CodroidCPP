@@ -8,6 +8,7 @@
 #include <future>
 #include <map>
 #include <random>
+#include <unordered_set>
 
 // 跨平台网络底层头文件
 #if defined(_WIN32)
@@ -2034,12 +2035,307 @@ Response CodroidController::setCollisionSensitivity(int level, int id) {
  * @return Response 响应结果
  */
 Response CodroidController::setPayload(int payloadId, int id) {
-    if (payloadId < 0 || payloadId > 15) {
-        Response r; r.id = id; r.error_msg = "Payload ID must be between 0 and 15";
+    if (payloadId < 1 || payloadId > 15) {
+        Response r; r.id = id; r.error_msg = "Payload ID must be between 1 and 15";
         return r;
     }
     return sendCommand("Robot/setPayload", payloadId, id);
 }
+
+namespace {
+
+constexpr int kRobotSlotIdMin = 1;
+constexpr int kRobotSlotIdMax = 15;
+
+Response make_local_error(int id, const std::string& msg) {
+    Response r;
+    r.id = id;
+    r.error_msg = msg;
+    return r;
+}
+
+bool is_valid_slot_id(int slot_id) {
+    return slot_id >= kRobotSlotIdMin && slot_id <= kRobotSlotIdMax;
+}
+
+double json_number(const nlohmann::json& j, const char* key, double fallback = 0.0) {
+    if (!j.contains(key))
+        return fallback;
+    const auto& v = j.at(key);
+    if (v.is_number())
+        return v.get<double>();
+    if (v.is_number_integer())
+        return static_cast<double>(v.get<int64_t>());
+    return fallback;
+}
+
+int json_int(const nlohmann::json& j, const char* key, int fallback = 0) {
+    if (!j.contains(key))
+        return fallback;
+    const auto& v = j.at(key);
+    if (v.is_number_integer())
+        return static_cast<int>(v.get<int64_t>());
+    if (v.is_number())
+        return static_cast<int>(v.get<double>());
+    return fallback;
+}
+
+RobotFrameEntry parse_frame_entry(const nlohmann::json& j) {
+    RobotFrameEntry e;
+    e.id = json_int(j, "id", 0);
+    e.x = json_number(j, "x");
+    e.y = json_number(j, "y");
+    e.z = json_number(j, "z");
+    e.a = json_number(j, "a");
+    e.b = json_number(j, "b");
+    e.c = json_number(j, "c");
+    return e;
+}
+
+RobotPayloadEntry parse_payload_entry(const nlohmann::json& j) {
+    RobotPayloadEntry e;
+    e.id = json_int(j, "id", 0);
+    e.m = json_number(j, "m");
+    e.mx = json_number(j, "mx");
+    e.my = json_number(j, "my");
+    e.mz = json_number(j, "mz");
+    return e;
+}
+
+std::vector<RobotFrameEntry> parse_frame_array(const nlohmann::json& db, const char* key) {
+    std::vector<RobotFrameEntry> out;
+    if (!db.contains(key) || !db.at(key).is_array())
+        return out;
+    for (const auto& item : db.at(key)) {
+        if (item.is_object())
+            out.push_back(parse_frame_entry(item));
+    }
+    return out;
+}
+
+std::vector<RobotPayloadEntry> parse_payload_array(const nlohmann::json& db, const char* key) {
+    std::vector<RobotPayloadEntry> out;
+    if (!db.contains(key) || !db.at(key).is_array())
+        return out;
+    for (const auto& item : db.at(key)) {
+        if (item.is_object())
+            out.push_back(parse_payload_entry(item));
+    }
+    return out;
+}
+
+RobotParameters parse_robot_parameters(const nlohmann::json& db) {
+    RobotParameters p;
+    p.default_tool_id = json_int(db, "defaultToolId");
+    p.default_payload_id = json_int(db, "defaultPayloadId");
+    p.default_coordinate_id = json_int(db, "defaultCoordinateId");
+    p.max_payload = json_number(db, "maxPayload");
+    p.tool = parse_frame_array(db, "Tool");
+    p.payload = parse_payload_array(db, "Payload");
+    p.coordinate = parse_frame_array(db, "Coordinate");
+    return p;
+}
+
+nlohmann::json frame_entry_to_json(const RobotFrameEntry& e) {
+    return nlohmann::json{{"id", e.id},
+                          {"x", e.x},
+                          {"y", e.y},
+                          {"z", e.z},
+                          {"a", e.a},
+                          {"b", e.b},
+                          {"c", e.c}};
+}
+
+nlohmann::json payload_entry_to_json(const RobotPayloadEntry& e) {
+    return nlohmann::json{{"id", e.id}, {"m", e.m}, {"mx", e.mx}, {"my", e.my}, {"mz", e.mz}};
+}
+
+nlohmann::json frames_to_json(const std::vector<RobotFrameEntry>& frames) {
+    nlohmann::json arr = nlohmann::json::array();
+    for (const auto& f : frames)
+        arr.push_back(frame_entry_to_json(f));
+    return arr;
+}
+
+nlohmann::json payloads_to_json(const std::vector<RobotPayloadEntry>& frames) {
+    nlohmann::json arr = nlohmann::json::array();
+    for (const auto& f : frames)
+        arr.push_back(payload_entry_to_json(f));
+    return arr;
+}
+
+/** 直接下发前：序号仅允许 1~15，且不可重复。 */
+bool validate_direct_tool_frames(const std::vector<RobotFrameEntry>& frames, std::string& err) {
+    std::unordered_set<int> seen;
+    for (const auto& f : frames) {
+        if (!is_valid_slot_id(f.id)) {
+            err = "Tool frame id must be between 1 and 15";
+            return false;
+        }
+        if (!seen.insert(f.id).second) {
+            err = "Duplicate Tool frame id " + std::to_string(f.id);
+            return false;
+        }
+    }
+    return true;
+}
+
+bool validate_direct_payload_frames(const std::vector<RobotPayloadEntry>& frames, std::string& err) {
+    std::unordered_set<int> seen;
+    for (const auto& f : frames) {
+        if (!is_valid_slot_id(f.id)) {
+            err = "Payload frame id must be between 1 and 15";
+            return false;
+        }
+        if (!seen.insert(f.id).second) {
+            err = "Duplicate Payload frame id " + std::to_string(f.id);
+            return false;
+        }
+    }
+    return true;
+}
+
+bool patch_frame_by_id(std::vector<RobotFrameEntry>& frames, int frame_id, const RobotFrameEntry& patch,
+                        std::string& err) {
+    for (auto& f : frames) {
+        if (f.id == frame_id) {
+            f = patch;
+            f.id = frame_id;
+            return true;
+        }
+    }
+    err = "Frame id " + std::to_string(frame_id) + " not found in controller parameters";
+    return false;
+}
+
+bool patch_payload_by_id(std::vector<RobotPayloadEntry>& frames, int frame_id, const RobotPayloadEntry& patch,
+                         std::string& err) {
+    for (auto& f : frames) {
+        if (f.id == frame_id) {
+            f = patch;
+            f.id = frame_id;
+            return true;
+        }
+    }
+    err = "Payload id " + std::to_string(frame_id) + " not found in controller parameters";
+    return false;
+}
+
+} // namespace
+
+Response CodroidController::getRobotParameter(int id) {
+    return sendCommand("Robot/GetRobotParameter", nlohmann::json::object(), id);
+}
+
+Response CodroidController::saveRobotParameter(const nlohmann::json& db, int id) {
+    return sendCommand("Robot/SaveRobotParameter", db, id);
+}
+
+Response CodroidController::setDefaultPayloadId(int payloadId, int id) {
+    if (!is_valid_slot_id(payloadId))
+        return make_local_error(id, "defaultPayloadId must be between 1 and 15");
+    nlohmann::json db;
+    db["defaultPayloadId"] = payloadId;
+    return saveRobotParameter(db, id);
+}
+
+Response CodroidController::setDefaultToolId(int toolId, int id) {
+    if (!is_valid_slot_id(toolId))
+        return make_local_error(id, "defaultToolId must be between 1 and 15");
+    nlohmann::json db;
+    db["defaultToolId"] = toolId;
+    return saveRobotParameter(db, id);
+}
+
+Response CodroidController::setDefaultCoordinateId(int coordinateId, int id) {
+    if (!is_valid_slot_id(coordinateId))
+        return make_local_error(id, "defaultCoordinateId must be between 1 and 15");
+    nlohmann::json db;
+    db["defaultCoordinateId"] = coordinateId;
+    return saveRobotParameter(db, id);
+}
+
+Response CodroidController::saveToolFrames(const std::vector<RobotFrameEntry>& frames, int id) {
+    std::string err;
+    if (!validate_direct_tool_frames(frames, err))
+        return make_local_error(id, err);
+    nlohmann::json db;
+    db["Tool"] = frames_to_json(frames);
+    return saveRobotParameter(db, id);
+}
+
+Response CodroidController::setToolFrame(int frame_id, const RobotFrameEntry& frame, int id) {
+    if (!is_valid_slot_id(frame_id))
+        return make_local_error(id, "Tool frame id must be between 1 and 15");
+
+    const int get_id = NextRequestId();
+    Response got = getRobotParameter(get_id);
+    if (!got.error_msg.empty())
+        return got;
+
+    RobotParameters params = parse_robot_parameters(got.db);
+    RobotFrameEntry patch = frame;
+    patch.id = frame_id;
+    std::string err;
+    if (!patch_frame_by_id(params.tool, frame_id, patch, err))
+        return make_local_error(id, err);
+
+    nlohmann::json db;
+    db["Tool"] = frames_to_json(params.tool);
+    return saveRobotParameter(db, id);
+}
+
+Response CodroidController::savePayloadFrames(const std::vector<RobotPayloadEntry>& frames, int id) {
+    std::string err;
+    if (!validate_direct_payload_frames(frames, err))
+        return make_local_error(id, err);
+    nlohmann::json db;
+    db["Payload"] = payloads_to_json(frames);
+    return saveRobotParameter(db, id);
+}
+
+Response CodroidController::setPayloadFrame(int frame_id, const RobotPayloadEntry& frame, int id) {
+    if (!is_valid_slot_id(frame_id))
+        return make_local_error(id, "Payload frame id must be between 1 and 15");
+
+    const int get_id = NextRequestId();
+    Response got = getRobotParameter(get_id);
+    if (!got.error_msg.empty())
+        return got;
+
+    RobotParameters params = parse_robot_parameters(got.db);
+    RobotPayloadEntry patch = frame;
+    patch.id = frame_id;
+    std::string err;
+    if (!patch_payload_by_id(params.payload, frame_id, patch, err))
+        return make_local_error(id, err);
+
+    nlohmann::json db;
+    db["Payload"] = payloads_to_json(params.payload);
+    return saveRobotParameter(db, id);
+}
+
+Response CodroidController::setUserCoordinateFrame(int frame_id, const RobotFrameEntry& frame, int id) {
+    if (!is_valid_slot_id(frame_id))
+        return make_local_error(id, "User coordinate id must be between 1 and 15");
+
+    const int get_id = NextRequestId();
+    Response got = getRobotParameter(get_id);
+    if (!got.error_msg.empty())
+        return got;
+
+    RobotParameters params = parse_robot_parameters(got.db);
+    RobotFrameEntry patch = frame;
+    patch.id = frame_id;
+    std::string err;
+    if (!patch_frame_by_id(params.coordinate, frame_id, patch, err))
+        return make_local_error(id, err);
+
+    nlohmann::json db;
+    db["Coordinate"] = frames_to_json(params.coordinate);
+    return saveRobotParameter(db, id);
+}
+
 /**
  * @brief Validate a variable name according to the rules specified by the Codroid server
  *        根据 Codroid 服务器指定的规则验证变量名

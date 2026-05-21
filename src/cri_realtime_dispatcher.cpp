@@ -1,4 +1,4 @@
-#include "codroid/cri_realtime_dispatcher.hpp"
+#include "Codroid/cri_realtime_dispatcher.hpp"
 
 #include "Codroid/CodroidDefine.h"
 

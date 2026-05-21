@@ -1,4 +1,4 @@
-#include "codroid/trajectory_generator.hpp"
+#include "Codroid/trajectory_generator.hpp"
 
 #include <algorithm>
 #include <cmath>

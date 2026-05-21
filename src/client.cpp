@@ -1,4 +1,4 @@
-#include "codroid/client.hpp"
+#include "Codroid/client.hpp"
 
 #include "Codroid/CodroidController.h"
 
@@ -18,6 +18,10 @@ public:
 };
 
 namespace {
+
+using ClientRobotFrame = CodroidClient::ClientRobotFrame;
+using ClientRobotPayload = CodroidClient::ClientRobotPayload;
+using ClientRobotParameters = CodroidClient::ClientRobotParameters;
 
 MoveType to_internal_move_type(ClientMoveType type) {
     switch (type) {
@@ -63,6 +67,141 @@ CommandResult to_client_result(const Response& r) {
     out.ty = r.ty;
     out.error_msg = r.error_msg;
     out.raw_json = r.raw_json;
+    return out;
+}
+
+ClientRobotFrame to_client_frame(const RobotFrameEntry& e) {
+    ClientRobotFrame out;
+    out.id = e.id;
+    out.x = e.x;
+    out.y = e.y;
+    out.z = e.z;
+    out.a = e.a;
+    out.b = e.b;
+    out.c = e.c;
+    return out;
+}
+
+RobotFrameEntry to_internal_frame(const ClientRobotFrame& e) {
+    RobotFrameEntry out;
+    out.id = e.id;
+    out.x = e.x;
+    out.y = e.y;
+    out.z = e.z;
+    out.a = e.a;
+    out.b = e.b;
+    out.c = e.c;
+    return out;
+}
+
+ClientRobotPayload to_client_payload(const RobotPayloadEntry& e) {
+    ClientRobotPayload out;
+    out.id = e.id;
+    out.m = e.m;
+    out.mx = e.mx;
+    out.my = e.my;
+    out.mz = e.mz;
+    return out;
+}
+
+RobotPayloadEntry to_internal_payload(const ClientRobotPayload& e) {
+    RobotPayloadEntry out;
+    out.id = e.id;
+    out.m = e.m;
+    out.mx = e.mx;
+    out.my = e.my;
+    out.mz = e.mz;
+    return out;
+}
+
+ClientRobotFrame parse_client_frame(const nlohmann::json& j) {
+    ClientRobotFrame e;
+    auto num = [](const nlohmann::json& v, double fb) {
+        if (v.is_number())
+            return v.get<double>();
+        if (v.is_number_integer())
+            return static_cast<double>(v.get<int64_t>());
+        return fb;
+    };
+    if (j.contains("id"))
+        e.id = j["id"].is_number_integer() ? static_cast<int>(j["id"].get<int64_t>()) : static_cast<int>(j["id"].get<double>());
+    if (j.contains("x"))
+        e.x = num(j["x"], 0.0);
+    if (j.contains("y"))
+        e.y = num(j["y"], 0.0);
+    if (j.contains("z"))
+        e.z = num(j["z"], 0.0);
+    if (j.contains("a"))
+        e.a = num(j["a"], 0.0);
+    if (j.contains("b"))
+        e.b = num(j["b"], 0.0);
+    if (j.contains("c"))
+        e.c = num(j["c"], 0.0);
+    return e;
+}
+
+ClientRobotPayload parse_client_payload(const nlohmann::json& j) {
+    ClientRobotPayload e;
+    auto num = [](const nlohmann::json& v, double fb) {
+        if (v.is_number())
+            return v.get<double>();
+        if (v.is_number_integer())
+            return static_cast<double>(v.get<int64_t>());
+        return fb;
+    };
+    if (j.contains("id"))
+        e.id = j["id"].is_number_integer() ? static_cast<int>(j["id"].get<int64_t>()) : static_cast<int>(j["id"].get<double>());
+    if (j.contains("m"))
+        e.m = num(j["m"], 0.0);
+    if (j.contains("mx"))
+        e.mx = num(j["mx"], 0.0);
+    if (j.contains("my"))
+        e.my = num(j["my"], 0.0);
+    if (j.contains("mz"))
+        e.mz = num(j["mz"], 0.0);
+    return e;
+}
+
+ClientRobotParameters to_client_parameters(const Response& r) {
+    ClientRobotParameters out;
+    if (!r.error_msg.empty())
+        return out;
+    const auto& db = r.db;
+    auto db_int = [&db](const char* key, int fb) {
+        if (!db.contains(key))
+            return fb;
+        const auto& v = db.at(key);
+        return v.is_number_integer() ? static_cast<int>(v.get<int64_t>()) : static_cast<int>(v.get<double>());
+    };
+    auto db_num = [&db](const char* key, double fb) {
+        if (!db.contains(key))
+            return fb;
+        const auto& v = db.at(key);
+        return v.is_number() ? v.get<double>() : static_cast<double>(v.get<int64_t>());
+    };
+    out.valid = true;
+    out.default_tool_id = db_int("defaultToolId", 0);
+    out.default_payload_id = db_int("defaultPayloadId", 0);
+    out.default_coordinate_id = db_int("defaultCoordinateId", 0);
+    out.max_payload = db_num("maxPayload", 0.0);
+    if (db.contains("Tool") && db["Tool"].is_array()) {
+        for (const auto& item : db["Tool"]) {
+            if (item.is_object())
+                out.tool.push_back(parse_client_frame(item));
+        }
+    }
+    if (db.contains("Payload") && db["Payload"].is_array()) {
+        for (const auto& item : db["Payload"]) {
+            if (item.is_object())
+                out.payload.push_back(parse_client_payload(item));
+        }
+    }
+    if (db.contains("Coordinate") && db["Coordinate"].is_array()) {
+        for (const auto& item : db["Coordinate"]) {
+            if (item.is_object())
+                out.coordinate.push_back(parse_client_frame(item));
+        }
+    }
     return out;
 }
 
@@ -203,6 +342,50 @@ CommandResult CodroidClient::SetCollisionSensitivity(int sensitivity, int id) {
 
 CommandResult CodroidClient::SetPayload(int payloadId, int id) {
     return to_client_result(impl_->controller.setPayload(payloadId, id));
+}
+
+ClientRobotParameters CodroidClient::GetRobotParameters(int id) {
+    return to_client_parameters(impl_->controller.getRobotParameter(id));
+}
+
+CommandResult CodroidClient::SetDefaultPayloadId(int payloadId, int id) {
+    return to_client_result(impl_->controller.setDefaultPayloadId(payloadId, id));
+}
+
+CommandResult CodroidClient::SetDefaultToolId(int toolId, int id) {
+    return to_client_result(impl_->controller.setDefaultToolId(toolId, id));
+}
+
+CommandResult CodroidClient::SetDefaultUserCoordinateId(int coordinateId, int id) {
+    return to_client_result(impl_->controller.setDefaultCoordinateId(coordinateId, id));
+}
+
+CommandResult CodroidClient::SaveToolFrames(const std::vector<ClientRobotFrame>& frames, int id) {
+    std::vector<RobotFrameEntry> internal;
+    internal.reserve(frames.size());
+    for (const auto& f : frames)
+        internal.push_back(to_internal_frame(f));
+    return to_client_result(impl_->controller.saveToolFrames(internal, id));
+}
+
+CommandResult CodroidClient::SetToolFrame(int frame_id, const ClientRobotFrame& frame, int id) {
+    return to_client_result(impl_->controller.setToolFrame(frame_id, to_internal_frame(frame), id));
+}
+
+CommandResult CodroidClient::SavePayloadFrames(const std::vector<ClientRobotPayload>& frames, int id) {
+    std::vector<RobotPayloadEntry> internal;
+    internal.reserve(frames.size());
+    for (const auto& f : frames)
+        internal.push_back(to_internal_payload(f));
+    return to_client_result(impl_->controller.savePayloadFrames(internal, id));
+}
+
+CommandResult CodroidClient::SetPayloadFrame(int frame_id, const ClientRobotPayload& frame, int id) {
+    return to_client_result(impl_->controller.setPayloadFrame(frame_id, to_internal_payload(frame), id));
+}
+
+CommandResult CodroidClient::SetUserCoordinateFrame(int frame_id, const ClientRobotFrame& frame, int id) {
+    return to_client_result(impl_->controller.setUserCoordinateFrame(frame_id, to_internal_frame(frame), id));
 }
 
 CommandResult CodroidClient::MovJ(const std::vector<double>& joints_deg, double speed, double acceleration, int id) {

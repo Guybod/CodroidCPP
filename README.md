@@ -8,10 +8,12 @@ Codroid C++ SDK 提供一套 C++ 接口，用于连接 Codroid 控制器并完�
 
 - API 在线手册：[金山文档](https://www.kdocs.cn/l/cqlm2DOsjGRp)
 - SDK 手册：`SDK_GUIDE.md`
-- 入口头文件：`include/codroid/client.hpp`
+- 入口头文件：`include/Codroid/client.hpp`
 - 客户示例目录：`examples_client/`
 
 ## 1. 准备控制器网络
+
+**固件要求**：本 SDK 全部对外接口要求控制器固件 **≥ 2.3.3.43**。
 
 先确认三件事：
 
@@ -148,7 +150,7 @@ package\CodroidSDK-Windows-MinGW-x64\
 
 客户集成时只需要交付包，不需要整个源码仓库。
 
-交付包中的 `codroid/client.hpp` 使用 PImpl 封装，不暴露 Asio、nlohmann/json 或内部控制器头文件。业务工程只需要配置 SDK 的 `include/` 和库路径。
+交付包中的 `Codroid/client.hpp` 使用 PImpl 封装，不暴露 Asio、nlohmann/json 或内部控制器头文件。业务工程只需要配置 SDK 的 `include/` 和库路径。
 
 ## 4. 跑通第一个 TCP 示例
 
@@ -172,13 +174,13 @@ Linux 运行：
 业务代码优先包含：
 
 ```cpp
-#include "codroid/client.hpp"
+#include "Codroid/client.hpp"
 ```
 
 最小程序：
 
 ```cpp
-#include "codroid/client.hpp"
+#include "Codroid/client.hpp"
 
 #include <iostream>
 #include <string>

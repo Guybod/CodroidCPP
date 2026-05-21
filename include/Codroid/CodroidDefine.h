@@ -2,7 +2,7 @@
  * @file CodroidDefine.h
  * @brief 内部 TCP SDK 共用类型：`Response`、`RobotRealtimeState`、运动/枚举 DTO、JSON 别名及异常。
  *
- * @note 客户仅使用 `codroid/client.hpp` 时无需包含本文件；高级集成或沿用 `CodroidController` 时依赖 nlohmann/json。
+ * @note 客户仅使用 `Codroid/client.hpp` 时无需包含本文件；高级集成或沿用 `CodroidController` 时依赖 nlohmann/json。
  */
 
 #ifndef CODROID_DEFINE_H
@@ -433,7 +433,48 @@ namespace Codroid {
     };
 
     // ========================================================================
-    // 5. 脚本参数 (script)
+    // 5. 机器人设置参数 (Robot/GetRobotParameter & Robot/SaveRobotParameter)
+    // ========================================================================
+
+    /** @brief 本 SDK 对外 TCP/UDP 接口统一要求的控制器固件最低版本（≥，含本号）。 */
+    inline constexpr const char* MinControllerFirmware = "2.3.3.43";
+
+    /** @brief 同 `MinControllerFirmware`（机器人设置参数接口别名，便于检索）。 */
+    inline constexpr const char* RobotParameterMinFirmware = MinControllerFirmware;
+
+    /** @brief 工具坐标系或用户坐标系单帧（协议字段 x,y,z,a,b,c）。 */
+    struct RobotFrameEntry {
+        int id = 0;
+        double x = 0.0;
+        double y = 0.0;
+        double z = 0.0;
+        double a = 0.0;
+        double b = 0.0;
+        double c = 0.0;
+    };
+
+    /** @brief 负载坐标系单帧（协议字段 m, mx, my, mz）。 */
+    struct RobotPayloadEntry {
+        int id = 0;
+        double m = 0.0;
+        double mx = 0.0;
+        double my = 0.0;
+        double mz = 0.0;
+    };
+
+    /** @brief `Robot/GetRobotParameter` 完整参数快照。 */
+    struct RobotParameters {
+        int default_tool_id = 0;
+        int default_payload_id = 0;
+        int default_coordinate_id = 0;
+        double max_payload = 0.0;
+        std::vector<RobotFrameEntry> tool;
+        std::vector<RobotPayloadEntry> payload;
+        std::vector<RobotFrameEntry> coordinate;
+    };
+
+    // ========================================================================
+    // 6. 脚本参数 (script)
     // ========================================================================
     struct RunScriptParams {
         std::string mainCode;                                     // 主程序代码 (必填)

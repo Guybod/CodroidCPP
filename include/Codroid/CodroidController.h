@@ -53,6 +53,9 @@ namespace Codroid {
 
 class CODROID_API CodroidController {
 public:
+    /** @brief 本 SDK 对外接口统一要求的控制器固件最低版本（≥ `MinControllerFirmware`）。 */
+    static constexpr const char* MinFirmwareVersion = MinControllerFirmware;
+
     /** @brief @~english Construct controller (no network I/O). @~chinese 构造函数，不发起网络连接。 */
     CodroidController();
     /** @brief @~english Destructor @~chinese 析构函数 */
@@ -988,18 +991,49 @@ public:
      */
     Response setCollisionSensitivity(int level, int id = 1);
 
-    // --- 19.2 设置负载参数 ---
-    /** @brief @~english Set the payload parameters on the robot @~chinese 设置机器人上的负载参数
-     * @~english
-     * @param payloadId ID of the payload to set.
-     * @param id Request ID.
-     * @~chinese
-     * @param payloadId 要设置的负载ID。
-     * @param id 请求 ID。
-     * @return @~english  Response object containing the result of the command execution.
-     *         @~chinese  包含指令执行结果的响应对象。
-     */
+    /** @brief 运行时切换当前负载（`Robot/setPayload`，1~15）。与 `setDefaultPayloadId` 不同。 */
     Response setPayload(int payloadId, int id = 1);
+
+    // --- 19.2~19.7 机器人设置界面参数（SaveRobotParameter / GetRobotParameter）---
+
+    /** @brief 获取设置界面参数（`Robot/GetRobotParameter`）。 */
+    Response getRobotParameter(int id = 1);
+
+    /** @brief 保存设置界面参数（`Robot/SaveRobotParameter`），@p db 为协议 `db` 对象。 */
+    Response saveRobotParameter(const json& db, int id = 1);
+
+    /** @brief 设置默认负载编号（仅下发 `defaultPayloadId`，1~15）。 */
+    Response setDefaultPayloadId(int payloadId, int id = 1);
+
+    /** @brief 设置默认工具坐标系编号（仅下发 `defaultToolId`，1~15）。 */
+    Response setDefaultToolId(int toolId, int id = 1);
+
+    /** @brief 设置默认用户坐标系编号（仅下发 `defaultCoordinateId`，1~15）。 */
+    Response setDefaultCoordinateId(int coordinateId, int id = 1);
+
+    /** @brief 直接下发完整工具坐标系表（`Tool` 数组，协议 19.4）。 */
+    Response saveToolFrames(const std::vector<RobotFrameEntry>& frames, int id = 1);
+
+    /**
+     * @brief 修改单个工具坐标系（先 Get 再改指定 id 后 Save；@p frame_id 为 1~15）。
+     * @param frame_id 1~15
+     */
+    Response setToolFrame(int frame_id, const RobotFrameEntry& frame, int id = 1);
+
+    /** @brief 直接下发完整负载坐标系表（`Payload` 数组，协议 19.5）。 */
+    Response savePayloadFrames(const std::vector<RobotPayloadEntry>& frames, int id = 1);
+
+    /**
+     * @brief 修改单个负载坐标系（先 Get 再改指定 id 后 Save；@p frame_id 为 1~15）。
+     * @param frame_id 1~15
+     */
+    Response setPayloadFrame(int frame_id, const RobotPayloadEntry& frame, int id = 1);
+
+    /**
+     * @brief 修改单个用户坐标系（先 Get 再改指定 id 后 Save；@p frame_id 为 1~15）。
+     * @param frame_id 1~15
+     */
+    Response setUserCoordinateFrame(int frame_id, const RobotFrameEntry& frame, int id = 1);
     
     // ==========================================
     // 运动学 (Kinematics) 接口

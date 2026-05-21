@@ -6,8 +6,8 @@
 #ifndef CODROID_TRAJECTORY_GENERATOR_HPP
 #define CODROID_TRAJECTORY_GENERATOR_HPP
 
-#include "codroid/CodroidExport.h"
-#include "codroid/trajectory_types.hpp"
+#include "Codroid/CodroidExport.h"
+#include "Codroid/trajectory_types.hpp"
 
 #include <array>
 #include <vector>

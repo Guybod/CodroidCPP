@@ -1,6 +1,6 @@
-#include "codroid/client.hpp"
-#include "codroid/cri_realtime_dispatcher.hpp"
-#include "codroid/trajectory_generator.hpp"
+#include "Codroid/client.hpp"
+#include "Codroid/cri_realtime_dispatcher.hpp"
+#include "Codroid/trajectory_generator.hpp"
 
 #include <array>
 #include <chrono>

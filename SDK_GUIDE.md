@@ -14,9 +14,8 @@
 
 ## 2. 目录结构（关键）
 
-- `include/codroid/`：客户公开头（`client.hpp`、轨迹与 CRI 相关）
-- `include/Codroid/`：底层控制器接口（内部实现/兼容层，不建议客户直接依赖）
-- `include/codroid/client.hpp`：对齐 C# 命名的主入口 `CodroidClient`
+- `include/Codroid/`：对外头文件（`client.hpp`、轨迹/CRI、`CodroidController` 等）
+- `include/Codroid/client.hpp`：客户主入口 `CodroidClient`
 - `src/`：SDK 实现
 - `examples/`：官方示例（推荐先跑）
 - `kinematics/`：运动学动态库（Linux）
@@ -49,7 +48,7 @@ build_msvc.bat
 ## 4. 快速上手（推荐调用顺序）
 
 ```cpp
-#include "codroid/client.hpp"
+#include "Codroid/client.hpp"
 
 int main() {
     Codroid::CodroidClient robot;
@@ -139,7 +138,11 @@ int main() {
 - `examples/09_io_test.cpp`：IO
 - `examples/14_cri_trajectory.cpp`：CRI 全流程与轨迹下发
 
-## 10. 版本与文档同步建议
+## 10. 控制器固件版本
+
+本 SDK（`CodroidClient` / `CodroidController`）对外封装的 **全部接口** 均要求控制器固件 **≥ 2.3.3.43**。代码常量见 `Codroid::MinControllerFirmware`（`CodroidDefine.h`）。SDK 不会在运行时自动校验版本，集成前请在控制器侧确认。
+
+## 11. 版本与文档同步建议
 
 当你修改以下任一项时，建议同步更新本文：
 - 构建脚本参数与产物目录
