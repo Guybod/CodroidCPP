@@ -1,8 +1,17 @@
 /**
  * @file CodroidDefine.h
- * @brief 内部 TCP SDK 共用类型：`Response`、`RobotRealtimeState`、运动/枚举 DTO、JSON 别名及异常。
+ * @brief Codroid TCP SDK 共用数据类型（DTO）、枚举与异常定义。
  *
- * @note 客户仅使用 `Codroid/client.hpp` 时无需包含本文件；高级集成或沿用 `CodroidController` 时依赖 nlohmann/json。
+ * 主要内容：
+ * - 通信：`Response`、主题推送 `PublishNotification`
+ * - 实时：`RobotRealtimeState`（CRI UDP 解析后，mm+度）
+ * - 运动：`JointPoint` / `CartesianPoint`（业务点位）→ `MovePoint`（协议路点）→ `MoveInstruction`（路径段）
+ * - 规划：`MoveToParams`（RunTo，需心跳）
+ * - 运动学：`FKParams` / `IKParams`
+ * - 机器人设置：`RobotParameters`（固件 ≥ MinControllerFirmware）
+ *
+ * @note 客户程序通常只 `#include "Codroid/client.hpp"`；本头由 client 间接包含。
+ *       业务层点位请用 `JointPoint` / `CartesianPoint`，不要与裸 `vector<double>` 混用。
  */
 
 #ifndef CODROID_DEFINE_H
@@ -21,15 +30,17 @@ namespace Codroid {
     using json = nlohmann::json;
 
     /**
-     * @brief @~english Standard SDK Response @~chinese SDK 标准响应结构体
+     * @brief 单条 TCP JSON 指令的解析结果（与控制器下行帧字段对应）。
+     *
+     * - 成功：`error_msg` 为空，业务数据在 `db`（可能为 null / 对象 / 数组）。
+     * - 失败：`error_msg` 为控制器 `err` 文本；`raw_json` 保留整帧便于现场排查。
      */
     struct Response {
-        int id;               ///< @~english Request ID @~chinese 请求 ID
-        std::string ty;       ///< @~english Request type @~chinese 请求类型
-        json db;              ///< @~english Return data @~chinese 返回数据内容
-        std::string error_msg; ///< @~english Error message (empty if success) @~chinese 错误信息（成功则为空）
-        /** 最近一次完整响应 JSON（成功或失败皆可），对齐 C# 侧排查惯例。 */
-        std::string raw_json;
+        int id;                ///< 与请求一致的序号
+        std::string ty;        ///< 路由类型，如 `Robot/move`、`IO/getValues`
+        json db;               ///< 业务载荷 `db` 字段（已解析为 JSON）
+        std::string error_msg; ///< 非空表示失败（来自控制器 `err`）
+        std::string raw_json;  ///< 最近一次完整响应 JSON 字符串
         Response() : id(0), db(json::object()) {}
     };
 
@@ -116,19 +127,24 @@ namespace Codroid {
     // 1. 通用枚举定义 (Common Enums)
     // ========================================================================
 
-    /** @brief @~english RS485 Parity @~chinese RS485 校验位 */
+    /** @brief RS485 串口校验位（IO/通讯配置用）。 */
     enum class RS485Parity : int { None = 0, Odd = 1, Even = 2 };
 
-    /** @brief @~english RS485 Stop Bits @~chinese RS485 停止位 */
+    /** @brief RS485 停止位。 */
     enum class RS485StopBits : int { One = 1, Two = 2 };
 
-    /** @brief @~english Coordinate System Type @~chinese 坐标系类型 */
+    /** @brief 坐标系类型：工具系 / 用户系（点动、相对位姿等）。 */
     enum class CoorType { Tool, User };
     NLOHMANN_JSON_SERIALIZE_ENUM(CoorType, {
         {CoorType::Tool, "tool"}, {CoorType::User, "user"}
     })
 
-    /** @brief @~english Motion Interpolation Type @~chinese 运动插补类型 */
+    /**
+     * @brief `Robot/move` 单段插补类型（写入 JSON 字段 `type`）。
+     * - movJ：关节空间插补（目标可为 jp 或 cp）
+     * - movL：笛卡尔直线（目标可为 cp 或 jp）
+     * - movC / movCircle：圆弧 / 整圆，需 middlePoint + targetPoint（一般为 cp）
+     */
     enum class MoveType { movJ, movL, movC, movCircle };
     NLOHMANN_JSON_SERIALIZE_ENUM(MoveType, {
         {MoveType::movJ, "movJ"}, {MoveType::movL, "movL"},
@@ -136,25 +152,26 @@ namespace Codroid {
     })
 
     /**
-     * @brief @~english MoveTo Type @~chinese 运动类型
+     * @brief `Robot/moveTo` 运动类别（与 C# `MoveToType` 一致）。
+     *
+     * 0~3：控制器内置位（Home/Safe/Candle/Packing），无需 target。
+     * 4/5：规划到用户点，须 `MoveToTarget`（jp 或 cp）；须周期性 `moveToHeartbeat()`。
      */
     enum class MoveToType : int {
-        Home = 0,           ///< @~english Home position @~chinese Home 位置
-        Safe = 1,           ///< @~english Safe position @~chinese 安全位置
-        Candle = 2,         ///< @~english Candle position @~chinese 蜡烛位
-        Packing = 3,        ///< @~english Packing position @~chinese 打包位
-        Joint = 4,          ///< @~english Joint planning to position @~chinese 关节规划到指定位置
-        Line = 5,          ///< @~english Line planning to position @~chinese 直线规划到指定位置
-        ResumePoint = 6     ///< @~english Program resume point @~chinese 程序恢复点
+        Home = 0,
+        Safe = 1,
+        Candle = 2,
+        Packing = 3,
+        Joint = 4,       ///< 关节规划到 target（target 可 jp 或 cp）
+        Line = 5,        ///< 直线规划到 target
+        ResumePoint = 6
     };
     NLOHMANN_JSON_SERIALIZE_ENUM(MoveToType, {
         {MoveToType::Home, 0}, {MoveToType::Safe, 1}, {MoveToType::Candle, 2}, 
         {MoveToType::Packing, 3}, {MoveToType::Joint, 4}, {MoveToType::Line, 5}, {MoveToType::ResumePoint, 6}
     })
 
-    /**
-     * @brief @~english Extend array supported data types @~chinese 扩展数组支持的数据类型
-     */
+    /** @brief 寄存器扩展数组元素类型（`Register/setExtendArrayType`）。 */
     enum class ExtendArrayType {
         Bool,UInt8,Int8,UInt16,
         Int16,UInt32,Int32,Float32
@@ -165,6 +182,7 @@ namespace Codroid {
         {ExtendArrayType::Int32, "Int32"}, {ExtendArrayType::Float32, "Float32"}
     })
 
+    /** @brief 点动模式：1=关节点动，2=直线点动（`JogParams`）。 */
     enum class JogMode {
         Joint = 1, Line = 2
      };
@@ -177,12 +195,20 @@ namespace Codroid {
     // ========================================================================
 
     /**
-     * @brief @~english Joint-space target (deg, 6 axes) @~chinese 关节空间目标点（度）
-     * @note 关节空间目标；用于 `movJ` / `movL(JointPoint)` 等 API。
+     * @brief 关节空间目标点（六轴角，单位：度）。
+     *
+     * 用于声明「这是一个关节目标」，例如：
+     * - `movJ(JointPoint)` / `movL(JointPoint)` 单点 API
+     * - `MoveInstruction::MovJ(jp)` / `MovL(jp)` 路径段
+     * - `MoveToTarget::Joint(...)`（RunTo 规划）
+     *
+     * @see JointPoint::Degrees 推荐工厂；长度为 6 的 [j1..j6]。
      */
     struct JointPoint {
+        /** 六轴关节角（度）。 */
         std::vector<double> jp;
 
+        /** @brief 由六轴关节角（度）构造。 */
         static JointPoint Degrees(std::vector<double> joints_deg) {
             JointPoint p;
             p.jp = std::move(joints_deg);
@@ -191,19 +217,36 @@ namespace Codroid {
     };
 
     /**
-     * @brief @~english Cartesian TCP target (mm + deg) @~chinese 笛卡尔末端目标点
-     * @note 笛卡尔 TCP 目标；用于 `movL` / `movJ(CartesianPoint)` 等 API；@p rj 为空时由 SDK 发默认参考关节。
+     * @brief 笛卡尔末端目标点（TCP 位姿：mm + 度）。
+     *
+     * 用于声明「这是一个 TCP 目标」，例如：
+     * - `movL(CartesianPoint)` / `movJ(CartesianPoint)`（关节运动到笛卡尔点时控制器做逆解）
+     * - `MoveInstruction::MovL(cp)` / `MovJ(cp)` 路径段
+     *
+     * 字段：
+     * - `cp`：[x, y, z, rx, ry, rz]，前三毫米、后三度（固定欧拉 XYZ 外旋，与 CRI/协议一致）。
+     * - `rj`：逆解**参考关节角**（度，六轴）。多组关节解时控制器据此选解，避免跳解。
+     *
+     * 工厂：
+     * - `MmDeg`：只设 TCP；下发 movJ/movL+cp 时若 `rj` 为空，SDK 填默认 [20,20,20,20,20,20]。
+     * - `MmDegWithRef`：同时设 TCP + 参考关节；**建议**用 CRI `joint_position` 当前值作 `rj`（与 AGENTS.md movL 约定一致）。
      */
     struct CartesianPoint {
         std::vector<double> cp;
         std::vector<double> rj;
 
+        /** @brief 仅 TCP 位姿（mm+度），不指定参考关节。 */
         static CartesianPoint MmDeg(std::vector<double> pose_mm_deg) {
             CartesianPoint p;
             p.cp = std::move(pose_mm_deg);
             return p;
         }
 
+        /**
+         * @brief TCP 位姿 + 逆解参考关节（度）。
+         * @param pose_mm_deg  [x,y,z,rx,ry,rz]
+         * @param ref_joints_deg  当前或期望的六轴参考角，通常取自 `GetRobotRealtimeState().joint_position`
+         */
         static CartesianPoint MmDegWithRef(std::vector<double> pose_mm_deg, std::vector<double> ref_joints_deg) {
             CartesianPoint p;
             p.cp = std::move(pose_mm_deg);
@@ -213,22 +256,28 @@ namespace Codroid {
     };
 
     /**
-     * @brief @~english Pose point definition @~chinese 运动位姿点定义（路径/复合指令用）
+     * @brief @~english One waypoint inside a path segment (protocol payload) @~chinese 路径段中的单个目标点
+     *
+     * 用于 `MoveInstruction.targetPoint` / `middlePoint`，对应 JSON `targetPoint` / `middlePoint` 字段。
+     * 对外请用 `JointPoint` / `CartesianPoint` 表达语义，再通过 `MovePoint::Joint` / `Cartesian` 填入本结构。
+     * 每条路径点只应填 **jp 或 cp 之一**（打包时 jp 优先）。
      */
     struct MovePoint {
-        std::vector<double> jp; ///< @~english Joint positions (deg) @~chinese 关节角 (单位:度)
-        std::vector<double> cp; ///< @~english Cartesian position (mm, deg) @~chinese 笛卡尔坐标 (单位:mm, 度)
-        std::vector<double> rj; ///< @~english Reference joints for IK @~chinese 逆解参考关节角
-        std::vector<double> ep; ///< @~english External axes @~chinese 附加轴位置
+        std::vector<double> jp; ///< 关节角（度），与 cp 二选一
+        std::vector<double> cp; ///< TCP [x,y,z,rx,ry,rz]（mm+度）
+        std::vector<double> rj; ///< 仅 cp 有效时：逆解参考关节（度）
+        std::vector<double> ep; ///< 附加轴（可选，多数机型为空）
 
         MovePoint() = default;
 
+        /** 从 JointPoint 生成协议路点（只填 jp）。 */
         static MovePoint Joint(JointPoint joint) {
             MovePoint p;
             p.jp = std::move(joint.jp);
             return p;
         }
 
+        /** 从 CartesianPoint 生成协议路点（填 cp、rj）。 */
         static MovePoint Cartesian(CartesianPoint cart) {
             MovePoint p;
             p.cp = std::move(cart.cp);
@@ -238,42 +287,119 @@ namespace Codroid {
     };
 
     /**
-     * @brief @~english Move instruction detail @~chinese 单条运动指令详情
+     * @brief @~english One segment of `Robot/move` path @~chinese 路径中的一段运动指令
+     *
+     * `move({inst1, inst2, ...})` 将多段 `MoveInstruction` 组成一条路径下发。
+     * 每段包含：运动类型（movJ/movL/movC…）、速度/加速度/过渡、目标点（及圆弧中间点）。
      */
     struct MoveInstruction {
-        MoveType type = MoveType::movJ;  ///< @~english Motion type @~chinese 运动类型
-        double speed = 60.0;            ///< @~english Speed (mm/s or deg/s) @~chinese 运动速度
-        double acc = 150.0;             ///< @~english Accel (mm/s^2 or deg/s^2) @~chinese 加速度
-        double blend = -1.0;            ///< @~english Transition radius (mm) @~chinese 过渡半径
-        double relativeBlend = -1.0;    ///< @~english Relative transition (%) @~chinese 相对过渡百分比
-        int circleNum = 1;              ///< @~english Circle count for movCircle @~chinese 圆周运动圈数
-        MovePoint targetPoint;          ///< @~english Target position @~chinese 目标点
-        MovePoint middlePoint;          ///< @~english Intermediate point (for movC) @~chinese 中间点
-        std::vector<double> coor;       ///< @~english User coordinate [x,y,z,a,b,c] @~chinese 用户坐标系
-        std::vector<double> tool;       ///< @~english Tool coordinate [x,y,z,a,b,c] @~chinese 工具坐标系
+        MoveType type = MoveType::movJ;
+        double speed = 60.0;         ///< 速度（关节段常用 deg/s 标度，直线段常用 mm/s 标度，与控制器约定一致）
+        double acc = 150.0;          ///< 加速度
+        double blend = -1.0;         ///< 过渡半径 mm；<0 表示不下发，用控制器默认
+        double relativeBlend = -1.0; ///< 相对过渡 %；<0 表示不下发
+        int circleNum = 1;           ///< movCircle 圈数
+        MovePoint targetPoint;       ///< 本段终点
+        MovePoint middlePoint;       ///< movC/movCircle 圆弧中间点
+        std::vector<double> coor;    ///< 可选用户坐标系 [x,y,z,a,b,c]
+        std::vector<double> tool;    ///< 可选工具坐标系
+
+        /** 路径段：movJ，目标为关节角。 */
+        static MoveInstruction MovJ(JointPoint target, double speed, double acc, double blend = -1.0) {
+            MoveInstruction inst;
+            inst.type = MoveType::movJ;
+            inst.speed = speed;
+            inst.acc = acc;
+            inst.blend = blend;
+            inst.targetPoint = MovePoint::Joint(std::move(target));
+            return inst;
+        }
+
+        /** 路径段：movJ，目标为 TCP（控制器逆解）；target.rj 建议用 MmDegWithRef 填写。 */
+        static MoveInstruction MovJ(CartesianPoint target, double speed, double acc, double blend = -1.0) {
+            MoveInstruction inst;
+            inst.type = MoveType::movJ;
+            inst.speed = speed;
+            inst.acc = acc;
+            inst.blend = blend;
+            inst.targetPoint = MovePoint::Cartesian(std::move(target));
+            return inst;
+        }
+
+        /** 路径段：movL，目标为 TCP。 */
+        static MoveInstruction MovL(CartesianPoint target, double speed, double acc, double blend = -1.0) {
+            MoveInstruction inst;
+            inst.type = MoveType::movL;
+            inst.speed = speed;
+            inst.acc = acc;
+            inst.blend = blend;
+            inst.targetPoint = MovePoint::Cartesian(std::move(target));
+            return inst;
+        }
+
+        /** 路径段：movL，目标为关节角。 */
+        static MoveInstruction MovL(JointPoint target, double speed, double acc, double blend = -1.0) {
+            MoveInstruction inst;
+            inst.type = MoveType::movL;
+            inst.speed = speed;
+            inst.acc = acc;
+            inst.blend = blend;
+            inst.targetPoint = MovePoint::Joint(std::move(target));
+            return inst;
+        }
+
+        /** 路径段：movC，中间点 + 终点（均为笛卡尔）。 */
+        static MoveInstruction MovC(CartesianPoint middle, CartesianPoint target, double speed, double acc,
+                                  double blend = -1.0) {
+            MoveInstruction inst;
+            inst.type = MoveType::movC;
+            inst.speed = speed;
+            inst.acc = acc;
+            inst.blend = blend;
+            inst.middlePoint = MovePoint::Cartesian(std::move(middle));
+            inst.targetPoint = MovePoint::Cartesian(std::move(target));
+            return inst;
+        }
+
+        /** 路径段：movCircle，中间点 + 终点 + 圈数。 */
+        static MoveInstruction MovCircle(CartesianPoint middle, CartesianPoint target, int circle_num, double speed,
+                                         double acc, double blend = -1.0) {
+            MoveInstruction inst;
+            inst.type = MoveType::movCircle;
+            inst.circleNum = circle_num;
+            inst.speed = speed;
+            inst.acc = acc;
+            inst.blend = blend;
+            inst.middlePoint = MovePoint::Cartesian(std::move(middle));
+            inst.targetPoint = MovePoint::Cartesian(std::move(target));
+            return inst;
+        }
     };
 
-    /** @brief @~english Jog Parameters @~chinese 点动参数结构体 */
+    /**
+     * @brief 点动（Jog）参数，对应 `Robot/startJog` 等。
+     * @note 须配合 `jogHeartbeat()` 周期调用；`speed` 为 -1~1 的比例而非 mm/s。
+     */
     struct JogParams {
-        JogMode mode = JogMode::Line;   ///< @~english 1:Joint, 2:Line @~chinese 1:关节点动 2:直线点动
-        double speed = 0.0;             ///< @~english Range -1 to 1 @~chinese 速度范围 -1~1
-        int index = 1;                  ///< @~english Axis/Joint index @~chinese 轴/关节序号
-        CoorType coorType = CoorType::User; ///< @~english User, Tool @~chinese 用户系 工具系
-        int coorId = 1;                 ///< @~english Coordinate ID @~chinese 坐标系 ID
+        JogMode mode = JogMode::Line;
+        double speed = 0.0;
+        int index = 1;
+        CoorType coorType = CoorType::User;
+        int coorId = 1;
         JogParams() = default;
         JogParams(JogMode m, double s, int i, CoorType ct = CoorType::User, int cid = 1) 
             : mode(m), speed(s), index(i), coorType(ct), coorId(cid) {}
     };
 
     /**
-     * @brief @~english Relative pose calculation parameters @~chinese 相对位姿计算参数
+     * @brief 相对位姿计算（`Robot/calculateRelativePose`），在工具系或用户系下对当前 TCP 施加偏移。
      */
     struct RelativePoseParams {
-        std::vector<double> pos;      ///< @~english [Required] Current position (Cartesian) @~chinese 当前末端TCP坐标 [x,y,z,a,b,c]
-        std::vector<double> offset;   ///< @~english [Required] Desired offset in Cartesian coordinates @~chinese 偏移量 [x,y,z,a,b,c]
-        CoorType coorType = CoorType::Tool; ///< @~english [Optional] Coordinate system type for the offset (Tool or User) @~chinese [可选] 坐标系类型
-        std::vector<double> posCoor;  ///< @~english [Optional] Coordinate of the current position @~chinese [可选] 当前末端TCP坐标系，默认世界坐标系
-        std::vector<double> coor;     ///< @~english [Optional] coorType is valid when set to user; offset coordinate system is the default, world coordinate system @~chinese [可选] coorType为user时有效，偏移坐标系，默认世界坐标系
+        std::vector<double> pos;
+        std::vector<double> offset;
+        CoorType coorType = CoorType::Tool;
+        std::vector<double> posCoor;
+        std::vector<double> coor;
         RelativePoseParams(const std::vector<double>& p, const std::vector<double>& o, CoorType type)
             : pos(p), offset(o), coorType(type) {}
             
@@ -281,12 +407,10 @@ namespace Codroid {
     };
 
 
-    /**
-     * @brief @~english Global variable information @~chinese 全局变量信息结构
-     */
+    /** @brief 全局变量一项：`val` 为 JSON 字符串，`nm` 为备注。 */
     struct Variable {
-        std::string val;  ///< @~english Variable value (JSON string format) @~chinese 变量值 (JSON字符串格式)
-        std::string nm;   ///< @~english Variable remark/note @~chinese 变量备注
+        std::string val;
+        std::string nm;
         template<typename T>
         Variable(const T& value, const std::string& note = "") : nm(note) {
             if constexpr (std::is_same_v<T, std::string>) {val = value; } 
@@ -296,35 +420,37 @@ namespace Codroid {
     };
     
     /**
-     * @brief @~english Forward Kinematics Params @~chinese 正解参数结构体
+     * @brief 正解请求（`Robot/apostocpos`）：关节角 → TCP。
+     * @note 与 `JointPoint` 单位相同（度）；返回 TCP 为 mm+度。
      */
     struct FKParams {
-        std::vector<double> jp;      ///< @~english [Required] joint angle @~chinese [必填] 关节角 [j1...j6], 单位: deg
-        std::vector<double> coor;    ///< @~english [Optional] user coordinate system @~chinese [可选] 用户坐标系, 不传则不处理
-        std::vector<double> tool;    ///< @~english [Optional] tool coordinate system @~chinese [可选] 工具坐标系, 不传则不处理
-        std::vector<double> ep;      ///< @~english [Optional] extra axes @~chinese [可选] 附加轴位置
+        std::vector<double> jp;
+        std::vector<double> coor;
+        std::vector<double> tool;
+        std::vector<double> ep;
         explicit FKParams(const std::vector<double>& jointPos) : jp(jointPos) {}
         FKParams() = default;
     };
 
     /**
-     * @brief @~english Inverse Kinematics Params @~chinese 逆解参数结构体
+     * @brief 逆解请求（`Robot/cpostoapos`）：TCP → 关节角。
+     * @note `cp` 为 mm+度；`rj` 为参考关节（同 `CartesianPoint::rj` / `MmDegWithRef` 语义）。
      */
     struct IKParams {
-        std::vector<double> cp;      ///< @~english [Required] Cartesian position,mm, deg @~chinese [必填] 笛卡尔末端位置, 单位: mm, deg
-        std::vector<double> rj;      ///< @~english [Optional] Reference joint angle, default [20,20,20,20,20,20] @~chinese [可选] 参考关节角, 默认 [20,20,20,20,20,20]
-        std::vector<double> ep;      ///< @~english [Optional] extra axes @~chinese [可选] 附加轴位置
+        std::vector<double> cp;
+        std::vector<double> rj;
+        std::vector<double> ep;
         explicit IKParams(const std::vector<double>& cartesianPos) : cp(cartesianPos) {}
         IKParams() = default;
     };
 
-    
     /**
-     * @brief @~english MoveTo Target Position @~chinese 运动目标位置
+     * @brief `Robot/moveTo` 的目标位置（仅 type=Joint/Line 时需要）。
+     * 使用 `Joint` / `Cartesian` 工厂，与 `JointPoint` / `CartesianPoint` 对齐。
      */
     struct MoveToTarget {
-        std::vector<double> cp; ///< @~english [Optional] End effector position [x,y,z,a,b,c] @~chinese [可选] 末端位置 [x,y,z,a,b,c]
-        std::vector<double> jp; ///@~english [Optional] Reference joint angle @~chinese [可选] 关节位置 [j1..j6]
+        std::vector<double> cp;
+        std::vector<double> jp;
         MoveToTarget() = default;
         static MoveToTarget Joint(JointPoint joint) {
             MoveToTarget t;
@@ -341,16 +467,15 @@ namespace Codroid {
     };
 
     /**
-     * @brief @~english MoveTo Parameters @~chinese 运动参数
+     * @brief `Robot/moveTo` 参数：内置位或规划到用户点。
+     * @warning type=Joint/Line 时须每 ≥500ms 调用 `moveToHeartbeat()`，否则 RunTo 会停。
      */
     struct MoveToParams {
         MoveToType type = MoveToType::Home;
-        MoveToTarget target; ///< @~english [Optional] Target position @~chinese [可选] 目标位置
+        MoveToTarget target;
 
         MoveToParams() = default;
-        // 预定义位置构造 (Home, Safe 等)
-        MoveToParams(MoveToType t) : type(t) {}
-        // 规划位置构造 (Joint/Line Planning)
+        explicit MoveToParams(MoveToType t) : type(t) {}
         MoveToParams(MoveToType t, const MoveToTarget& tgt) : type(t), target(tgt) {}
     };
     
@@ -359,14 +484,14 @@ namespace Codroid {
     // ========================================================================
 
     /**
-     * @brief @~english Robot runtime status @~chinese 机器人运行状态
+     * @brief 主题 `publish/RobotStatus` 推送体解析结果（与 CRI 位字段不同，勿混用）。
      */
     struct RobotStatus {
-        int mode;            ///< @~english 0:Manual, 1:Auto, 2:Remote @~chinese 0:手动, 1:自动, 2:远程
-        int state;           ///< @~english 0:Not Enabled, 1:Enabling, 2:Idle, 3:Teaching, 4:Running, 5:Dragging @~chinese 0:未使能, 1:使能中, 2:空闲, 3:点动中, 4:RunTo, 5:拖动中
-        int isMoving;        ///< @~english 0:Stopped, 1:Moving @~chinese 0:停止, 1:运动
-        double moveRate;     ///< @~english Auto speed rate @~chinese 自动速度倍率  
-        double manualMoveRate;///< @~english Manual speed rate @~chinese 手动速度倍率
+        int mode;             ///< 0 手动 / 1 自动 / 2 远程
+        int state;            ///< 0 未使能 … 5 拖动
+        int isMoving;
+        double moveRate;
+        double manualMoveRate;
         int recoveryState;
         bool isSimulation;
         int teachingPendant;
@@ -383,17 +508,13 @@ namespace Codroid {
         long long timestamp;    ///< @~english Push timestamp @~chinese 推送时间戳
     };
 
-    /**
-     * @brief @~english Robot real-time posture @~chinese 机器人实时位姿
-     */
+    /** @brief 主题 `publish/RobotPosture`：当前关节与 TCP（度 / mm+度）。 */
     struct RobotPosture {
-        std::vector<double> joint; ///< @~english Joints (deg) @~chinese 关节角 (度)
-        std::vector<double> cart;  ///< @~english Cartesian [x,y,z,a,b,c] @~chinese 笛卡尔坐标 [x,y,z,a,b,c]
+        std::vector<double> joint;
+        std::vector<double> cart;
     };
 
-    /**
-     * @brief @~english Project execution state @~chinese 工程执行状态
-     */
+    /** @brief 主题 `publish/ProjectState`：工程运行状态。 */
     struct ProjectState {
         std::string id;           ///< @~english Project ID @~chinese 工程 ID
         int state;                ///< @~english 0:Idle, 2:Running, 3:Paused @~chinese 工程状态
@@ -406,19 +527,19 @@ namespace Codroid {
     // 4. IO 与 寄存器 (IO & Registers)
     // ========================================================================
 
-    /** @brief @~english IO information @~chinese IO 信息结构体 */
+    /** @brief IO 读写的单点描述（type 如 `DI`/`DO`/`AI`/`AO`，port 为索引）。 */
     struct IOInfo {
-        std::string type;         ///< @~english DI, DO, AI, AO @~chinese IO 类型
-        int port;                 ///< @~english Port number @~chinese 端口号
-        double value;             ///< @~english IO value @~chinese IO 数值
+        std::string type;
+        int port;
+        double value;
         IOInfo(const std::string& t, int p) : type(t), port(p), value(0.0) {}
         IOInfo() = default;
     };
 
-    /** @brief @~english Register information @~chinese 寄存器信息结构体 */
+    /** @brief 寄存器地址与数值（批量读写 `Register/getValues` 等）。 */
     struct RegisterInfo {
-        int address;              ///< @~english Register address @~chinese 寄存器地址
-        double value;             ///< @~english Register value @~chinese 寄存器数值
+        int address;
+        double value;
         RegisterInfo(int addr, double val) : address(addr), value(val) {}
         RegisterInfo() = default;
     };
@@ -495,7 +616,10 @@ namespace Codroid {
     /** @brief 同 `MinControllerFirmware`（机器人设置参数接口别名，便于检索）。 */
     inline constexpr const char* RobotParameterMinFirmware = MinControllerFirmware;
 
-    /** @brief 工具坐标系或用户坐标系单帧（协议字段 x,y,z,a,b,c）。 */
+    /**
+     * @brief 工具坐标系或用户坐标系表中的一帧（协议 19.4 / 19.6）。
+     * @note 对外设置序号 1~15；控制器 0 号槽位只读且恒为 0，SDK 不提供对 0 号的写接口。
+     */
     struct RobotFrameEntry {
         int id = 0;
         double x = 0.0;
@@ -506,7 +630,7 @@ namespace Codroid {
         double c = 0.0;
     };
 
-    /** @brief 负载坐标系单帧（协议字段 m, mx, my, mz）。 */
+    /** @brief 负载坐标系表中的一帧（协议 19.5：质量 m 与质心 mx,my,mz）。 */
     struct RobotPayloadEntry {
         int id = 0;
         double m = 0.0;
@@ -515,7 +639,10 @@ namespace Codroid {
         double mz = 0.0;
     };
 
-    /** @brief `Robot/GetRobotParameter` 完整参数快照。 */
+    /**
+     * @brief `Robot/GetRobotParameter` 返回的完整机器人设置参数快照。
+     * 修改后通过 `SaveRobotParameter` 或分项 `Set*` / `Save*Frames` 写回。
+     */
     struct RobotParameters {
         int default_tool_id = 0;
         int default_payload_id = 0;
@@ -529,14 +656,15 @@ namespace Codroid {
     // ========================================================================
     // 6. 脚本参数 (script)
     // ========================================================================
-    struct RunScriptParams {
-        std::string mainCode;                                     // 主程序代码 (必填)
-        std::unordered_map<std::string, std::string> subThreads;  // 子线程 (可选)
-        std::unordered_map<std::string, std::string> subPrograms; // 子程序 (可选)
-        std::unordered_map<std::string, std::string> interrupts;  // 中断程序 (可选)
-        json vars = json::object();                               // 全局变量 (可选，支持混合类型)
 
-        // 构造函数，强制要求传入主程序代码
+    /** @brief 远程脚本运行参数（`RunScript` / `runScript`）。 */
+    struct RunScriptParams {
+        std::string mainCode;
+        std::unordered_map<std::string, std::string> subThreads;
+        std::unordered_map<std::string, std::string> subPrograms;
+        std::unordered_map<std::string, std::string> interrupts;
+        json vars = json::object();
+
         explicit RunScriptParams(const std::string& main) : mainCode(main) {}
     };
 

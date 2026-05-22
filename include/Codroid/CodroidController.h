@@ -488,6 +488,10 @@ public:
      * @return @~english  Response object containing the result of the command execution.
      *         @~chinese  包含指令执行结果的响应对象。
      */
+    /**
+     * @brief @~english Execute a multi-segment path (`Robot/move`) @~chinese 下发多段路径
+     * @param path Each element is one segment (`MoveInstruction`); use static factories `MovJ`/`MovL`/etc.
+     */
     Response move(const std::vector<MoveInstruction>& path, int id = 1);
     
     // --- movJ 重载 ---

@@ -101,37 +101,12 @@ enum class ClientMoveType {
 
 using ClientJointPoint = JointPoint;
 using ClientCartesianPoint = CartesianPoint;
+/** @brief 路径段目标点，与 `MovePoint` 相同（`Robot/move` 的 targetPoint / middlePoint）。 */
+using ClientMovePoint = MovePoint;
 
 /**
- * @brief 运动目标点：`jp` 关节度；`cp` 笛卡尔 mm+度；`rj`/`ep` 按协议可选。
- * @note 请用 `Joint` / `Cartesian` 工厂，避免 jp 与 cp 同时非空。
- */
-struct ClientMovePoint {
-    std::vector<double> jp;
-    std::vector<double> cp;
-    std::vector<double> rj;
-    std::vector<double> ep;
-
-    static ClientMovePoint Joint(ClientJointPoint joint) {
-        ClientMovePoint out;
-        out.jp = std::move(joint.jp);
-        return out;
-    }
-
-    static ClientMovePoint Cartesian(ClientCartesianPoint cart) {
-        ClientMovePoint out;
-        out.cp = std::move(cart.cp);
-        out.rj = std::move(cart.rj);
-        return out;
-    }
-};
-
-/**
- * @brief `MovePath` 单段：`target` 必填；`MovC`/`MovCircle` 需有效 `middle`。
- * @param speed / acceleration 含义与同类型点到点 API 一致（控制器约定百分比或内部标定，与示例对齐即可）。
- * @param blend / relative_blend 融合半径；默认 -1 表示沿用控制器默认。
- * @param circle_num 仅 `MovCircle`：圈数。
- * @param coor / tool 坐标系与工具，可选，与 `MovL` 一致。
+ * @brief `Move` / `MovePath` 路径中的单段指令（对应 `MoveInstruction` + `ClientMoveType`）。
+ * @note 推荐用静态工厂 `MovJ` / `MovL` / `MovC` / `MovCircle`，目标点传 `JointPoint` / `CartesianPoint`。
  */
 struct ClientMoveInstruction {
     ClientMoveType type = ClientMoveType::MovJ;
@@ -144,6 +119,71 @@ struct ClientMoveInstruction {
     ClientMovePoint middle;
     std::vector<double> coor;
     std::vector<double> tool;
+
+    static ClientMoveInstruction MovJ(ClientJointPoint target, double speed, double acceleration, double blend = -1.0) {
+        ClientMoveInstruction inst;
+        inst.type = ClientMoveType::MovJ;
+        inst.speed = speed;
+        inst.acceleration = acceleration;
+        inst.blend = blend;
+        inst.target = ClientMovePoint::Joint(std::move(target));
+        return inst;
+    }
+
+    static ClientMoveInstruction MovJ(ClientCartesianPoint target, double speed, double acceleration, double blend = -1.0) {
+        ClientMoveInstruction inst;
+        inst.type = ClientMoveType::MovJ;
+        inst.speed = speed;
+        inst.acceleration = acceleration;
+        inst.blend = blend;
+        inst.target = ClientMovePoint::Cartesian(std::move(target));
+        return inst;
+    }
+
+    static ClientMoveInstruction MovL(ClientCartesianPoint target, double speed, double acceleration, double blend = -1.0) {
+        ClientMoveInstruction inst;
+        inst.type = ClientMoveType::MovL;
+        inst.speed = speed;
+        inst.acceleration = acceleration;
+        inst.blend = blend;
+        inst.target = ClientMovePoint::Cartesian(std::move(target));
+        return inst;
+    }
+
+    static ClientMoveInstruction MovL(ClientJointPoint target, double speed, double acceleration, double blend = -1.0) {
+        ClientMoveInstruction inst;
+        inst.type = ClientMoveType::MovL;
+        inst.speed = speed;
+        inst.acceleration = acceleration;
+        inst.blend = blend;
+        inst.target = ClientMovePoint::Joint(std::move(target));
+        return inst;
+    }
+
+    static ClientMoveInstruction MovC(ClientCartesianPoint middle, ClientCartesianPoint target, double speed,
+                                    double acceleration, double blend = -1.0) {
+        ClientMoveInstruction inst;
+        inst.type = ClientMoveType::MovC;
+        inst.speed = speed;
+        inst.acceleration = acceleration;
+        inst.blend = blend;
+        inst.middle = ClientMovePoint::Cartesian(std::move(middle));
+        inst.target = ClientMovePoint::Cartesian(std::move(target));
+        return inst;
+    }
+
+    static ClientMoveInstruction MovCircle(ClientCartesianPoint middle, ClientCartesianPoint target, int circle_num,
+                                           double speed, double acceleration, double blend = -1.0) {
+        ClientMoveInstruction inst;
+        inst.type = ClientMoveType::MovCircle;
+        inst.circle_num = circle_num;
+        inst.speed = speed;
+        inst.acceleration = acceleration;
+        inst.blend = blend;
+        inst.middle = ClientMovePoint::Cartesian(std::move(middle));
+        inst.target = ClientMovePoint::Cartesian(std::move(target));
+        return inst;
+    }
 };
 
 /** @brief 主题推送一帧：`ty` 为主题类型；`db_json` 为 `db` 子树的 JSON 字符串；`raw_json` 为整帧。 */
@@ -311,7 +351,12 @@ public:
     /** @brief 整圆/多圈：中间点、目标点为笛卡尔（mm+度）。 */
     CommandResult MovCircle(const ClientCartesianPoint& middle, const ClientCartesianPoint& target,
                             int circle_num, double speed, double acceleration, int id = 1);
-    /** @brief 多段路径，按顺序下发为一条 `Robot/move`（或等价）指令。 */
+    /**
+     * @brief 多段路径 `Robot/move`：按顺序执行 @p path 中各 `ClientMoveInstruction`。
+     * @note 与 C# `Move` 对齐；等价于 `MovePath`。
+     */
+    CommandResult Move(const std::vector<ClientMoveInstruction>& path, int id = 1);
+    /** @brief 同 `Move`（保留别名）。 */
     CommandResult MovePath(const std::vector<ClientMoveInstruction>& path, int id = 1);
     CommandResult PauseRobotMotion(int id = 1);
     CommandResult ResumeRobotMotion(int id = 1);

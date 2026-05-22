@@ -240,50 +240,62 @@ robot.SetRegisterValue(49100, 520.0, id2);
 
 ### 运动控制
 
-运动目标点使用 **`JointPoint`（关节，度）** 与 **`CartesianPoint`（TCP，mm+度）** 区分，不要直接传裸 `std::vector<double>`，避免关节角与笛卡尔位姿混淆。
+运动目标使用 **`JointPoint`（关节，度）** 与 **`CartesianPoint`（TCP，mm+度）** 区分，**不要**传裸 `std::vector<double>`。类型说明见 `include/Codroid/CodroidDefine.h`。
+
+**笛卡尔工厂**：
+
+| 工厂 | 说明 |
+|------|------|
+| `CartesianPoint::MmDeg({x,y,z,rx,ry,rz})` | 只设 TCP |
+| `CartesianPoint::MmDegWithRef(tcp, ref_joints_deg)` | TCP + 逆解参考关节；`ref_joints_deg` 建议用 `GetRobotRealtimeState().joint_position`，避免 movJ/movL 到 cp 时跳解 |
+
+**运动方式 × 点位**（单点 `MovJ`/`MovL` 与路径 `ClientMoveInstruction::MovJ`/`MovL` 均支持）：
+
+| 组合 | 参数类型 | 协议 |
+|------|----------|------|
+| 关节运动到关节 | `JointPoint` | movJ + jp |
+| 关节运动到 TCP | `CartesianPoint`（建议 `MmDegWithRef`） | movJ + cp |
+| 直线到 TCP | `CartesianPoint` | movL + cp |
+| 直线到关节 | `JointPoint` | movL + jp |
+
+**类型分层**：
+
+| 类型 | 作用 |
+|------|------|
+| `JointPoint` / `CartesianPoint` | 业务层：声明点位语义 |
+| `MovePoint` | 协议层：JSON 里一个 `targetPoint` / `middlePoint`（一般由工厂从上面两种转换，用户少直接碰） |
+| `ClientMoveInstruction` | 路径一段；用 `ClientMoveInstruction::MovJ(jp)` 等工厂构建 |
+| `Move` / `MovePath` | 一次下发多段路径（`Robot/move`） |
 
 ```cpp
 #include "Codroid/client.hpp"
 
-// 关节目标 [j1..j6]，单位 deg
 auto home = Codroid::JointPoint::Degrees({0, 0, 90, 0, 90, 0});
-
-// 笛卡尔目标 [x,y,z,rx,ry,rz]，前三 mm、后三 deg
 auto pose = Codroid::CartesianPoint::MmDeg({927.5, 214.5, 899.0, 180.0, 0.0, -90.0});
-auto via  = Codroid::CartesianPoint::MmDeg({927.5, 214.5, 486.5, 180.0, 0.0, -90.0});
 
-// 逆解参考关节（可选；不填时 SDK 发默认 rj，建议填 CRI 当前关节）
+// 从 CRI 取参考关节再发 movJ(cp)
+auto st = robot.GetRobotRealtimeState();
 auto pose_ik = Codroid::CartesianPoint::MmDegWithRef(
-    {927.5, 214.5, 899.0, 180.0, 0.0, -90.0}, home.jp);
+    {927.5, 214.5, 899.0, 180.0, 0.0, -90.0}, st.joint_position);
 
-robot.SetAutoMoveRate(40, robot.NextRequestId());
-robot.StopRobotMove(robot.NextRequestId());
+robot.MovJ(home, 40, 100, robot.NextRequestId());
+robot.MovJ(pose_ik, 40, 100, robot.NextRequestId());
+robot.MovL(pose, 150, 500, {}, {}, robot.NextRequestId());
+robot.MovL(home, 150, 500, {}, {}, robot.NextRequestId());
 
-robot.MovJ(home, 40.0, 100.0, robot.NextRequestId());            // 关节运动 → 关节点
-robot.MovJ(pose_ik, 40.0, 100.0, robot.NextRequestId());         // 关节运动 → 笛卡尔点（控制器逆解）
-robot.MovL(pose, 150.0, 500.0, {}, {}, robot.NextRequestId());   // 直线运动 → 笛卡尔点
-robot.MovL(home, 150.0, 500.0, {}, {}, robot.NextRequestId());   // 直线运动 → 关节点
-
-robot.MovC(via, pose, 120.0, 400.0, robot.NextRequestId());      // 圆弧：中间点、终点
-
-// 多段路径：ClientMovePoint::Joint / Cartesian 同样只接受上述类型
-Codroid::ClientMoveInstruction seg;
-seg.type = Codroid::ClientMoveType::MovJ;
-seg.target = Codroid::ClientMovePoint::Cartesian(pose_ik);
-robot.MovePath({seg}, robot.NextRequestId());
+const std::vector<Codroid::ClientMoveInstruction> path = {
+    Codroid::ClientMoveInstruction::MovJ(home, 40, 100),    // movJ + jp
+    Codroid::ClientMoveInstruction::MovJ(pose_ik, 40, 100), // movJ + cp
+    Codroid::ClientMoveInstruction::MovL(pose, 150, 500),   // movL + cp
+    Codroid::ClientMoveInstruction::MovL(home, 150, 500),   // movL + jp
+};
+robot.Move(path, robot.NextRequestId());
 ```
 
-| API | 目标类型 | 运动方式 |
-|-----|----------|----------|
-| `MovJ(JointPoint)` | 关节 `jp` | 关节插补 |
-| `MovJ(CartesianPoint)` | 笛卡尔 `cp`（可选 `rj`） | 关节插补 + 控制器逆解 |
-| `MovL(CartesianPoint)` | 笛卡尔 `cp` | 直线（TCP） |
-| `MovL(JointPoint)` | 关节 `jp` | 直线到关节目标 |
-| `MovC` / `MovCircle` | 两个 `CartesianPoint` | 圆弧 / 整圆 |
+另有一套 **`moveTo` / `moveToHeartbeat`**（RunTo 规划，非 `Robot/move`），目标同样用 `MoveToTarget::Joint` / `Cartesian`，示例见 `examples/07_move_To.cpp`。
 
-底层 `CodroidController` 另有 `moveTo(MoveToType, MoveToTarget)`（`MoveToTarget::Joint` / `Cartesian` 同样使用 `JointPoint` / `CartesianPoint`），需每 500ms `moveToHeartbeat()`，示例见 `examples/07_move_To.cpp`。
-
-客户侧完整示例：`examples_client/04_move.cpp`。旧版 `CodroidController` 直连示例：`examples/08_move.cpp`。
+- 客户示例：`examples_client/04_move.cpp`（点到点 + 四组合路径）
+- 底层直连：`examples/08_move.cpp`（`CodroidController`）
 
 ## 7. 跑 CRI 实时轨迹
 
@@ -376,7 +388,7 @@ robot.SetCriDataReceived([](const Codroid::ClientRealtimeState& state) {
 - `examples_client/01_connect.cpp`：最小连接与实时状态读取
 - `examples_client/02_io_register.cpp`：IO 与寄存器
 - `examples_client/03_cri_state.cpp`：读取 CRI 状态快照
-- `examples_client/04_move.cpp`：`JointPoint` / `CartesianPoint` 与 MovJ / MovL / MovC / MovePath
+- `examples_client/04_move.cpp`：`JointPoint` / `CartesianPoint`、点到点 API 与 `Move` 多段路径
 - `examples_client/05_cri_trajectory.cpp`：CRI 实时控制最小轨迹
 - `examples/`：SDK 内部/兼容示例，包含旧接口用法
 

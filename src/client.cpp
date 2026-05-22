@@ -37,15 +37,6 @@ MoveType to_internal_move_type(ClientMoveType type) {
     return MoveType::movJ;
 }
 
-MovePoint to_internal_point(const ClientMovePoint& point) {
-    MovePoint out;
-    out.jp = point.jp;
-    out.cp = point.cp;
-    out.rj = point.rj;
-    out.ep = point.ep;
-    return out;
-}
-
 MoveInstruction to_internal_instruction(const ClientMoveInstruction& inst) {
     MoveInstruction out;
     out.type = to_internal_move_type(inst.type);
@@ -54,8 +45,8 @@ MoveInstruction to_internal_instruction(const ClientMoveInstruction& inst) {
     out.blend = inst.blend;
     out.relativeBlend = inst.relative_blend;
     out.circleNum = inst.circle_num;
-    out.targetPoint = to_internal_point(inst.target);
-    out.middlePoint = to_internal_point(inst.middle);
+    out.targetPoint = inst.target;
+    out.middlePoint = inst.middle;
     out.coor = inst.coor;
     out.tool = inst.tool;
     return out;
@@ -397,7 +388,7 @@ CommandResult CodroidClient::MovJ(const ClientCartesianPoint& target, double spe
 }
 
 CommandResult CodroidClient::MovJ(const ClientMovePoint& target, double speed, double acceleration, int id) {
-    return to_client_result(impl_->controller.movJ(to_internal_point(target), speed, acceleration, id));
+    return to_client_result(impl_->controller.movJ(target, speed, acceleration, id));
 }
 
 CommandResult CodroidClient::MovL(const ClientCartesianPoint& target, double speed, double acceleration,
@@ -412,7 +403,7 @@ CommandResult CodroidClient::MovL(const ClientJointPoint& target, double speed, 
 
 CommandResult CodroidClient::MovL(const ClientMovePoint& target, double speed, double acceleration,
                                   const std::vector<double>& coor, const std::vector<double>& tool, int id) {
-    return to_client_result(impl_->controller.movL(to_internal_point(target), speed, acceleration, coor, tool, id));
+    return to_client_result(impl_->controller.movL(target, speed, acceleration, coor, tool, id));
 }
 
 CommandResult CodroidClient::MovC(const ClientCartesianPoint& middle,
@@ -420,15 +411,9 @@ CommandResult CodroidClient::MovC(const ClientCartesianPoint& middle,
                                   double speed,
                                   double acceleration,
                                   int id) {
-    ClientMoveInstruction inst;
-    inst.type = ClientMoveType::MovC;
-    inst.speed = speed;
-    inst.acceleration = acceleration;
     ClientCartesianPoint mid = middle;
     ClientCartesianPoint tgt = target;
-    inst.middle = ClientMovePoint::Cartesian(std::move(mid));
-    inst.target = ClientMovePoint::Cartesian(std::move(tgt));
-    return MovePath({inst}, id);
+    return Move({ClientMoveInstruction::MovC(std::move(mid), std::move(tgt), speed, acceleration)}, id);
 }
 
 CommandResult CodroidClient::MovCircle(const ClientCartesianPoint& middle,
@@ -437,16 +422,14 @@ CommandResult CodroidClient::MovCircle(const ClientCartesianPoint& middle,
                                        double speed,
                                        double acceleration,
                                        int id) {
-    ClientMoveInstruction inst;
-    inst.type = ClientMoveType::MovCircle;
-    inst.speed = speed;
-    inst.acceleration = acceleration;
-    inst.circle_num = circle_num;
     ClientCartesianPoint mid = middle;
     ClientCartesianPoint tgt = target;
-    inst.middle = ClientMovePoint::Cartesian(std::move(mid));
-    inst.target = ClientMovePoint::Cartesian(std::move(tgt));
-    return MovePath({inst}, id);
+    return Move({ClientMoveInstruction::MovCircle(std::move(mid), std::move(tgt), circle_num, speed, acceleration)},
+                id);
+}
+
+CommandResult CodroidClient::Move(const std::vector<ClientMoveInstruction>& path, int id) {
+    return MovePath(path, id);
 }
 
 CommandResult CodroidClient::MovePath(const std::vector<ClientMoveInstruction>& path, int id) {
