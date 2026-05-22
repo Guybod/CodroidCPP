@@ -66,6 +66,30 @@ chmod +x build_linux.sh
 
 本仓库的 `CMakeLists.txt` 已内置上述编码参数（MSVC/MinGW/GCC/Clang 自动处理）。
 
+**控制台中文乱码**（在 Ubuntu 上写 UTF-8 源码，在 Windows cmd 里运行示例时）：
+
+1. **程序入口**（推荐）：本仓库 **所有** `examples_client/*.cpp` 与 `examples/*.cpp`（除空桩 `05_rs485`）已在 `main` 开头调用 `InitConsoleUtf8()`。业务工程可复制：
+
+```cpp
+#include "Codroid/console_utf8.hpp"
+
+int main() {
+    Codroid::InitConsoleUtf8();  // Windows 下将控制台设为 UTF-8，Linux 无操作
+    // ...
+}
+```
+
+2. **运行前改代码页**（cmd / 批处理）：
+
+```bat
+chcp 65001
+client_04_move.exe
+```
+
+3. **终端**：优先用 **Windows Terminal** 或 **PowerShell 7+**；或在「区域设置」中开启 **Beta: 使用 Unicode UTF-8 提供全球语言支持」。
+
+说明：乱码是**运行时控制台代码页**与 UTF-8 输出不一致，与源码 `/utf-8` 编译选项是两回事。
+
 编译：
 
 ```bat

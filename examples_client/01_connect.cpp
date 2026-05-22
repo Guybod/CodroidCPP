@@ -1,9 +1,12 @@
 #include "Codroid/client.hpp"
+#include "Codroid/console_utf8.hpp"
 
 #include <iostream>
 #include <string>
 
 int main() {
+    Codroid::InitConsoleUtf8();
+
     // 按现场网络修改：robot_ip 是控制器地址，local_ip 是本机接收 CRI UDP 的网卡地址。
     const std::string robot_ip = "192.168.8.136";
     const std::string local_ip = "192.168.8.150";

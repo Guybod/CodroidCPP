@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "Codroid/CodroidController.h"
+#include "Codroid/console_utf8.hpp"
 
 std::string now() {
     auto t = std::chrono::system_clock::now();
@@ -53,6 +54,8 @@ void startMove(Codroid::CodroidController& robot) {
 }
 
 int main() {
+    Codroid::InitConsoleUtf8();
+
     std::string robot_ip = "192.168.8.136";
     std::string local_pc_ip = "192.168.8.150";
     int robot_port = 9001;

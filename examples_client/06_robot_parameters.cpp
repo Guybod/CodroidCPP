@@ -11,6 +11,7 @@
  */
 
 #include "Codroid/client.hpp"
+#include "Codroid/console_utf8.hpp"
 
 #include <iostream>
 #include <optional>
@@ -80,6 +81,8 @@ void print_summary(const ClientRobotParameters& p) {
 } // namespace
 
 int main() {
+    Codroid::InitConsoleUtf8();
+
     const std::string robot_ip = "192.168.8.136";
     const std::string local_ip = "192.168.8.150";
 

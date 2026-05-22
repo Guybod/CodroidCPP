@@ -1,8 +1,10 @@
 #include "../include/Codroid/CodroidController.h"
+#include "Codroid/console_utf8.hpp"
 #include <vector>
 #include <iostream>
 
 int main() {
+    Codroid::InitConsoleUtf8();
     double pi = 3.141592654;
     double pi_2 = 0.5 * pi;
     // S5-90-ECO-V2

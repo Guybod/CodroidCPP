@@ -1,4 +1,5 @@
 #include "Codroid/client.hpp"
+#include "Codroid/console_utf8.hpp"
 #include "Codroid/cri_realtime_dispatcher.hpp"
 #include "Codroid/trajectory_generator.hpp"
 
@@ -43,6 +44,8 @@ void print_result(const char* action, const Codroid::CommandResult& result) {
 } // namespace
 
 int main() {
+    Codroid::InitConsoleUtf8();
+
     // 按现场网络修改。local_ip 用于接收控制器 CRI UDP 状态推送。
     const std::string robot_ip = "192.168.8.136";
     const std::string local_ip = "192.168.8.150";

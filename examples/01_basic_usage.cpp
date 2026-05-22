@@ -3,8 +3,10 @@
 #include <thread>
 #include <chrono>
 #include "Codroid/CodroidController.h"
+#include "Codroid/console_utf8.hpp"
 
 int main() {
+    Codroid::InitConsoleUtf8();
     // 1. 实例化控制类
     Codroid::CodroidController robot;
 

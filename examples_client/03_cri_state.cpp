@@ -1,4 +1,5 @@
 #include "Codroid/client.hpp"
+#include "Codroid/console_utf8.hpp"
 
 #include <chrono>
 #include <iostream>
@@ -6,6 +7,8 @@
 #include <thread>
 
 int main() {
+    Codroid::InitConsoleUtf8();
+
     // 按现场网络修改。local_ip 必须是本机能接收控制器 UDP 推送的网卡地址。
     const std::string robot_ip = "192.168.8.136";
     const std::string local_ip = "192.168.8.150";

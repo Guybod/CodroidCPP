@@ -25,6 +25,7 @@
 #include <vector>
 
 #include "Codroid/client.hpp"
+#include "Codroid/console_utf8.hpp"
 #include "Codroid/cri_realtime_dispatcher.hpp"
 #include "Codroid/trajectory_generator.hpp"
 
@@ -188,6 +189,7 @@ void log_send_end(const char* tag, std::chrono::steady_clock::time_point t0) {
 } // namespace
 
 int main() {
+    Codroid::InitConsoleUtf8();
     std::cout << "TRAJECTORY_ALGORITHM.md §9 (offline)...\n";
     if (!run_trajectory_algorithm_s9()) {
         std::cerr << "§9 trajectory self-check failed.\n";

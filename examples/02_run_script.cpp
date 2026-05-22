@@ -3,8 +3,10 @@
 #include <thread>
 
 #include "../include/Codroid/CodroidController.h"
+#include "Codroid/console_utf8.hpp"
 
 int main() {
+    Codroid::InitConsoleUtf8();
     Codroid::CodroidController robot;
 
     std::string robot_ip = "192.168.1.136";

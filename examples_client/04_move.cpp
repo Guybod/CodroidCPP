@@ -22,6 +22,7 @@
  */
 
 #include "Codroid/client.hpp"
+#include "Codroid/console_utf8.hpp"
 
 #include <chrono>
 #include <iostream>
@@ -47,6 +48,8 @@ void wait_motion_hint() {
 } // namespace
 
 int main() {
+    Codroid::InitConsoleUtf8();
+
     // -------------------------------------------------------------------------
     // 连接（TCP 9001 + 切远程 + CRI 推送 + 上电）
     // -------------------------------------------------------------------------
@@ -93,7 +96,7 @@ int main() {
     wait_motion_hint();
 
     // movL + cp：直线运动到 TCP 位姿
-    print_result("MovL(line_p1)", robot.MovL(line_p1, 150.0, 500.0, {}, {}, robot.NextRequestId()));
+    print_result("MovL(line_p1)", robot.MovL(line_p1, 550.0, 500.0, {}, {}, robot.NextRequestId()));
     wait_motion_hint();
 
     // movJ + cp：关节运动到笛卡尔点（控制器逆解）
@@ -103,10 +106,10 @@ int main() {
     wait_motion_hint();
 
     // movL + jp：直线运动到关节目标
-    print_result("MovL(joint_p2)", robot.MovL(joint_p3, 150.0, 500.0, {}, {}, robot.NextRequestId()));
+    print_result("MovL(joint_p2)", robot.MovL(joint_p3, 550.0, 500.0, {}, {}, robot.NextRequestId()));
     wait_motion_hint();
 
-    print_result("MovL(line_p2)", robot.MovL(line_p2, 150.0, 500.0, {}, {}, robot.NextRequestId()));
+    print_result("MovL(line_p2)", robot.MovL(line_p2, 550.0, 500.0, {}, {}, robot.NextRequestId()));
     wait_motion_hint();
 
     // 圆弧：中间点 line_p2，终点 line_p3（均为 CartesianPoint）
@@ -121,8 +124,8 @@ int main() {
     const std::vector<Codroid::ClientMoveInstruction> path = {
         Codroid::ClientMoveInstruction::MovJ(joint_p1, 40.0, 100.0),   // movJ + jp
         Codroid::ClientMoveInstruction::MovJ(line_p1, 40.0, 100.0),    // movJ + cp
-        Codroid::ClientMoveInstruction::MovL(line_p2, 150.0, 500.0),   // movL + cp
-        Codroid::ClientMoveInstruction::MovL(joint_p1, 150.0, 500.0),  // movL + jp
+        Codroid::ClientMoveInstruction::MovL(line_p2, 550.0, 500.0),   // movL + cp
+        Codroid::ClientMoveInstruction::MovL(joint_p1, 550.0, 500.0),  // movL + jp
         Codroid::ClientMoveInstruction::MovC(circle_middle, circle_end, 120.0, 400.0),
     };
 

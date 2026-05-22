@@ -1,5 +1,27 @@
 # Codroid C++ SDK 版本说明
 
+## v2.1.1（2026-05-21）
+
+在 v2.1.0 基础上的累积更新（运动 API、路径构建、MinGW 构建）。客户可读公告见 **`UPDATE_ANNOUNCEMENT.md`**。
+
+### 破坏性变更：运动点位
+
+- `MovJ` / `MovL` / `MovC` / `MovCircle` 不再接受裸 `std::vector<double>`。
+- 使用 **`JointPoint::Degrees`**（关节）与 **`CartesianPoint::MmDeg` / `MmDegWithRef`**（TCP）。
+- 路径：`ClientMoveInstruction::MovJ` / `MovL` / `MovC` / `MovCircle` + **`Move()`**（`MovePath` 别名）。
+
+### 其它
+
+- `CodroidDefine.h` 补充各类中文注释；`ClientMovePoint` 与 `MovePoint` 统一。
+- `build_mingw.bat`：错误检测、单工具链目录、可选 `MINGW_BIN`。
+- `examples_client/04_move.cpp`、`README.md` 更新。
+
+### 迁移
+
+见 `UPDATE_ANNOUNCEMENT.md` §六。
+
+---
+
 ## v2.1.0（2026-05-21）
 
 面向 **Codroid 控制器固件 ≥ 2.3.3.43** 的 Linux / Windows 客户库更新。公开头文件目录为 `include/Codroid/`，客户主入口为 `Codroid/client.hpp`。
@@ -103,5 +125,6 @@ robot.Disconnect();
 
 | 版本 | 主要提交 |
 |------|----------|
+| v2.1.1 | `5f664d7` 运动类型与路径工厂；`6c89d45` JointPoint/CartesianPoint；`7954fa1` MinGW |
 | v2.1.0 | `8edb664` 机器人参数 API；`6c9a786` 打包脚本与 `include/Codroid` |
 | v2.0.0 | `72b54b8` 统一版本与架构 |

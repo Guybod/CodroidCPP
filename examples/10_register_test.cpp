@@ -3,6 +3,7 @@
 #include <thread>
 #include <chrono>
 #include "Codroid/CodroidController.h"
+#include "Codroid/console_utf8.hpp"
 
 
 void testRegisterAdvanced(Codroid::CodroidController& robot) {
@@ -25,6 +26,7 @@ void testRegisterAdvanced(Codroid::CodroidController& robot) {
 }
 
 int main() {
+    Codroid::InitConsoleUtf8();
     Codroid::CodroidController robot;
     std::string robot_ip = "192.168.1.136"; // 替换为实际的机器人 IP 地址
     const int robot_port = 9001;
