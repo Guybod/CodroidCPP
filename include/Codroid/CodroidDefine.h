@@ -154,10 +154,11 @@ namespace Codroid {
     /**
      * @brief `Robot/moveTo` 运动类别（与 C# `MoveToType` 一致）。
      *
-     * 0~3：控制器内置位（Home/Safe/Candle/Packing），无需 target。
+     * -1：停止 MoveTo；0~3：控制器内置位（Home/Safe/Candle/Packing），无需 target。
      * 4/5：规划到用户点，须 `MoveToTarget`（jp 或 cp）；须周期性 `moveToHeartbeat()`。
      */
     enum class MoveToType : int {
+        Stop = -1,       ///< 停止 MoveTo 运动
         Home = 0,
         Safe = 1,
         Candle = 2,
@@ -167,7 +168,7 @@ namespace Codroid {
         ResumePoint = 6
     };
     NLOHMANN_JSON_SERIALIZE_ENUM(MoveToType, {
-        {MoveToType::Home, 0}, {MoveToType::Safe, 1}, {MoveToType::Candle, 2}, 
+        {MoveToType::Stop, -1}, {MoveToType::Home, 0}, {MoveToType::Safe, 1}, {MoveToType::Candle, 2},
         {MoveToType::Packing, 3}, {MoveToType::Joint, 4}, {MoveToType::Line, 5}, {MoveToType::ResumePoint, 6}
     })
 

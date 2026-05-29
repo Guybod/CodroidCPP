@@ -24,6 +24,7 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 namespace Codroid {
@@ -37,6 +38,20 @@ struct CommandResult {
 
     /** @brief 是否成功（`error_msg` 为空）。 */
     bool Ok() const noexcept { return error_msg.empty(); }
+};
+
+/**
+ * @brief 阻塞运动等待参数（C# `MotionWaitOptions`）。
+ * @note 用于 `MoveSync` / `MovJSync` / `MovLSync` / `MovCSync` / `MovCircleSync`。
+ */
+struct MotionWaitOptions {
+    double timeout_s = 60.0;                        ///< 整体等待超时（秒）
+    double poll_interval_s = 0.05;                  ///< CRI 轮询间隔（秒）
+    double cri_stale_timeout_s = 0.5;               ///< CRI 数据过期判定（秒）
+    int settled_samples = 3;                        ///< InMotion=false 连续稳定采样数
+    double joint_tolerance_deg = 0.2;               ///< 关节目标容差（最大轴误差，度）
+    double cartesian_position_tolerance_mm = 1.0;   ///< 笛卡尔位置容差（欧氏距离，mm）
+    double cartesian_orientation_tolerance_deg = 1.0; ///< 笛卡尔姿态容差（最大欧拉角误差，度）
 };
 
 /**
@@ -362,6 +377,43 @@ public:
     CommandResult ResumeRobotMotion(int id = 1);
     CommandResult StopRobotMove(int id = 1);
 
+    // --- 11b. 阻塞式运动（Sync Motion，对齐 C#）---
+
+    /** @brief 阻塞式路径执行，等待 CRI 确认最后一段到达目标。 */
+    bool MoveSync(const std::vector<ClientMoveInstruction>& path, const MotionWaitOptions& wait = {});
+    /** @brief 阻塞式关节运动到关节目标。 */
+    bool MovJSync(const ClientJointPoint& target, double speed, double acc, const MotionWaitOptions& wait = {});
+    /** @brief 阻塞式关节运动到笛卡尔目标。 */
+    bool MovJSync(const ClientCartesianPoint& target, double speed, double acc, const MotionWaitOptions& wait = {});
+    /** @brief 阻塞式直线运动到笛卡尔目标。 */
+    bool MovLSync(const ClientCartesianPoint& target, double speed, double acc, const MotionWaitOptions& wait = {});
+    /** @brief 阻塞式直线运动到关节目标。 */
+    bool MovLSync(const ClientJointPoint& target, double speed, double acc, const MotionWaitOptions& wait = {});
+    /** @brief 阻塞式圆弧运动。 */
+    bool MovCSync(const ClientCartesianPoint& middle, const ClientCartesianPoint& target,
+                  double speed, double acc, const MotionWaitOptions& wait = {});
+    /** @brief 阻塞式整圆运动。 */
+    bool MovCircleSync(const ClientCartesianPoint& middle, const ClientCartesianPoint& target,
+                       int circle_num, double speed, double acc, const MotionWaitOptions& wait = {});
+
+    // --- 11.4 MoveTo ---
+
+    /** @brief MoveTo 预设/规划运动。 */
+    CommandResult MoveTo(const MoveToParams& params, int id = 1);
+    /** @brief MoveTo 心跳（每 ≥500ms 调用一次）。 */
+    CommandResult MoveToHeartbeat(int id = 1);
+    /** @brief 停止 MoveTo 运动（发送 type=-1）。 */
+    CommandResult StopMoveTo(int id = 1);
+
+    // --- 11.3 Jog ---
+
+    /** @brief 点动。 */
+    CommandResult Jog(const JogParams& params, int id = 1);
+    /** @brief 停止点动。 */
+    CommandResult StopJog(int id = 1);
+    /** @brief 点动心跳（每 ≥500ms 调用一次）。 */
+    CommandResult JogHeartbeat(int id = 1);
+
     /**
      * @brief 请求 CRI 状态 UDP 推送到本机 @p udpIp:@p udpPort（载荷 308 字节，周期等默认与 C# 一致）。
      */
@@ -381,6 +433,69 @@ public:
     ClientRealtimeState GetRobotRealtimeState() const;
     /** @brief 每次收到 CRI 帧时回调（在内部接收路径上触发，避免长时间阻塞）。 */
     void SetCriDataReceived(std::function<void(const ClientRealtimeState&)> cb);
+    /**
+     * @brief 阻塞等待第一个 CRI 数据帧到达。
+     * @param timeout_s 最大等待秒数，默认 5.0。
+     * @note 调用 `*Sync` 阻塞运动方法前，须确保 CRI 数据已开始推送。
+     */
+    void WaitForCriData(double timeout_s = 5.0);
+
+    // --- 12. 模式控制（对齐 C#）---
+
+    /** @brief 先切自动再切手动（Auto → Manual）。 */
+    CommandResult EnterManualModeViaAuto(int id = 1);
+    /** @brief 先切自动再切远程（Auto → Remote）。 */
+    CommandResult EnterRemoteModeViaAuto(int id = 1);
+    /** @brief 进入仿真模式。 */
+    CommandResult ToSimulation(int id = 1);
+    /** @brief 进入实机模式。 */
+    CommandResult ToActual(int id = 1);
+    /** @brief 进入拖拽示教模式。 */
+    CommandResult StartDrag(int id = 1);
+    /** @brief 退出拖拽示教模式。 */
+    CommandResult StopDrag(int id = 1);
+
+    // --- 2. 工程/脚本（对齐 C#）---
+
+    /** @brief 运行远程 Lua 脚本。 */
+    CommandResult RunScript(const std::string& mainScript,
+                            const std::unordered_map<std::string, std::string>& subThreads = {},
+                            const std::unordered_map<std::string, std::string>& subPrograms = {},
+                            const std::unordered_map<std::string, std::string>& interrupts = {},
+                            const nlohmann::json& vars = {},
+                            int id = 1);
+    /** @brief 进入远程脚本模式。 */
+    CommandResult EnterRemoteScriptMode(int id = 1);
+    /** @brief 运行指定工程。 */
+    CommandResult Run(const std::string& projectId, int id = 1);
+    /** @brief 通过索引运行工程。 */
+    CommandResult RunByIndex(int index, int id = 1);
+    /** @brief 单步运行工程。 */
+    CommandResult RunStep(const std::string& projectId, int id = 1);
+    /** @brief 暂停工程。 */
+    CommandResult PauseProject(int id = 1);
+    /** @brief 恢复工程。 */
+    CommandResult ResumeProject(int id = 1);
+    /** @brief 停止工程。 */
+    CommandResult StopProject(int id = 1);
+
+    // --- 3. 全局变量（对齐 C#）---
+
+    /** @brief 获取所有全局变量（原始 JSON 响应）。 */
+    nlohmann::json GetGlobalVars(int id = 1);
+    /** @brief 保存全局变量。 */
+    CommandResult SaveGlobalVars(const std::map<std::string, Variable>& vars, int id = 1);
+    /** @brief 删除全局变量。 */
+    CommandResult RemoveGlobalVars(const std::vector<std::string>& names, int id = 1);
+
+    // --- 10. 运动学（对齐 C#）---
+
+    /** @brief 正解：关节角 → TCP 位姿。 */
+    std::vector<double> ForwardKinematics(const FKParams& params, int id = 1);
+    /** @brief 逆解：TCP 位姿 → 关节角。 */
+    std::vector<double> InverseKinematics(const IKParams& params, int id = 1);
+    /** @brief 笛卡尔相对位姿计算。 */
+    std::vector<double> CalculateRelativePose(const RelativePoseParams& params, int id = 1);
     /**
      * @brief 订阅协议 15.x 推送主题；首次订阅发送 `ty`+`tc`，无整数 id。
      * @param topicTy 主题字符串须与控制器一致（如 `publish/RobotStatus`）。

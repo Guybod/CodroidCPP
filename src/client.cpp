@@ -2,6 +2,10 @@
 
 #include "Codroid/CodroidController.h"
 
+#include <chrono>
+#include <cmath>
+#include <stdexcept>
+#include <thread>
 #include <utility>
 
 namespace Codroid {
@@ -229,6 +233,104 @@ ClientRealtimeState to_client_state(const RobotRealtimeState& s) {
     out.realtime_control_mode = s.realtime_control_mode;
     out.cri_error_code = s.cri_error_code;
     return out;
+}
+
+// --- Sync motion helpers ---
+
+double max_abs_diff(const std::vector<double>& actual, const std::vector<double>& expected) {
+    if (actual.size() < 6 || expected.size() < 6) return 1e9;
+    double m = 0.0;
+    for (int i = 0; i < 6; ++i) {
+        double d = std::abs(actual[i] - expected[i]);
+        if (d > m) m = d;
+    }
+    return m;
+}
+
+double euclidean_3mm(const std::vector<double>& a, const std::vector<double>& b) {
+    if (a.size() < 3 || b.size() < 3) return 1e9;
+    double dx = a[0] - b[0], dy = a[1] - b[1], dz = a[2] - b[2];
+    return std::sqrt(dx * dx + dy * dy + dz * dz);
+}
+
+double max_abs_euler_diff_deg(const std::vector<double>& a, const std::vector<double>& b) {
+    if (a.size() < 6 || b.size() < 6) return 1e9;
+    double m = 0.0;
+    for (int i = 3; i < 6; ++i) {
+        double d = std::abs(a[i] - b[i]);
+        if (d > m) m = d;
+    }
+    return m;
+}
+
+bool is_cartesian_reached(const std::vector<double>& actual, const std::vector<double>& target,
+                          const MotionWaitOptions& opts) {
+    return euclidean_3mm(actual, target) <= opts.cartesian_position_tolerance_mm
+           && max_abs_euler_diff_deg(actual, target) <= opts.cartesian_orientation_tolerance_deg;
+}
+
+void wait_until_settled(CodroidController& ctrl, const std::function<bool(const ClientRealtimeState&)>& pred,
+                        const std::string& op_name, const MotionWaitOptions& opts) {
+    if (opts.settled_samples <= 0)
+        throw std::invalid_argument(op_name + ": MotionWaitOptions.settled_samples must be > 0");
+    if (opts.poll_interval_s <= 0)
+        throw std::invalid_argument(op_name + ": MotionWaitOptions.poll_interval_s must be > 0");
+
+    auto start = std::chrono::steady_clock::now();
+    int settled = 0;
+    bool had_motion = false;
+
+    while (std::chrono::steady_clock::now() - start < std::chrono::duration<double>(opts.timeout_s)) {
+        auto state = ctrl.getRobotRealtimeState();
+        if (!state.data_valid) {
+            std::this_thread::sleep_for(std::chrono::duration<double>(opts.poll_interval_s));
+            continue;
+        }
+
+        ClientRealtimeState cs;
+        cs.joint_position = state.joint_position;
+        cs.tcp_pose = state.tcp_pose;
+        cs.in_motion = state.in_motion;
+        cs.collision_stopped = state.collision_stopped;
+        cs.emergency_stop_pressed = state.emergency_stop_pressed;
+        cs.has_alarm = state.has_alarm;
+
+        bool reached = pred(cs);
+
+        if (cs.in_motion) had_motion = true;
+
+        if (cs.collision_stopped || cs.emergency_stop_pressed || cs.has_alarm) {
+            throw std::runtime_error(op_name + " failed: abnormal state detected (CollisionStopped="
+                                     + std::to_string(cs.collision_stopped)
+                                     + ", EmergencyStopPressed=" + std::to_string(cs.emergency_stop_pressed)
+                                     + ", HasAlarm=" + std::to_string(cs.has_alarm) + ")");
+        }
+
+        if (had_motion && !cs.in_motion && !reached) {
+            throw std::runtime_error(op_name + " failed: motion stopped but target not reached.");
+        }
+
+        bool still = !cs.in_motion;
+        if (reached && still) {
+            if (++settled >= opts.settled_samples) return;
+        } else {
+            settled = 0;
+        }
+
+        std::this_thread::sleep_for(std::chrono::duration<double>(opts.poll_interval_s));
+    }
+
+    auto tail = ctrl.getRobotRealtimeState();
+    std::string jp_str;
+    for (size_t i = 0; i < tail.joint_position.size(); ++i) {
+        if (i > 0) jp_str += ", ";
+        char buf[32];
+        std::snprintf(buf, sizeof(buf), "%.3f", tail.joint_position[i]);
+        jp_str += buf;
+    }
+    throw std::runtime_error(op_name + " wait timed out (" + std::to_string(opts.timeout_s)
+                             + "s). Last state: InMotion=" + std::to_string(tail.in_motion)
+                             + ", jp=[" + jp_str + "]");
 }
 
 } // namespace
@@ -507,6 +609,242 @@ void CodroidClient::SetThrowOnCommandError(bool enable) {
 
 bool CodroidClient::ThrowOnCommandError() const noexcept {
     return impl_->controller.getThrowOnCommandError();
+}
+
+// --- Sync motion ---
+
+bool CodroidClient::MoveSync(const std::vector<ClientMoveInstruction>& path, const MotionWaitOptions& wait) {
+    auto r = Move(path);
+    if (!r.Ok()) throw std::runtime_error("MoveSync: Move failed: " + r.error_msg);
+    // Build predicate from last instruction
+    if (path.empty()) throw std::invalid_argument("MoveSync: path is empty");
+    const auto& last = path.back();
+    MotionWaitOptions opts = wait;
+    if (last.target.jp.size() >= 6) {
+        auto jp = last.target.jp;
+        wait_until_settled(impl_->controller,
+            [jp, opts](const ClientRealtimeState& s) { return max_abs_diff(s.joint_position, jp) <= opts.joint_tolerance_deg; },
+            "MoveSync", opts);
+    } else if (last.target.cp.size() >= 6) {
+        auto cp = last.target.cp;
+        wait_until_settled(impl_->controller,
+            [cp, opts](const ClientRealtimeState& s) { return is_cartesian_reached(s.tcp_pose, cp, opts); },
+            "MoveSync", opts);
+    }
+    return true;
+}
+
+bool CodroidClient::MovJSync(const ClientJointPoint& target, double speed, double acc, const MotionWaitOptions& wait) {
+    auto r = MovJ(target, speed, acc);
+    if (!r.Ok()) throw std::runtime_error("MovJSync: MovJ failed: " + r.error_msg);
+    auto jp = target.jp;
+    MotionWaitOptions opts = wait;
+    wait_until_settled(impl_->controller,
+        [jp, opts](const ClientRealtimeState& s) { return max_abs_diff(s.joint_position, jp) <= opts.joint_tolerance_deg; },
+        "MovJSync(JointPoint)", opts);
+    return true;
+}
+
+bool CodroidClient::MovJSync(const ClientCartesianPoint& target, double speed, double acc, const MotionWaitOptions& wait) {
+    auto r = MovJ(target, speed, acc);
+    if (!r.Ok()) throw std::runtime_error("MovJSync: MovJ failed: " + r.error_msg);
+    auto cp = target.cp;
+    MotionWaitOptions opts = wait;
+    wait_until_settled(impl_->controller,
+        [cp, opts](const ClientRealtimeState& s) { return is_cartesian_reached(s.tcp_pose, cp, opts); },
+        "MovJSync(CartesianPoint)", opts);
+    return true;
+}
+
+bool CodroidClient::MovLSync(const ClientCartesianPoint& target, double speed, double acc, const MotionWaitOptions& wait) {
+    auto r = MovL(target, speed, acc);
+    if (!r.Ok()) throw std::runtime_error("MovLSync: MovL failed: " + r.error_msg);
+    auto cp = target.cp;
+    MotionWaitOptions opts = wait;
+    wait_until_settled(impl_->controller,
+        [cp, opts](const ClientRealtimeState& s) { return is_cartesian_reached(s.tcp_pose, cp, opts); },
+        "MovLSync(CartesianPoint)", opts);
+    return true;
+}
+
+bool CodroidClient::MovLSync(const ClientJointPoint& target, double speed, double acc, const MotionWaitOptions& wait) {
+    auto r = MovL(target, speed, acc);
+    if (!r.Ok()) throw std::runtime_error("MovLSync: MovL failed: " + r.error_msg);
+    auto jp = target.jp;
+    MotionWaitOptions opts = wait;
+    wait_until_settled(impl_->controller,
+        [jp, opts](const ClientRealtimeState& s) { return max_abs_diff(s.joint_position, jp) <= opts.joint_tolerance_deg; },
+        "MovLSync(JointPoint)", opts);
+    return true;
+}
+
+bool CodroidClient::MovCSync(const ClientCartesianPoint& middle, const ClientCartesianPoint& target,
+                             double speed, double acc, const MotionWaitOptions& wait) {
+    auto r = MovC(middle, target, speed, acc);
+    if (!r.Ok()) throw std::runtime_error("MovCSync: MovC failed: " + r.error_msg);
+    auto cp = target.cp;
+    MotionWaitOptions opts = wait;
+    wait_until_settled(impl_->controller,
+        [cp, opts](const ClientRealtimeState& s) { return is_cartesian_reached(s.tcp_pose, cp, opts); },
+        "MovCSync", opts);
+    return true;
+}
+
+bool CodroidClient::MovCircleSync(const ClientCartesianPoint& middle, const ClientCartesianPoint& target,
+                                  int circle_num, double speed, double acc, const MotionWaitOptions& wait) {
+    auto r = MovCircle(middle, target, circle_num, speed, acc);
+    if (!r.Ok()) throw std::runtime_error("MovCircleSync: MovCircle failed: " + r.error_msg);
+    auto cp = target.cp;
+    MotionWaitOptions opts = wait;
+    wait_until_settled(impl_->controller,
+        [cp, opts](const ClientRealtimeState& s) { return is_cartesian_reached(s.tcp_pose, cp, opts); },
+        "MovCircleSync", opts);
+    return true;
+}
+
+// --- MoveTo ---
+
+CommandResult CodroidClient::MoveTo(const MoveToParams& params, int id) {
+    return to_client_result(impl_->controller.moveTo(params, id));
+}
+
+CommandResult CodroidClient::MoveToHeartbeat(int id) {
+    return to_client_result(impl_->controller.moveToHeartbeat(id));
+}
+
+CommandResult CodroidClient::StopMoveTo(int id) {
+    return to_client_result(impl_->controller.moveTo(MoveToParams(MoveToType::Stop), id));
+}
+
+// --- Jog ---
+
+CommandResult CodroidClient::Jog(const JogParams& params, int id) {
+    return to_client_result(impl_->controller.jog(params, id));
+}
+
+CommandResult CodroidClient::StopJog(int id) {
+    return to_client_result(impl_->controller.stopJog(id));
+}
+
+CommandResult CodroidClient::JogHeartbeat(int id) {
+    return to_client_result(impl_->controller.jogHeartbeat(id));
+}
+
+// --- WaitForCriData ---
+
+void CodroidClient::WaitForCriData(double timeout_s) {
+    auto start = std::chrono::steady_clock::now();
+    while (std::chrono::steady_clock::now() - start < std::chrono::duration<double>(timeout_s)) {
+        auto state = impl_->controller.getRobotRealtimeState();
+        if (state.data_valid) return;
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    }
+    throw std::runtime_error("WaitForCriData timed out (" + std::to_string(timeout_s)
+                             + "s). Ensure StartCriDataPush is called first.");
+}
+
+// --- Mode control ---
+
+CommandResult CodroidClient::EnterManualModeViaAuto(int id) {
+    return to_client_result(impl_->controller.toManual(id));
+}
+
+CommandResult CodroidClient::EnterRemoteModeViaAuto(int id) {
+    return to_client_result(impl_->controller.toRemote(id));
+}
+
+CommandResult CodroidClient::ToSimulation(int id) {
+    return to_client_result(impl_->controller.toSimulation(id));
+}
+
+CommandResult CodroidClient::ToActual(int id) {
+    return to_client_result(impl_->controller.toActual(id));
+}
+
+CommandResult CodroidClient::StartDrag(int id) {
+    return to_client_result(impl_->controller.startDrag(id));
+}
+
+CommandResult CodroidClient::StopDrag(int id) {
+    return to_client_result(impl_->controller.stopDrag(id));
+}
+
+// --- Script & Project ---
+
+CommandResult CodroidClient::RunScript(const std::string& mainScript,
+                                       const std::unordered_map<std::string, std::string>& subThreads,
+                                       const std::unordered_map<std::string, std::string>& subPrograms,
+                                       const std::unordered_map<std::string, std::string>& interrupts,
+                                       const nlohmann::json& vars,
+                                       int id) {
+    RunScriptParams params(mainScript);
+    params.subThreads = subThreads;
+    params.subPrograms = subPrograms;
+    params.interrupts = interrupts;
+    params.vars = vars;
+    return to_client_result(impl_->controller.runScript(params, id));
+}
+
+CommandResult CodroidClient::EnterRemoteScriptMode(int id) {
+    return to_client_result(impl_->controller.enterRemoteScriptMode(id));
+}
+
+CommandResult CodroidClient::Run(const std::string& projectId, int id) {
+    return to_client_result(impl_->controller.runProject(projectId, id));
+}
+
+CommandResult CodroidClient::RunByIndex(int index, int id) {
+    return to_client_result(impl_->controller.runProjectByIndex(index, id));
+}
+
+CommandResult CodroidClient::RunStep(const std::string& projectId, int id) {
+    return to_client_result(impl_->controller.runStep(projectId, id));
+}
+
+CommandResult CodroidClient::PauseProject(int id) {
+    return to_client_result(impl_->controller.pauseProject(id));
+}
+
+CommandResult CodroidClient::ResumeProject(int id) {
+    return to_client_result(impl_->controller.resumeProject(id));
+}
+
+CommandResult CodroidClient::StopProject(int id) {
+    return to_client_result(impl_->controller.stopProject(id));
+}
+
+// --- Global Variables ---
+
+nlohmann::json CodroidClient::GetGlobalVars(int id) {
+    auto r = impl_->controller.getGlobalVars(id);
+    if (!r.error_msg.empty()) {
+        if (impl_->controller.getThrowOnCommandError())
+            throw CodroidCommandException(r.id, r.ty, r.error_msg, r.raw_json);
+        return nullptr;
+    }
+    return r.db;
+}
+
+CommandResult CodroidClient::SaveGlobalVars(const std::map<std::string, Variable>& vars, int id) {
+    return to_client_result(impl_->controller.saveGlobalVars(vars, id));
+}
+
+CommandResult CodroidClient::RemoveGlobalVars(const std::vector<std::string>& names, int id) {
+    return to_client_result(impl_->controller.removeGlobalVars(names, id));
+}
+
+// --- Kinematics ---
+
+std::vector<double> CodroidClient::ForwardKinematics(const FKParams& params, int id) {
+    return impl_->controller.forwardKinematics(params, id);
+}
+
+std::vector<double> CodroidClient::InverseKinematics(const IKParams& params, int id) {
+    return impl_->controller.inverseKinematics(params, id);
+}
+
+std::vector<double> CodroidClient::CalculateRelativePose(const RelativePoseParams& params, int id) {
+    return impl_->controller.calculateRelativePose(params, id);
 }
 
 } // namespace Codroid

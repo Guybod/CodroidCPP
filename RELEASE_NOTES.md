@@ -1,5 +1,26 @@
 # Codroid C++ SDK 版本说明
 
+## v2.1.2（2026-05-29）
+
+### 新增
+
+- **阻塞式运动 API**（对齐 C# `*Sync` 方法）：
+  - `MoveSync`、`MovJSync`（JointPoint / CartesianPoint）、`MovLSync`（CartesianPoint / JointPoint）、`MovCSync`、`MovCircleSync`
+  - `MotionWaitOptions` 结构体：可配置超时、轮询间隔、CRI 过期判定、稳定采样数、关节/笛卡尔容差
+- **`StopMoveTo()`**：发送 `type=-1` 停止 MoveTo 运动
+- **`WaitForCriData(timeout_s)`**：阻塞等待首帧 CRI 数据到达
+- `MoveToType::Stop = -1` 枚举值
+- 从 `CodroidController` 暴露到 `CodroidClient` 的方法：
+  - 模式控制：`EnterManualModeViaAuto`、`EnterRemoteModeViaAuto`、`ToSimulation`、`ToActual`、`StartDrag`、`StopDrag`
+  - 工程/脚本：`RunScript`（含 `subThreads`/`subPrograms`/`interrupts`/`vars`）、`EnterRemoteScriptMode`、`Run`、`RunByIndex`、`RunStep`、`PauseProject`、`ResumeProject`、`StopProject`
+  - 全局变量：`GetGlobalVars`、`SaveGlobalVars`、`RemoveGlobalVars`
+  - Jog：`Jog`、`StopJog`、`JogHeartbeat`
+  - MoveTo：`MoveTo`、`MoveToHeartbeat`
+  - 运动学：`ForwardKinematics`、`InverseKinematics`、`CalculateRelativePose`
+- 新增示例：`examples_client/07_sync_motion.cpp`（阻塞式运动演示）
+
+---
+
 ## v2.1.1（2026-05-21）
 
 在 v2.1.0 基础上的累积更新（运动 API、路径构建、MinGW 构建）。客户可读公告见 **`UPDATE_ANNOUNCEMENT.md`**。

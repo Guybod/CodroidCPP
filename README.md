@@ -262,6 +262,40 @@ const int id2 = robot.NextRequestId();
 robot.SetRegisterValue(49100, 520.0, id2);
 ```
 
+### 脚本与工程
+
+```cpp
+// 运行 Lua 脚本（含子线程、子程序、中断）
+std::unordered_map<std::string, std::string> threads = {
+    {"thread1", "while true do print('sub') sleep(1) end"}
+};
+robot.RunScript("print('main')", threads);
+
+// 运行工程
+robot.Run("project_id");
+robot.PauseProject();
+robot.ResumeProject();
+robot.StopProject();
+```
+
+### 模式控制
+
+```cpp
+robot.EnterRemoteModeViaAuto();  // Auto → Remote
+robot.EnterManualModeViaAuto();  // Auto → Manual
+robot.ToSimulation();            // 仿真模式
+robot.ToActual();                // 实机模式
+robot.StartDrag();               // 拖拽示教
+robot.StopDrag();
+```
+
+### 运动学
+
+```cpp
+auto fk_result = robot.ForwardKinematics(Codroid::FKParams({0, 0, 90, 0, 90, 0}));
+auto ik_result = robot.InverseKinematics(Codroid::IKParams({400, 200, 500, 180, 0, 90}));
+```
+
 ### 运动控制
 
 运动目标使用 **`JointPoint`（关节，度）** 与 **`CartesianPoint`（TCP，mm+度）** 区分，**不要**传裸 `std::vector<double>`。类型说明见 `include/Codroid/CodroidDefine.h`。
@@ -316,9 +350,52 @@ const std::vector<Codroid::ClientMoveInstruction> path = {
 robot.Move(path, robot.NextRequestId());
 ```
 
+### 阻塞式运动（Sync Motion）
+
+`*Sync` 方法发送运动指令后自动轮询 CRI 数据，直到机器人稳定到达目标。需要 CRI 数据已开始推送。
+
+```cpp
+#include "Codroid/client.hpp"
+
+robot.ConnectRemoteAndSwitchOn(robot_ip, 9001, local_ip);
+robot.WaitForCriData();  // 等待首帧 CRI 到达
+
+// 阻塞式关节运动（默认容差）
+robot.MovJSync(Codroid::JointPoint::Degrees({0, 0, 90, 0, 90, 0}), 40, 100);
+
+// 阻塞式直线运动
+robot.MovLSync(Codroid::CartesianPoint::MmDeg({400, 200, 500, 180, 0, 90}), 150, 500);
+
+// 自定义等待参数
+Codroid::MotionWaitOptions opts;
+opts.timeout_s = 30.0;
+opts.joint_tolerance_deg = 0.5;  // 放宽关节容差
+robot.MovJSync(target, 40, 100, opts);
+
+// 阻塞式多段路径
+std::vector<Codroid::ClientMoveInstruction> path = {
+    Codroid::ClientMoveInstruction::MovJ(jp, 40, 100),
+    Codroid::ClientMoveInstruction::MovL(cp, 150, 500),
+};
+robot.MoveSync(path);
+```
+
+`MotionWaitOptions` 参数说明：
+
+| 参数 | 默认值 | 说明 |
+|------|--------|------|
+| `timeout_s` | 60.0 | 整体等待超时（秒） |
+| `poll_interval_s` | 0.05 | CRI 轮询间隔（秒） |
+| `cri_stale_timeout_s` | 0.5 | CRI 数据过期判定（秒） |
+| `settled_samples` | 3 | 连续稳定采样数 |
+| `joint_tolerance_deg` | 0.2 | 关节容差（度） |
+| `cartesian_position_tolerance_mm` | 1.0 | 笛卡尔位置容差（mm） |
+| `cartesian_orientation_tolerance_deg` | 1.0 | 笛卡尔姿态容差（度） |
+
 另有一套 **`moveTo` / `moveToHeartbeat`**（RunTo 规划，非 `Robot/move`），目标同样用 `MoveToTarget::Joint` / `Cartesian`，示例见 `examples/07_move_To.cpp`。
 
 - 客户示例：`examples_client/04_move.cpp`（点到点 + 四组合路径）
+- 阻塞运动示例：`examples_client/07_sync_motion.cpp`（Sync 阻塞运动）
 - 底层直连：`examples/08_move.cpp`（`CodroidController`）
 
 ## 7. 跑 CRI 实时轨迹
@@ -414,6 +491,8 @@ robot.SetCriDataReceived([](const Codroid::ClientRealtimeState& state) {
 - `examples_client/03_cri_state.cpp`：读取 CRI 状态快照
 - `examples_client/04_move.cpp`：`JointPoint` / `CartesianPoint`、点到点 API 与 `Move` 多段路径
 - `examples_client/05_cri_trajectory.cpp`：CRI 实时控制最小轨迹
+- `examples_client/06_robot_parameters.cpp`：机器人设置（工具/负载/坐标系）
+- `examples_client/07_sync_motion.cpp`：阻塞式运动 API（`*Sync` + `MotionWaitOptions`）
 - `examples/`：SDK 内部/兼容示例，包含旧接口用法
 
 ## 11. 常见问题
