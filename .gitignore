@@ -11,7 +11,6 @@ package/
 bin/
 lib/
 out/
-docs/
 
 # === 编译器产生的中间文件 (Objects & Libraries) ===
 *.o
@@ -94,9 +93,9 @@ htmlcov/
 # 本地环境配置文件
 .env
 
-# Markdown：除 README.md 外不入库
+# Markdown：仅允许根目录 README.md、RELEASE_NOTES.md 和 docs/ 目录
 *.md
 !README.md
-!SDK_GUIDE.md
 !RELEASE_NOTES.md
-!UPDATE_ANNOUNCEMENT.md
+!docs/**/*.md
+!docs/**/*.pdf
