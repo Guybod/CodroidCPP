@@ -4,12 +4,10 @@ Codroid C++ SDK 提供一套 C++ 接口，用于连接 Codroid 控制器并完�
 
 首页按实际接入顺序组织：准备网络，编译 SDK，跑通第一个示例，再接入业务程序。
 
-## 资料入口
+## 文档
 
-- API 在线手册：[金山文档](https://www.kdocs.cn/l/cqlm2DOsjGRp)
-- SDK 手册：`SDK_GUIDE.md`
-- 入口头文件：`include/Codroid/client.hpp`
-- 客户示例目录：`examples_client/`
+- **SDK 手册（中文）**：[docs/CodroidCPP-SDK-Manual-v2.1.2-zh.md](docs/CodroidCPP-SDK-Manual-v2.1.2-zh.md)
+- **SDK Manual (English)**：[docs/CodroidCPP-SDK-Manual-v2.1.2-en.md](docs/CodroidCPP-SDK-Manual-v2.1.2-en.md)
 
 ## 1. 准备控制器网络
 
@@ -54,13 +52,13 @@ chmod +x build_linux.sh
 
 - CMake 已加入 PATH
 - Visual Studio 2019 / 2022 / 2026
-- 安装 “使用 C++ 的桌面开发”
+- 安装 "使用 C++ 的桌面开发"
 - 目标平台使用 x64
 
 注意事项（编码）：
 
 - Windows 下请使用 UTF-8 编码（源码和项目建议统一为 UTF-8）。
-- 在 Visual Studio 中可通过“项目属性 -> C/C++ -> 命令行”添加 `/utf-8`，强制按 UTF-8 编译。
+- 在 Visual Studio 中可通过"项目属性 -> C/C++ -> 命令行"添加 `/utf-8`，强制按 UTF-8 编译。
 - 使用其他 IDE（如 CLion、VS Code、Qt Creator）但底层仍是 MSVC 时，同样需要传递 `/utf-8`。
 - 使用 MinGW（GCC/Clang）时，建议添加 `-finput-charset=UTF-8 -fexec-charset=UTF-8`。
 
