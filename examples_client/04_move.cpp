@@ -92,28 +92,28 @@ int main() {
     print_result("MovJ(joint_p2)", robot.MovJ(joint_p2, 40.0, 100.0, robot.NextRequestId()));
     wait_motion_hint();
 
-    print_result("MovJ(joint_p1) again", robot.MovJ(joint_p1, 40.0, 100.0, robot.NextRequestId()));
+    print_result("MovJ(joint_p1) again", robot.MovJ(joint_p1, 40.0, 100.0, -1, -1, {}, {}, robot.NextRequestId()));
     wait_motion_hint();
 
     // movL + cp：直线运动到 TCP 位姿
-    print_result("MovL(line_p1)", robot.MovL(line_p1, 550.0, 500.0, {}, {}, robot.NextRequestId()));
+    print_result("MovL(line_p1)", robot.MovL(line_p1, 550.0, 500.0, -1, -1, {}, {}, robot.NextRequestId()));
     wait_motion_hint();
 
     // movJ + cp：关节运动到笛卡尔点（控制器逆解）
     // 若需稳定选解，可改为：
     //   auto cp = Codroid::CartesianPoint::MmDegWithRef({...tcp...}, robot.GetRobotRealtimeState().joint_position);
-    print_result("MovJ(line_p1)", robot.MovJ(line_p2, 40.0, 100.0, robot.NextRequestId()));
+    print_result("MovJ(line_p1)", robot.MovJ(line_p2, 40.0, 100.0, -1, -1, {}, {}, robot.NextRequestId()));
     wait_motion_hint();
 
     // movL + jp：直线运动到关节目标
-    print_result("MovL(joint_p2)", robot.MovL(joint_p3, 550.0, 500.0, {}, {}, robot.NextRequestId()));
+    print_result("MovL(joint_p2)", robot.MovL(joint_p3, 550.0, 500.0, -1, -1, {}, {}, robot.NextRequestId()));
     wait_motion_hint();
 
-    print_result("MovL(line_p2)", robot.MovL(line_p2, 550.0, 500.0, {}, {}, robot.NextRequestId()));
+    print_result("MovL(line_p2)", robot.MovL(line_p2, 550.0, 500.0, -1, -1, {}, {}, robot.NextRequestId()));
     wait_motion_hint();
 
     // 圆弧：中间点 line_p2，终点 line_p3（均为 CartesianPoint）
-    print_result("MovC(line_p2 -> line_p3)", robot.MovC(circle_middle, circle_end, 120.0, 400.0, robot.NextRequestId()));
+    print_result("MovC(line_p2 -> line_p3)", robot.MovC(circle_middle, circle_end, 120.0, 400.0, -1, -1, {}, {}, robot.NextRequestId()));
     wait_motion_hint();
 
     // -------------------------------------------------------------------------

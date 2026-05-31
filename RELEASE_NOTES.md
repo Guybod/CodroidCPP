@@ -1,5 +1,20 @@
 # Codroid C++ SDK 版本说明
 
+## v2.1.5（2026-05-30）
+
+### Bug Fixes
+
+- **修复阻塞运动欧拉角到达判定**：`180°` 和 `-180°` 是同一姿态，但之前直接算差值 `|180-(-180)|=360°`，导致判定永远不通过。现在归一化到 `[-180, 180]` 后再比较
+- **修复 `packInstruction` blend/relativeBlend 互斥逻辑**：从 `else if` 改为两个独立 `if`，允许 relativeBlend 独立生效
+- **修复 `setPayload` 校验范围**：从 1-15 改为 0-15，与 C# 对齐
+
+### 改进
+
+- **MovJ/MovL/MovC/MovCircle 便捷方法补全参数**：所有便捷方法新增 `blend`、`relativeBlend`、`coor`、`tool` 可选参数，与 C#/Python 对齐
+- **所有 *Sync 方法补全参数**：`MovJSync`、`MovLSync`、`MovCSync`、`MovCircleSync` 新增 `blend`、`relativeBlend`、`coor`、`tool` 可选参数
+
+---
+
 ## v2.1.2（2026-05-29）
 
 ### 新增

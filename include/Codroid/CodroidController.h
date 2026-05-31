@@ -521,14 +521,20 @@ public:
      *         @~chinese  包含指令执行结果的响应对象。
      */
     /** @brief @~english Joint motion to joint-space target (deg) @~chinese 关节运动到关节目标点 */
-    Response movJ(const JointPoint& target, double speed, double acc, int id = 1);
+    Response movJ(const JointPoint& target, double speed, double acc,
+                  double blend = -1, double relativeBlend = -1,
+                  const std::vector<double>& coor = {}, const std::vector<double>& tool = {}, int id = 1);
     /**
      * @brief @~english Joint motion to a Cartesian target (controller IK) @~chinese 关节运动到笛卡尔目标点
      * @param target TCP pose mm+deg; optional @p target.rj reference joints (deg).
      */
-    Response movJ(const CartesianPoint& target, double speed, double acc, int id = 1);
+    Response movJ(const CartesianPoint& target, double speed, double acc,
+                  double blend = -1, double relativeBlend = -1,
+                  const std::vector<double>& coor = {}, const std::vector<double>& tool = {}, int id = 1);
     /** @brief @~english Joint motion using an explicit @ref MovePoint (Joint or Cartesian) @~chinese 使用 MovePoint 的关节运动 */
-    Response movJ(const MovePoint& target, double speed, double acc, int id = 1);
+    Response movJ(const MovePoint& target, double speed, double acc,
+                  double blend = -1, double relativeBlend = -1,
+                  const std::vector<double>& coor = {}, const std::vector<double>& tool = {}, int id = 1);
 
     // --- movL 重载 ---
     /** @brief @~english Move the robot along a linear path @~chinese 按直线路径移动机器人
@@ -562,12 +568,15 @@ public:
      */
     /** @brief @~english Linear motion to Cartesian target (mm+deg) @~chinese 直线运动到笛卡尔目标点 */
     Response movL(const CartesianPoint& target, double speed, double acc,
+                  double blend = -1, double relativeBlend = -1,
                   const std::vector<double>& coor = {}, const std::vector<double>& tool = {}, int id = 1);
     /** @brief @~english Linear motion to a joint-space target @~chinese 直线运动到关节目标点 */
     Response movL(const JointPoint& target, double speed, double acc,
+                  double blend = -1, double relativeBlend = -1,
                   const std::vector<double>& coor = {}, const std::vector<double>& tool = {}, int id = 1);
     /** @brief @~english Linear motion using an explicit @ref MovePoint (Joint or Cartesian) @~chinese 使用 MovePoint 的直线运动 */
     Response movL(const MovePoint& target, double speed, double acc,
+                  double blend = -1, double relativeBlend = -1,
                   const std::vector<double>& coor = {}, const std::vector<double>& tool = {}, int id = 1);
 
     // --- movC 重载 ---
@@ -582,6 +591,11 @@ public:
      *         @~chinese  包含指令执行结果的响应对象。
      */
     Response movC(const MoveInstruction& inst, int id = 1);
+    /** @brief @~english Circular arc motion @~chinese 圆弧运动 */
+    Response movC(const CartesianPoint& middle, const CartesianPoint& target,
+                  double speed, double acc,
+                  double blend = -1, double relativeBlend = -1,
+                  const std::vector<double>& coor = {}, const std::vector<double>& tool = {}, int id = 1);
 
     // --- movCircle (整圆运动) ---
     /** @brief @~english Move the robot along a circular path that forms a complete circle @~chinese 按圆弧路径移动机器人，形成一个完整的圆
@@ -595,6 +609,11 @@ public:
      *         @~chinese  包含指令执行结果的响应对象。
      */
     Response movCircle(const MoveInstruction& inst, int id = 1);
+    /** @brief @~english Full circle motion @~chinese 整圆运动 */
+    Response movCircle(const CartesianPoint& middle, const CartesianPoint& target, int circleNum,
+                       double speed, double acc,
+                       double blend = -1, double relativeBlend = -1,
+                       const std::vector<double>& coor = {}, const std::vector<double>& tool = {}, int id = 1);
 
     // --- 11.9 暂停运动 ---
     /** @brief @~english Pause the current movement of the robot @~chinese 暂停机器人当前的运动

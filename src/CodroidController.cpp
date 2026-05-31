@@ -1445,19 +1445,25 @@ Response CodroidController::movJ(const MoveInstruction& inst, int id) {
  * @param id Request ID / 请求ID
  * @return Response Standard response / 标准响应
  */
-Response CodroidController::movJ(const JointPoint& target, double speed, double acc, int id) {
+Response CodroidController::movJ(const JointPoint& target, double speed, double acc,
+                                double blend, double relativeBlend,
+                                const std::vector<double>& coor, const std::vector<double>& tool, int id) {
     JointPoint joint = target;
-    return movJ(MovePoint::Joint(std::move(joint)), speed, acc, id);
+    return movJ(MovePoint::Joint(std::move(joint)), speed, acc, blend, relativeBlend, coor, tool, id);
 }
 
-Response CodroidController::movJ(const CartesianPoint& target, double speed, double acc, int id) {
+Response CodroidController::movJ(const CartesianPoint& target, double speed, double acc,
+                                double blend, double relativeBlend,
+                                const std::vector<double>& coor, const std::vector<double>& tool, int id) {
     MovePoint point;
     point.cp = target.cp;
     point.rj = target.rj;
-    return movJ(point, speed, acc, id);
+    return movJ(point, speed, acc, blend, relativeBlend, coor, tool, id);
 }
 
-Response CodroidController::movJ(const MovePoint& target, double speed, double acc, int id) {
+Response CodroidController::movJ(const MovePoint& target, double speed, double acc,
+                                double blend, double relativeBlend,
+                                const std::vector<double>& coor, const std::vector<double>& tool, int id) {
     if (target.jp.empty() && target.cp.empty()) {
         Response err;
         err.id = id;
@@ -1468,6 +1474,10 @@ Response CodroidController::movJ(const MovePoint& target, double speed, double a
     inst.targetPoint = target;
     inst.speed = speed;
     inst.acc = acc;
+    inst.blend = blend;
+    inst.relativeBlend = relativeBlend;
+    inst.coor = coor;
+    inst.tool = tool;
     return movJ(inst, id);
 }
 
@@ -1495,20 +1505,23 @@ Response CodroidController::movL(const MoveInstruction& inst, int id) {
  * @return Response Standard response / 标准响应
  */
 Response CodroidController::movL(const CartesianPoint& target, double speed, double acc,
+                                 double blend, double relativeBlend,
                                  const std::vector<double>& coor, const std::vector<double>& tool, int id) {
     MovePoint point;
     point.cp = target.cp;
     point.rj = target.rj;
-    return movL(point, speed, acc, coor, tool, id);
+    return movL(point, speed, acc, blend, relativeBlend, coor, tool, id);
 }
 
 Response CodroidController::movL(const JointPoint& target, double speed, double acc,
+                                 double blend, double relativeBlend,
                                  const std::vector<double>& coor, const std::vector<double>& tool, int id) {
     JointPoint joint = target;
-    return movL(MovePoint::Joint(std::move(joint)), speed, acc, coor, tool, id);
+    return movL(MovePoint::Joint(std::move(joint)), speed, acc, blend, relativeBlend, coor, tool, id);
 }
 
 Response CodroidController::movL(const MovePoint& target, double speed, double acc,
+                                 double blend, double relativeBlend,
                                  const std::vector<double>& coor, const std::vector<double>& tool, int id) {
     if (target.jp.empty() && target.cp.empty()) {
         Response err;
@@ -1520,6 +1533,8 @@ Response CodroidController::movL(const MovePoint& target, double speed, double a
     inst.targetPoint = target;
     inst.speed = speed;
     inst.acc = acc;
+    inst.blend = blend;
+    inst.relativeBlend = relativeBlend;
     inst.coor = coor;
     inst.tool = tool;
     return movL(inst, id);
@@ -1532,6 +1547,53 @@ Response CodroidController::movL(const MovePoint& target, double speed, double a
  * @param id Request ID / 请求ID
  * @return Response Standard response / 标准响应
  */
+Response CodroidController::movC(const MoveInstruction& inst, int id) {
+    return move({inst}, id);
+}
+
+Response CodroidController::movC(const CartesianPoint& middle, const CartesianPoint& target,
+                                double speed, double acc,
+                                double blend, double relativeBlend,
+                                const std::vector<double>& coor, const std::vector<double>& tool, int id) {
+    MoveInstruction inst;
+    inst.type = MoveType::movC;
+    inst.middlePoint.cp = middle.cp;
+    inst.middlePoint.rj = middle.rj;
+    inst.targetPoint.cp = target.cp;
+    inst.targetPoint.rj = target.rj;
+    inst.speed = speed;
+    inst.acc = acc;
+    inst.blend = blend;
+    inst.relativeBlend = relativeBlend;
+    inst.coor = coor;
+    inst.tool = tool;
+    return movC(inst, id);
+}
+
+Response CodroidController::movCircle(const MoveInstruction& inst, int id) {
+    return move({inst}, id);
+}
+
+Response CodroidController::movCircle(const CartesianPoint& middle, const CartesianPoint& target, int circleNum,
+                                     double speed, double acc,
+                                     double blend, double relativeBlend,
+                                     const std::vector<double>& coor, const std::vector<double>& tool, int id) {
+    MoveInstruction inst;
+    inst.type = MoveType::movCircle;
+    inst.circleNum = circleNum;
+    inst.middlePoint.cp = middle.cp;
+    inst.middlePoint.rj = middle.rj;
+    inst.targetPoint.cp = target.cp;
+    inst.targetPoint.rj = target.rj;
+    inst.speed = speed;
+    inst.acc = acc;
+    inst.blend = blend;
+    inst.relativeBlend = relativeBlend;
+    inst.coor = coor;
+    inst.tool = tool;
+    return movCircle(inst, id);
+}
+
 Response CodroidController::pauseMove(int id) {
     return sendCommand("Robot/pause", json::object(), id);
 }
@@ -2075,8 +2137,8 @@ Response CodroidController::setCollisionSensitivity(int level, int id) {
  * @return Response 响应结果
  */
 Response CodroidController::setPayload(int payloadId, int id) {
-    if (payloadId < 1 || payloadId > 15) {
-        Response r; r.id = id; r.error_msg = "Payload ID must be between 1 and 15";
+    if (payloadId < 0 || payloadId > 15) {
+        Response r; r.id = id; r.error_msg = "Payload ID must be between 0 and 15";
         return r;
     }
     return sendCommand("Robot/setPayload", payloadId, id);
@@ -2424,9 +2486,9 @@ json CodroidController::packInstruction(const MoveInstruction& inst) {
     j["speed"] = inst.speed;
     j["acc"] = inst.acc;
 
-    // 处理 blend (只有在显式设置 >= 0 时才发送)
+    // 处理 blend / relativeBlend（互斥：同时传入时 relativeBlend 被忽略）
     if (inst.blend >= 0) j["blend"] = inst.blend;
-    else if (inst.relativeBlend >= 0) j["relativeBlend"] = inst.relativeBlend;
+    if (inst.relativeBlend >= 0) j["relativeBlend"] = inst.relativeBlend;
 
     if (inst.type == MoveType::movCircle) j["circleNum"] = inst.circleNum;
 

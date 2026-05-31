@@ -257,7 +257,8 @@ double max_abs_euler_diff_deg(const std::vector<double>& a, const std::vector<do
     if (a.size() < 6 || b.size() < 6) return 1e9;
     double m = 0.0;
     for (int i = 3; i < 6; ++i) {
-        double d = std::abs(a[i] - b[i]);
+        double d = std::fmod(a[i] - b[i], 360.0);
+        d = std::min(std::abs(d), 360.0 - std::abs(d));
         if (d > m) m = d;
     }
     return m;
@@ -481,53 +482,54 @@ CommandResult CodroidClient::SetUserCoordinateFrame(int frame_id, const ClientRo
     return to_client_result(impl_->controller.setUserCoordinateFrame(frame_id, to_internal_frame(frame), id));
 }
 
-CommandResult CodroidClient::MovJ(const ClientJointPoint& target, double speed, double acceleration, int id) {
-    return to_client_result(impl_->controller.movJ(target, speed, acceleration, id));
+CommandResult CodroidClient::MovJ(const ClientJointPoint& target, double speed, double acceleration,
+                                  double blend, double relativeBlend,
+                                  const std::vector<double>& coor, const std::vector<double>& tool, int id) {
+    return to_client_result(impl_->controller.movJ(target, speed, acceleration, blend, relativeBlend, coor, tool, id));
 }
 
-CommandResult CodroidClient::MovJ(const ClientCartesianPoint& target, double speed, double acceleration, int id) {
-    return to_client_result(impl_->controller.movJ(target, speed, acceleration, id));
+CommandResult CodroidClient::MovJ(const ClientCartesianPoint& target, double speed, double acceleration,
+                                  double blend, double relativeBlend,
+                                  const std::vector<double>& coor, const std::vector<double>& tool, int id) {
+    return to_client_result(impl_->controller.movJ(target, speed, acceleration, blend, relativeBlend, coor, tool, id));
 }
 
-CommandResult CodroidClient::MovJ(const ClientMovePoint& target, double speed, double acceleration, int id) {
-    return to_client_result(impl_->controller.movJ(target, speed, acceleration, id));
+CommandResult CodroidClient::MovJ(const ClientMovePoint& target, double speed, double acceleration,
+                                  double blend, double relativeBlend,
+                                  const std::vector<double>& coor, const std::vector<double>& tool, int id) {
+    return to_client_result(impl_->controller.movJ(target, speed, acceleration, blend, relativeBlend, coor, tool, id));
 }
 
 CommandResult CodroidClient::MovL(const ClientCartesianPoint& target, double speed, double acceleration,
+                                  double blend, double relativeBlend,
                                   const std::vector<double>& coor, const std::vector<double>& tool, int id) {
-    return to_client_result(impl_->controller.movL(target, speed, acceleration, coor, tool, id));
+    return to_client_result(impl_->controller.movL(target, speed, acceleration, blend, relativeBlend, coor, tool, id));
 }
 
 CommandResult CodroidClient::MovL(const ClientJointPoint& target, double speed, double acceleration,
+                                  double blend, double relativeBlend,
                                   const std::vector<double>& coor, const std::vector<double>& tool, int id) {
-    return to_client_result(impl_->controller.movL(target, speed, acceleration, coor, tool, id));
+    return to_client_result(impl_->controller.movL(target, speed, acceleration, blend, relativeBlend, coor, tool, id));
 }
 
 CommandResult CodroidClient::MovL(const ClientMovePoint& target, double speed, double acceleration,
+                                  double blend, double relativeBlend,
                                   const std::vector<double>& coor, const std::vector<double>& tool, int id) {
-    return to_client_result(impl_->controller.movL(target, speed, acceleration, coor, tool, id));
+    return to_client_result(impl_->controller.movL(target, speed, acceleration, blend, relativeBlend, coor, tool, id));
 }
 
-CommandResult CodroidClient::MovC(const ClientCartesianPoint& middle,
-                                  const ClientCartesianPoint& target,
-                                  double speed,
-                                  double acceleration,
-                                  int id) {
-    ClientCartesianPoint mid = middle;
-    ClientCartesianPoint tgt = target;
-    return Move({ClientMoveInstruction::MovC(std::move(mid), std::move(tgt), speed, acceleration)}, id);
+CommandResult CodroidClient::MovC(const ClientCartesianPoint& middle, const ClientCartesianPoint& target,
+                                  double speed, double acceleration,
+                                  double blend, double relativeBlend,
+                                  const std::vector<double>& coor, const std::vector<double>& tool, int id) {
+    return to_client_result(impl_->controller.movC(middle, target, speed, acceleration, blend, relativeBlend, coor, tool, id));
 }
 
-CommandResult CodroidClient::MovCircle(const ClientCartesianPoint& middle,
-                                       const ClientCartesianPoint& target,
-                                       int circle_num,
-                                       double speed,
-                                       double acceleration,
-                                       int id) {
-    ClientCartesianPoint mid = middle;
-    ClientCartesianPoint tgt = target;
-    return Move({ClientMoveInstruction::MovCircle(std::move(mid), std::move(tgt), circle_num, speed, acceleration)},
-                id);
+CommandResult CodroidClient::MovCircle(const ClientCartesianPoint& middle, const ClientCartesianPoint& target,
+                                       int circle_num, double speed, double acceleration,
+                                       double blend, double relativeBlend,
+                                       const std::vector<double>& coor, const std::vector<double>& tool, int id) {
+    return to_client_result(impl_->controller.movCircle(middle, target, circle_num, speed, acceleration, blend, relativeBlend, coor, tool, id));
 }
 
 CommandResult CodroidClient::Move(const std::vector<ClientMoveInstruction>& path, int id) {
@@ -634,8 +636,11 @@ bool CodroidClient::MoveSync(const std::vector<ClientMoveInstruction>& path, con
     return true;
 }
 
-bool CodroidClient::MovJSync(const ClientJointPoint& target, double speed, double acc, const MotionWaitOptions& wait) {
-    auto r = MovJ(target, speed, acc);
+bool CodroidClient::MovJSync(const ClientJointPoint& target, double speed, double acc,
+                             const MotionWaitOptions& wait,
+                             double blend, double relativeBlend,
+                             const std::vector<double>& coor, const std::vector<double>& tool) {
+    auto r = MovJ(target, speed, acc, blend, relativeBlend, coor, tool);
     if (!r.Ok()) throw std::runtime_error("MovJSync: MovJ failed: " + r.error_msg);
     auto jp = target.jp;
     MotionWaitOptions opts = wait;
@@ -645,8 +650,11 @@ bool CodroidClient::MovJSync(const ClientJointPoint& target, double speed, doubl
     return true;
 }
 
-bool CodroidClient::MovJSync(const ClientCartesianPoint& target, double speed, double acc, const MotionWaitOptions& wait) {
-    auto r = MovJ(target, speed, acc);
+bool CodroidClient::MovJSync(const ClientCartesianPoint& target, double speed, double acc,
+                             const MotionWaitOptions& wait,
+                             double blend, double relativeBlend,
+                             const std::vector<double>& coor, const std::vector<double>& tool) {
+    auto r = MovJ(target, speed, acc, blend, relativeBlend, coor, tool);
     if (!r.Ok()) throw std::runtime_error("MovJSync: MovJ failed: " + r.error_msg);
     auto cp = target.cp;
     MotionWaitOptions opts = wait;
@@ -656,8 +664,11 @@ bool CodroidClient::MovJSync(const ClientCartesianPoint& target, double speed, d
     return true;
 }
 
-bool CodroidClient::MovLSync(const ClientCartesianPoint& target, double speed, double acc, const MotionWaitOptions& wait) {
-    auto r = MovL(target, speed, acc);
+bool CodroidClient::MovLSync(const ClientCartesianPoint& target, double speed, double acc,
+                             const MotionWaitOptions& wait,
+                             double blend, double relativeBlend,
+                             const std::vector<double>& coor, const std::vector<double>& tool) {
+    auto r = MovL(target, speed, acc, blend, relativeBlend, coor, tool);
     if (!r.Ok()) throw std::runtime_error("MovLSync: MovL failed: " + r.error_msg);
     auto cp = target.cp;
     MotionWaitOptions opts = wait;
@@ -667,8 +678,11 @@ bool CodroidClient::MovLSync(const ClientCartesianPoint& target, double speed, d
     return true;
 }
 
-bool CodroidClient::MovLSync(const ClientJointPoint& target, double speed, double acc, const MotionWaitOptions& wait) {
-    auto r = MovL(target, speed, acc);
+bool CodroidClient::MovLSync(const ClientJointPoint& target, double speed, double acc,
+                             const MotionWaitOptions& wait,
+                             double blend, double relativeBlend,
+                             const std::vector<double>& coor, const std::vector<double>& tool) {
+    auto r = MovL(target, speed, acc, blend, relativeBlend, coor, tool);
     if (!r.Ok()) throw std::runtime_error("MovLSync: MovL failed: " + r.error_msg);
     auto jp = target.jp;
     MotionWaitOptions opts = wait;
@@ -679,8 +693,10 @@ bool CodroidClient::MovLSync(const ClientJointPoint& target, double speed, doubl
 }
 
 bool CodroidClient::MovCSync(const ClientCartesianPoint& middle, const ClientCartesianPoint& target,
-                             double speed, double acc, const MotionWaitOptions& wait) {
-    auto r = MovC(middle, target, speed, acc);
+                             double speed, double acc, const MotionWaitOptions& wait,
+                             double blend, double relativeBlend,
+                             const std::vector<double>& coor, const std::vector<double>& tool) {
+    auto r = MovC(middle, target, speed, acc, blend, relativeBlend, coor, tool);
     if (!r.Ok()) throw std::runtime_error("MovCSync: MovC failed: " + r.error_msg);
     auto cp = target.cp;
     MotionWaitOptions opts = wait;
@@ -691,8 +707,10 @@ bool CodroidClient::MovCSync(const ClientCartesianPoint& middle, const ClientCar
 }
 
 bool CodroidClient::MovCircleSync(const ClientCartesianPoint& middle, const ClientCartesianPoint& target,
-                                  int circle_num, double speed, double acc, const MotionWaitOptions& wait) {
-    auto r = MovCircle(middle, target, circle_num, speed, acc);
+                                  int circle_num, double speed, double acc, const MotionWaitOptions& wait,
+                                  double blend, double relativeBlend,
+                                  const std::vector<double>& coor, const std::vector<double>& tool) {
+    auto r = MovCircle(middle, target, circle_num, speed, acc, blend, relativeBlend, coor, tool);
     if (!r.Ok()) throw std::runtime_error("MovCircleSync: MovCircle failed: " + r.error_msg);
     auto cp = target.cp;
     MotionWaitOptions opts = wait;

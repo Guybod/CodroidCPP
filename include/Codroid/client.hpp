@@ -346,26 +346,39 @@ public:
     CommandResult SetUserCoordinateFrame(int frame_id, const ClientRobotFrame& frame, int id = 1);
 
     /** @brief 关节运动到关节目标（度）。 */
-    CommandResult MovJ(const ClientJointPoint& target, double speed, double acceleration, int id = 1);
+    CommandResult MovJ(const ClientJointPoint& target, double speed, double acceleration,
+                       double blend = -1, double relativeBlend = -1,
+                       const std::vector<double>& coor = {}, const std::vector<double>& tool = {}, int id = 1);
     /** @brief 关节运动到笛卡尔目标（mm+度）；@p target.rj 建议填当前关节参考。 */
-    CommandResult MovJ(const ClientCartesianPoint& target, double speed, double acceleration, int id = 1);
+    CommandResult MovJ(const ClientCartesianPoint& target, double speed, double acceleration,
+                       double blend = -1, double relativeBlend = -1,
+                       const std::vector<double>& coor = {}, const std::vector<double>& tool = {}, int id = 1);
     /** @brief 关节运动；@p target 须为 `ClientMovePoint::Joint` 或 `Cartesian`。 */
-    CommandResult MovJ(const ClientMovePoint& target, double speed, double acceleration, int id = 1);
+    CommandResult MovJ(const ClientMovePoint& target, double speed, double acceleration,
+                       double blend = -1, double relativeBlend = -1,
+                       const std::vector<double>& coor = {}, const std::vector<double>& tool = {}, int id = 1);
     /** @brief 直线运动到笛卡尔目标（mm+度）。 */
     CommandResult MovL(const ClientCartesianPoint& target, double speed, double acceleration,
+                       double blend = -1, double relativeBlend = -1,
                        const std::vector<double>& coor = {}, const std::vector<double>& tool = {}, int id = 1);
     /** @brief 直线运动到关节目标（度）。 */
     CommandResult MovL(const ClientJointPoint& target, double speed, double acceleration,
+                       double blend = -1, double relativeBlend = -1,
                        const std::vector<double>& coor = {}, const std::vector<double>& tool = {}, int id = 1);
     /** @brief 直线运动；@p target 须为 `ClientMovePoint::Joint` 或 `Cartesian`。 */
     CommandResult MovL(const ClientMovePoint& target, double speed, double acceleration,
+                       double blend = -1, double relativeBlend = -1,
                        const std::vector<double>& coor = {}, const std::vector<double>& tool = {}, int id = 1);
     /** @brief 圆弧：中间点与目标点均为笛卡尔（mm+度）。 */
     CommandResult MovC(const ClientCartesianPoint& middle, const ClientCartesianPoint& target,
-                       double speed, double acceleration, int id = 1);
+                       double speed, double acceleration,
+                       double blend = -1, double relativeBlend = -1,
+                       const std::vector<double>& coor = {}, const std::vector<double>& tool = {}, int id = 1);
     /** @brief 整圆/多圈：中间点、目标点为笛卡尔（mm+度）。 */
     CommandResult MovCircle(const ClientCartesianPoint& middle, const ClientCartesianPoint& target,
-                            int circle_num, double speed, double acceleration, int id = 1);
+                            int circle_num, double speed, double acceleration,
+                            double blend = -1, double relativeBlend = -1,
+                            const std::vector<double>& coor = {}, const std::vector<double>& tool = {}, int id = 1);
     /**
      * @brief 多段路径 `Robot/move`：按顺序执行 @p path 中各 `ClientMoveInstruction`。
      * @note 与 C# `Move` 对齐；等价于 `MovePath`。
@@ -382,19 +395,35 @@ public:
     /** @brief 阻塞式路径执行，等待 CRI 确认最后一段到达目标。 */
     bool MoveSync(const std::vector<ClientMoveInstruction>& path, const MotionWaitOptions& wait = {});
     /** @brief 阻塞式关节运动到关节目标。 */
-    bool MovJSync(const ClientJointPoint& target, double speed, double acc, const MotionWaitOptions& wait = {});
+    bool MovJSync(const ClientJointPoint& target, double speed, double acc,
+                  const MotionWaitOptions& wait = {},
+                  double blend = -1, double relativeBlend = -1,
+                  const std::vector<double>& coor = {}, const std::vector<double>& tool = {});
     /** @brief 阻塞式关节运动到笛卡尔目标。 */
-    bool MovJSync(const ClientCartesianPoint& target, double speed, double acc, const MotionWaitOptions& wait = {});
+    bool MovJSync(const ClientCartesianPoint& target, double speed, double acc,
+                  const MotionWaitOptions& wait = {},
+                  double blend = -1, double relativeBlend = -1,
+                  const std::vector<double>& coor = {}, const std::vector<double>& tool = {});
     /** @brief 阻塞式直线运动到笛卡尔目标。 */
-    bool MovLSync(const ClientCartesianPoint& target, double speed, double acc, const MotionWaitOptions& wait = {});
+    bool MovLSync(const ClientCartesianPoint& target, double speed, double acc,
+                  const MotionWaitOptions& wait = {},
+                  double blend = -1, double relativeBlend = -1,
+                  const std::vector<double>& coor = {}, const std::vector<double>& tool = {});
     /** @brief 阻塞式直线运动到关节目标。 */
-    bool MovLSync(const ClientJointPoint& target, double speed, double acc, const MotionWaitOptions& wait = {});
+    bool MovLSync(const ClientJointPoint& target, double speed, double acc,
+                  const MotionWaitOptions& wait = {},
+                  double blend = -1, double relativeBlend = -1,
+                  const std::vector<double>& coor = {}, const std::vector<double>& tool = {});
     /** @brief 阻塞式圆弧运动。 */
     bool MovCSync(const ClientCartesianPoint& middle, const ClientCartesianPoint& target,
-                  double speed, double acc, const MotionWaitOptions& wait = {});
+                  double speed, double acc, const MotionWaitOptions& wait = {},
+                  double blend = -1, double relativeBlend = -1,
+                  const std::vector<double>& coor = {}, const std::vector<double>& tool = {});
     /** @brief 阻塞式整圆运动。 */
     bool MovCircleSync(const ClientCartesianPoint& middle, const ClientCartesianPoint& target,
-                       int circle_num, double speed, double acc, const MotionWaitOptions& wait = {});
+                       int circle_num, double speed, double acc, const MotionWaitOptions& wait = {},
+                       double blend = -1, double relativeBlend = -1,
+                       const std::vector<double>& coor = {}, const std::vector<double>& tool = {});
 
     // --- 11.4 MoveTo ---
 
