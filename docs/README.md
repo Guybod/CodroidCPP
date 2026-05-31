@@ -1,6 +1,6 @@
 # CodroidCPP SDK 文档 / CodroidCPP SDK Documentation
 
-**版本 / Version:** 2.1.2 | **命名空间 / Namespace:** `Codroid`
+**版本 / Version:** 2.1.5 | **命名空间 / Namespace:** `Codroid`
 
 ---
 
@@ -8,8 +8,8 @@
 
 | 语言 / Language | 文件 / File | 说明 / Description |
 |----------------|-------------|-------------------|
-| 中文 | [CodroidCPP-SDK-Manual-v2.1.2-zh.md](CodroidCPP-SDK-Manual-v2.1.2-zh.md) | 完整中文手册 |
-| English | [CodroidCPP-SDK-Manual-v2.1.2-en.md](CodroidCPP-SDK-Manual-v2.1.2-en.md) | Complete English manual |
+| 中文 | [CodroidCPP-SDK-Manual-v2.1.5-zh.md](CodroidCPP-SDK-Manual-v2.1.5-zh.md) | 完整中文手册 |
+| English | [CodroidCPP-SDK-Manual-v2.1.5-en.md](CodroidCPP-SDK-Manual-v2.1.5-en.md) | Complete English manual |
 
 ---
 
