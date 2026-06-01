@@ -974,6 +974,12 @@ public:
     RobotRealtimeState getRobotRealtimeState() const;
 
     /**
+     * @brief 返回最近一次 CRI UDP 收包距今的毫秒数；从未收过返回 INT64_MAX。
+     * @note 用于同步运动中的数据时效性判定（与 Python `_ensure_cri_fresh` / C# `EnsureCriFresh` 对齐）。
+     */
+    int64_t getCriDataAgeMs() const;
+
+    /**
      * @brief 等价于 C# **`CriDataReceived`**：每帧 308 字节解析成功后回调；在工作线程触发，请勿阻塞。
      * @note 传入独立快照副本，可与 **`getRobotRealtimeState`** 并行使用。
      */
@@ -1194,6 +1200,7 @@ private:
     mutable std::mutex cri_cache_mtx_;
     CriInternalCache cri_cache_{};
     bool cri_cache_valid_ = false;
+    std::atomic<int64_t> cri_last_received_steady_ms_{0}; ///< 最近一次 CRI UDP 收包的 steady_clock 毫秒时间戳
 
     std::mutex cri_handler_mtx_;
     CriDataReceivedHandler cri_data_received_handler_;

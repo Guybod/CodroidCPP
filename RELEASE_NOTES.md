@@ -1,5 +1,21 @@
 # Codroid C++ SDK 版本说明
 
+## v2.1.6（2026-06-01）
+
+### Bug Fixes
+
+- **修复 `packInstruction` middlePoint `rj` 死代码 Bug**：原条件 `!inst.middlePoint.rj.empty()` 内的三元表达式 true 分支永远不可达，导致 middlePoint 的 `rj` 为空时不填默认值。提取 `packMovePoint()` 共用函数，targetPoint 和 middlePoint 统一走同一打包逻辑
+- **修复 middlePoint 忽略 `jp`**：原代码 middlePoint 只检查 `cp`，如果 middlePoint 只有 `jp`（关节角度）会生成空 `{}`。现在 `jp` 优先级与 targetPoint 一致
+- **修复 `packInstruction` blend/relativeBlend 互斥逻辑**：注释说"互斥：同时传入时 relativeBlend 被忽略"，但代码实际两个都发。现在改为 `blend >= 0` 时只发 `blend`，否则才发 `relativeBlend`
+- **修复空 targetPoint 静默发送**：`jp`/`cp`/`ep` 全空时原代码发送 `targetPoint: {}` 不报错，现在抛出 `std::invalid_argument`
+
+### 改进
+
+- **新增 `ep`（外部轴）字段序列化**：`packMovePoint` 中 `ep` 非空时自动附加到 targetPoint 和 middlePoint，与 Python/C# 对齐
+- **新增 CRI 数据时效性检查**：同步运动（`*Sync`）轮询循环中新增基于 `steady_clock` 的数据年龄判定，超过 `cri_stale_timeout_s`（默认 500ms）立即报错，与 Python `_ensure_cri_fresh` / C# `EnsureCriFresh` 对齐。新增 `getCriDataAgeMs()` 公共方法
+
+---
+
 ## v2.1.5（2026-05-30）
 
 ### Bug Fixes

@@ -282,6 +282,18 @@ void wait_until_settled(CodroidController& ctrl, const std::function<bool(const 
     bool had_motion = false;
 
     while (std::chrono::steady_clock::now() - start < std::chrono::duration<double>(opts.timeout_s)) {
+        // CRI 数据时效性检查（与 Python _ensure_cri_fresh / C# EnsureCriFresh 对齐）
+        int64_t cri_age_ms = ctrl.getCriDataAgeMs();
+        if (cri_age_ms == INT64_MAX) {
+            throw std::runtime_error(op_name + " failed: no CRI data received yet. "
+                                     "Ensure StartCriDataPush() is called before sync motion.");
+        }
+        if (cri_age_ms > static_cast<int64_t>(opts.cri_stale_timeout_s * 1000.0)) {
+            throw std::runtime_error(op_name + " failed: CRI data is stale (last received "
+                                     + std::to_string(cri_age_ms) + "ms ago, threshold "
+                                     + std::to_string(static_cast<int>(opts.cri_stale_timeout_s * 1000)) + "ms).");
+        }
+
         auto state = ctrl.getRobotRealtimeState();
         if (!state.data_valid) {
             std::this_thread::sleep_for(std::chrono::duration<double>(opts.poll_interval_s));

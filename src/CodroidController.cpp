@@ -209,6 +209,14 @@ RobotRealtimeState CodroidController::getRobotRealtimeState() const {
     return buildRobotRealtimeState_(cri_cache_, cri_cache_valid_);
 }
 
+int64_t CodroidController::getCriDataAgeMs() const {
+    int64_t last = cri_last_received_steady_ms_.load(std::memory_order_acquire);
+    if (last == 0) return INT64_MAX; // 从未收到过
+    auto now_ms = std::chrono::duration_cast<std::chrono::milliseconds>(
+        std::chrono::steady_clock::now().time_since_epoch()).count();
+    return now_ms - last;
+}
+
 void CodroidController::setCriDataReceivedHandler(CriDataReceivedHandler handler) {
     std::lock_guard<std::mutex> lk(cri_handler_mtx_);
     cri_data_received_handler_ = std::move(handler);
@@ -367,6 +375,11 @@ void CodroidController::parseCriPushPacket_(const uint8_t* data, std::size_t len
         cri_cache_ = snap;
         cri_cache_valid_ = true;
     }
+    // 记录取包时间戳（用于数据时效性判定）
+    cri_last_received_steady_ms_.store(
+        std::chrono::duration_cast<std::chrono::milliseconds>(
+            std::chrono::steady_clock::now().time_since_epoch()).count(),
+        std::memory_order_release);
 
     const RobotRealtimeState delivered = buildRobotRealtimeState_(snap, true);
 
@@ -387,6 +400,7 @@ bool CodroidController::startCriUdpPushSession_() {
         cri_cache_valid_ = false;
         cri_cache_ = CriInternalCache{};
     }
+    cri_last_received_steady_ms_.store(0, std::memory_order_release);
 
     std::random_device rd;
     std::mt19937 gen(rd());
@@ -440,6 +454,7 @@ void CodroidController::disconnect() {
         std::lock_guard<std::mutex> lock(cri_cache_mtx_);
         cri_cache_valid_ = false;
     }
+    cri_last_received_steady_ms_.store(0, std::memory_order_release);
     {
         std::lock_guard<std::mutex> lk(cri_handler_mtx_);
         cri_data_received_handler_ = {};
@@ -2039,6 +2054,7 @@ Response CodroidController::stopDataPush(int id) {
         cri_cache_valid_ = false;
         cri_cache_ = CriInternalCache{};
     }
+    cri_last_received_steady_ms_.store(0, std::memory_order_release);
     stopCriUdpReceiver_();
     return r;
 }
@@ -2054,6 +2070,7 @@ Response CodroidController::stopDataPush(const std::string& ip, int port, int id
         cri_cache_valid_ = false;
         cri_cache_ = CriInternalCache{};
     }
+    cri_last_received_steady_ms_.store(0, std::memory_order_release);
     stopCriUdpReceiver_();
     return r;
 }
@@ -2476,6 +2493,33 @@ bool CodroidController::isValidVariableName(const std::string& name, std::string
 }
 
 /**
+ * @brief 打包单个 MovePoint 为 JSON（targetPoint / middlePoint 共用）
+ * @param pt MovePoint 数据
+ * @return JSON 对象
+ *
+ * 规则（与 Python pack_move_point / C# MotionPointPacker.Pack 对齐）：
+ * 1. jp 非空 → 仅输出 jp
+ * 2. 否则 cp 非空 → 输出 cp；rj 为空时填入默认值 [20,20,20,20,20,20]
+ * 3. ep 非空时附加
+ * 4. jp 与 cp 均为空 → 返回空对象 {}
+ */
+static json packMovePoint(const MovePoint& pt) {
+    json mp = json::object();
+    if (!pt.jp.empty()) {
+        mp["jp"] = pt.jp;
+    } else if (!pt.cp.empty()) {
+        mp["cp"] = pt.cp;
+        mp["rj"] = pt.rj.empty() ? std::vector<double>{20, 20, 20, 20, 20, 20} : pt.rj;
+    } else if (pt.ep.empty()) {
+        throw std::invalid_argument("MovePoint must have at least one of jp, cp, or ep");
+    }
+    if (!pt.ep.empty()) {
+        mp["ep"] = pt.ep;
+    }
+    return mp;
+}
+
+/**
  * @brief Pack a move instruction into a JSON object / 将运动指令打包成 JSON 对象
  * @param inst Move instruction / 运动指令
  * @return json Packed JSON object / 打包后的 JSON 对象
@@ -2486,36 +2530,21 @@ json CodroidController::packInstruction(const MoveInstruction& inst) {
     j["speed"] = inst.speed;
     j["acc"] = inst.acc;
 
-    // 处理 blend / relativeBlend（互斥：同时传入时 relativeBlend 被忽略）
-    if (inst.blend >= 0) j["blend"] = inst.blend;
-    if (inst.relativeBlend >= 0) j["relativeBlend"] = inst.relativeBlend;
+    // 处理 blend / relativeBlend（互斥：同时传入时 relativeBlend 不下发）
+    if (inst.blend >= 0) {
+        j["blend"] = inst.blend;
+    } else if (inst.relativeBlend >= 0) {
+        j["relativeBlend"] = inst.relativeBlend;
+    }
 
     if (inst.type == MoveType::movCircle) j["circleNum"] = inst.circleNum;
 
-    // 处理 targetPoint
-    json tp = json::object();
-    // 1. 优先处理 jp
-    if (!inst.targetPoint.jp.empty()) {
-        tp["jp"] = inst.targetPoint.jp;
-    } 
-    // 2. 如果没有 jp，处理 cp 和 rj
-    else if (!inst.targetPoint.cp.empty()) {
-        tp["cp"] = inst.targetPoint.cp;
-        // 如果没有 rj，补全默认值 [20,20,20,20,20,20]
-        if (inst.targetPoint.rj.empty()) {
-            tp["rj"] = std::vector<double>{20, 20, 20, 20, 20, 20};
-        } else {
-            tp["rj"] = inst.targetPoint.rj;
-        }
-    }
-    j["targetPoint"] = tp;
+    // 处理 targetPoint（使用共用打包函数，保证 jp 优先、rj 默认值、ep 附加）
+    j["targetPoint"] = packMovePoint(inst.targetPoint);
 
-    // 处理中间点 (movC/Circle)
+    // 处理中间点 (movC/Circle)（使用同一打包逻辑，修复原先 jp 缺失和 rj 死代码 Bug）
     if (inst.type == MoveType::movC || inst.type == MoveType::movCircle) {
-        json mp = json::object();
-        if (!inst.middlePoint.cp.empty()) mp["cp"] = inst.middlePoint.cp;
-        if (!inst.middlePoint.rj.empty()) mp["rj"] = inst.middlePoint.rj.empty() ? std::vector<double>(6, 20) : inst.middlePoint.rj;
-        j["middlePoint"] = mp;
+        j["middlePoint"] = packMovePoint(inst.middlePoint);
     }
 
     // --- 修复后端崩溃 Bug：只有不为空才发 ---
