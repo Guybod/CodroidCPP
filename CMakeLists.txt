@@ -34,6 +34,9 @@ add_definitions(-DASIO_STANDALONE)
 # ===============================
 include_directories(
     include
+)
+# SYSTEM 抑制 third_party 的编译器警告（如 asio 空指针类型推导）
+include_directories(SYSTEM
     third_party
 )
 
