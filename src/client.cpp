@@ -800,7 +800,7 @@ nlohmann::json CodroidClient::GetGlobalVarsCatalog(int id) {
 
 nlohmann::json CodroidClient::GetProjectVar(int id) {
     Response r = impl_->controller.getProjectVar(id);
-    if (throw_on_command_error_ && !r.error_msg.empty()) {
+    if (impl_->controller.getThrowOnCommandError() && !r.error_msg.empty()) {
         throw CodroidCommandException(r.id, "globalVar/GetProjectVarUpdate", r.error_msg, r.raw_json);
     }
     return r.db;
@@ -818,7 +818,7 @@ CommandResult CodroidClient::Rs485Flush(int id) {
 
 nlohmann::json CodroidClient::Rs485Read(int length, int timeout, int id) {
     Response r = impl_->controller.RS485read(length, timeout, id);
-    if (throw_on_command_error_ && !r.error_msg.empty()) {
+    if (impl_->controller.getThrowOnCommandError() && !r.error_msg.empty()) {
         throw CodroidCommandException(r.id, "EC2RS485/read", r.error_msg, r.raw_json);
     }
     return r.db;
