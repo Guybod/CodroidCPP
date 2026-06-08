@@ -1,6 +1,6 @@
 # CodroidCPP SDK 手册
 
-**版本:** 2.1.5 | **命名空间:** `Codroid`
+**版本:** 2.1.7 | **命名空间:** `Codroid`
 
 ---
 
@@ -2981,6 +2981,136 @@ std::vector<double> InverseKinematics(const IKParams& params, int id = 1);
 ```cpp
 std::vector<double> CalculateRelativePose(const RelativePoseParams& params, int id = 1);
 ```
+
+### CposToCpos / CposToCposPose（v2.1.7+）
+
+坐标系转换：将 TCP 位姿从坐标系1+工具1 转换到坐标系2+工具2。协议 `Robot/cpostocpos`。
+
+```cpp
+// 返回原始 double 数组
+std::vector<double> CposToCpos(const std::vector<double>& cp,
+                               const std::vector<double>& coor1, const std::vector<double>& tool1,
+                               const std::vector<double>& coor2, const std::vector<double>& tool2,
+                               int id = 1);
+
+// 返回 CartesianPoint
+CartesianPoint CposToCposPose(const CartesianPoint& cp,
+                              const std::vector<double>& coor1, const std::vector<double>& tool1,
+                              const std::vector<double>& coor2, const std::vector<double>& tool2,
+                              int id = 1);
+```
+
+| 参数 | 说明 |
+|------|------|
+| `cp` | 当前 TCP 位姿 `[x,y,z,a,b,c]`（mm+度） |
+| `coor1` | 源坐标系 `[x,y,z,a,b,c]` |
+| `tool1` | 源工具 `[x,y,z,a,b,c]` |
+| `coor2` | 目标坐标系 `[x,y,z,a,b,c]` |
+| `tool2` | 目标工具 `[x,y,z,a,b,c]` |
+
+```cpp
+auto result = robot.CposToCpos({400,200,500,180,0,90},
+                               {0,0,0,0,0,0}, {0,0,0,0,0,0},
+                               {100,0,0,0,0,0}, {0,0,100,0,0,0});
+```
+
+---
+
+## RS485 通信（v2.1.7+）
+
+### Rs485Init
+
+```cpp
+CommandResult Rs485Init(int baudrate, RS485StopBits stopBit = RS485StopBits::One,
+                        RS485Parity parity = RS485Parity::None, int id = 1);
+```
+
+初始化末端 RS485 通信。
+
+### Rs485Flush
+
+```cpp
+CommandResult Rs485Flush(int id = 1);
+```
+
+清空 RS485 读取缓冲区。
+
+### Rs485Read
+
+```cpp
+nlohmann::json Rs485Read(int length, int timeout = 5000, int id = 1);
+```
+
+读取 RS485 数据。`length` 最大 128 字节，`timeout` 最大 3000ms。
+
+### Rs485Write
+
+```cpp
+CommandResult Rs485Write(const std::vector<uint8_t>& data, int id = 1);
+```
+
+写入 RS485 数据。`data` 最大 127 字节。
+
+```cpp
+robot.Rs485Init(115200, Codroid::RS485StopBits::One, Codroid::RS485Parity::None);
+robot.Rs485Flush();
+auto data = robot.Rs485Read(7, 1000);
+robot.Rs485Write({0x01, 0x03, 0x00, 0x00, 0x00, 0x01, 0x84, 0x0A});
+```
+
+---
+
+## 工程控制扩展（v2.1.7+）
+
+### SetStartLine / ClearStartLine
+
+```cpp
+CommandResult SetStartLine(int line, int id = 1);
+CommandResult ClearStartLine(int id = 1);
+```
+
+设置/清除工程执行启动行。
+
+### GetProjectVar
+
+```cpp
+nlohmann::json GetProjectVar(int id = 1);
+```
+
+获取当前工程变量值（仅在工程运行中有效）。
+
+### GetGlobalVarsCatalog
+
+```cpp
+nlohmann::json GetGlobalVarsCatalog(int id = 1);
+```
+
+获取全局变量目录（与 `GetGlobalVars` 同协议，结构化解析为 `变量名 → {Value, Remark}`）。
+
+---
+
+## 寄存器扩展（v2.1.7+）
+
+### SetExtendArrayType / RemoveExtendArray
+
+```cpp
+CommandResult SetExtendArrayType(int index, ExtendArrayType type, int id = 1);
+CommandResult RemoveExtendArray(int index, int id = 1);
+```
+
+设置/重置扩展数组元素类型。
+
+---
+
+## 机器人设置扩展（v2.1.7+）
+
+### SaveUserCoordinateFrames
+
+```cpp
+CommandResult SaveUserCoordinateFrames(const std::vector<ClientRobotFrame>& frames, int id = 1);
+```
+
+直接下发完整用户坐标系表（19.6），与 `SaveToolFrames` / `SavePayloadFrames` 对齐。
 
 ---
 

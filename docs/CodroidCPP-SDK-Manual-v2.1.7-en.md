@@ -1,6 +1,6 @@
 # CodroidCPP SDK Manual
 
-**Version:** 2.1.5 | **Namespace:** `Codroid`
+**Version:** 2.1.7 | **Namespace:** `Codroid`
 
 ---
 
@@ -2981,6 +2981,136 @@ std::vector<double> InverseKinematics(const IKParams& params, int id = 1);
 ```cpp
 std::vector<double> CalculateRelativePose(const RelativePoseParams& params, int id = 1);
 ```
+
+### CposToCpos / CposToCposPose (v2.1.7+)
+
+Coordinate system transformation: convert a TCP pose from coordinate system 1 + tool 1 to coordinate system 2 + tool 2. Protocol `Robot/cpostocpos`.
+
+```cpp
+// Returns raw double array
+std::vector<double> CposToCpos(const std::vector<double>& cp,
+                               const std::vector<double>& coor1, const std::vector<double>& tool1,
+                               const std::vector<double>& coor2, const std::vector<double>& tool2,
+                               int id = 1);
+
+// Returns CartesianPoint
+CartesianPoint CposToCposPose(const CartesianPoint& cp,
+                              const std::vector<double>& coor1, const std::vector<double>& tool1,
+                              const std::vector<double>& coor2, const std::vector<double>& tool2,
+                              int id = 1);
+```
+
+| Parameter | Description |
+|-----------|-------------|
+| `cp` | Current TCP pose `[x,y,z,a,b,c]` (mm+deg) |
+| `coor1` | Source coordinate system `[x,y,z,a,b,c]` |
+| `tool1` | Source tool `[x,y,z,a,b,c]` |
+| `coor2` | Target coordinate system `[x,y,z,a,b,c]` |
+| `tool2` | Target tool `[x,y,z,a,b,c]` |
+
+```cpp
+auto result = robot.CposToCpos({400,200,500,180,0,90},
+                               {0,0,0,0,0,0}, {0,0,0,0,0,0},
+                               {100,0,0,0,0,0}, {0,0,100,0,0,0});
+```
+
+---
+
+## RS485 Communication (v2.1.7+)
+
+### Rs485Init
+
+```cpp
+CommandResult Rs485Init(int baudrate, RS485StopBits stopBit = RS485StopBits::One,
+                        RS485Parity parity = RS485Parity::None, int id = 1);
+```
+
+Initialize end-effector RS485 communication.
+
+### Rs485Flush
+
+```cpp
+CommandResult Rs485Flush(int id = 1);
+```
+
+Flush RS485 read buffer.
+
+### Rs485Read
+
+```cpp
+nlohmann::json Rs485Read(int length, int timeout = 5000, int id = 1);
+```
+
+Read RS485 data. `length` max 128 bytes, `timeout` max 3000ms.
+
+### Rs485Write
+
+```cpp
+CommandResult Rs485Write(const std::vector<uint8_t>& data, int id = 1);
+```
+
+Write RS485 data. `data` max 127 bytes.
+
+```cpp
+robot.Rs485Init(115200, Codroid::RS485StopBits::One, Codroid::RS485Parity::None);
+robot.Rs485Flush();
+auto data = robot.Rs485Read(7, 1000);
+robot.Rs485Write({0x01, 0x03, 0x00, 0x00, 0x00, 0x01, 0x84, 0x0A});
+```
+
+---
+
+## Project Control Extensions (v2.1.7+)
+
+### SetStartLine / ClearStartLine
+
+```cpp
+CommandResult SetStartLine(int line, int id = 1);
+CommandResult ClearStartLine(int id = 1);
+```
+
+Set/clear project execution start line.
+
+### GetProjectVar
+
+```cpp
+nlohmann::json GetProjectVar(int id = 1);
+```
+
+Get current project variable values (only valid during project execution).
+
+### GetGlobalVarsCatalog
+
+```cpp
+nlohmann::json GetGlobalVarsCatalog(int id = 1);
+```
+
+Get global variables catalog (same protocol as `GetGlobalVars`, parsed into `name → {Value, Remark}`).
+
+---
+
+## Register Extensions (v2.1.7+)
+
+### SetExtendArrayType / RemoveExtendArray
+
+```cpp
+CommandResult SetExtendArrayType(int index, ExtendArrayType type, int id = 1);
+CommandResult RemoveExtendArray(int index, int id = 1);
+```
+
+Set/reset extended array element type.
+
+---
+
+## Robot Settings Extensions (v2.1.7+)
+
+### SaveUserCoordinateFrames
+
+```cpp
+CommandResult SaveUserCoordinateFrames(const std::vector<ClientRobotFrame>& frames, int id = 1);
+```
+
+Directly save the complete user coordinate frame table (19.6), aligned with `SaveToolFrames` / `SavePayloadFrames`.
 
 ---
 

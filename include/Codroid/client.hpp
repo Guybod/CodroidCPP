@@ -508,14 +508,40 @@ public:
     /** @brief 停止工程。 */
     CommandResult StopProject(int id = 1);
 
+    // --- 2.13/2.14 启动行（对齐 C#）---
+
+    /** @brief 设置工程执行启动行。 */
+    CommandResult SetStartLine(int line, int id = 1);
+    /** @brief 清除启动行设置。 */
+    CommandResult ClearStartLine(int id = 1);
+
     // --- 3. 全局变量（对齐 C#）---
 
     /** @brief 获取所有全局变量（原始 JSON 响应）。 */
     nlohmann::json GetGlobalVars(int id = 1);
+    /** @brief 获取全局变量目录（结构化解析）。 */
+    nlohmann::json GetGlobalVarsCatalog(int id = 1);
     /** @brief 保存全局变量。 */
     CommandResult SaveGlobalVars(const std::map<std::string, Variable>& vars, int id = 1);
     /** @brief 删除全局变量。 */
     CommandResult RemoveGlobalVars(const std::vector<std::string>& names, int id = 1);
+
+    // --- 4.1 工程变量（对齐 C#）---
+
+    /** @brief 获取当前工程变量值。 */
+    nlohmann::json GetProjectVar(int id = 1);
+
+    // --- 5. RS485（对齐 C#）---
+
+    /** @brief 初始化 RS485 通信。 */
+    CommandResult Rs485Init(int baudrate, RS485StopBits stopBit = RS485StopBits::One,
+                            RS485Parity parity = RS485Parity::None, int id = 1);
+    /** @brief 清空 RS485 读取缓冲区。 */
+    CommandResult Rs485Flush(int id = 1);
+    /** @brief 读取 RS485 数据。 */
+    nlohmann::json Rs485Read(int length, int timeout = 5000, int id = 1);
+    /** @brief 写入 RS485 数据。 */
+    CommandResult Rs485Write(const std::vector<uint8_t>& data, int id = 1);
 
     // --- 10. 运动学（对齐 C#）---
 
@@ -525,6 +551,28 @@ public:
     std::vector<double> InverseKinematics(const IKParams& params, int id = 1);
     /** @brief 笛卡尔相对位姿计算。 */
     std::vector<double> CalculateRelativePose(const RelativePoseParams& params, int id = 1);
+    /** @brief 坐标系转换：TCP 位姿从坐标系1+工具1 转换到坐标系2+工具2。 */
+    std::vector<double> CposToCpos(const std::vector<double>& cp,
+                                   const std::vector<double>& coor1, const std::vector<double>& tool1,
+                                   const std::vector<double>& coor2, const std::vector<double>& tool2,
+                                   int id = 1);
+    /** @brief 坐标系转换（返回 CartesianPoint）。 */
+    CartesianPoint CposToCposPose(const CartesianPoint& cp,
+                                  const std::vector<double>& coor1, const std::vector<double>& tool1,
+                                  const std::vector<double>& coor2, const std::vector<double>& tool2,
+                                  int id = 1);
+
+    // --- 14. 寄存器扩展（对齐 C#）---
+
+    /** @brief 设置扩展数组元素类型。 */
+    CommandResult SetExtendArrayType(int index, ExtendArrayType type, int id = 1);
+    /** @brief 重置扩展数组。 */
+    CommandResult RemoveExtendArray(int index, int id = 1);
+
+    // --- 19. 机器人设置（对齐 C#）---
+
+    /** @brief 直接下发完整用户坐标系表（19.6）。 */
+    CommandResult SaveUserCoordinateFrames(const std::vector<ClientRobotFrame>& frames, int id = 1);
     /**
      * @brief 订阅协议 15.x 推送主题；首次订阅发送 `ty`+`tc`，无整数 id。
      * @param topicTy 主题字符串须与控制器一致（如 `publish/RobotStatus`）。

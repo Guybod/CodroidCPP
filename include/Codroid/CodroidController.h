@@ -391,6 +391,19 @@ public:
      */
     std::vector<double> calculateRelativePose(const RelativePoseParams& params, int id = 1);
 
+    // --- 10.4 坐标系转换（C# CposToCpos）---
+    /** @brief 坐标系转换：将 TCP 位姿从坐标系1+工具1 转换到坐标系2+工具2。
+     *  @param cp 当前 TCP 位姿 [x,y,z,a,b,c]（mm+度）。
+     *  @param coor1 源坐标系 [x,y,z,a,b,c]。
+     *  @param tool1 源工具 [x,y,z,a,b,c]。
+     *  @param coor2 目标坐标系 [x,y,z,a,b,c]。
+     *  @param tool2 目标工具 [x,y,z,a,b,c]。
+     *  @return 转换后的 TCP 位姿 [x,y,z,a,b,c]。 */
+    std::vector<double> cposToCpos(const std::vector<double>& cp,
+                                   const std::vector<double>& coor1, const std::vector<double>& tool1,
+                                   const std::vector<double>& coor2, const std::vector<double>& tool2,
+                                   int id = 1);
+
     // --- 11.1 点动 ---
     /** @brief @~english Perform a jog operation on the robot @~chinese 对机器人执行点动操作
      * @~english
@@ -1072,7 +1085,9 @@ public:
      * @param frame_id 1~15
      */
     Response setUserCoordinateFrame(int frame_id, const RobotFrameEntry& frame, int id = 1);
-    
+    /** @brief 直接下发完整用户坐标系表（19.6）。 */
+    Response saveUserCoordinateFrames(const std::vector<RobotFrameEntry>& frames, int id = 1);
+
     // ==========================================
     // 运动学 (Kinematics) 接口
     // ==========================================

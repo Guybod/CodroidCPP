@@ -6,8 +6,8 @@ Codroid C++ SDK 提供一套 C++ 接口，用于连接 Codroid 控制器并完�
 
 ## 文档
 
-- **SDK 手册（中文）**：[docs/CodroidCPP-SDK-Manual-v2.1.2-zh.md](docs/CodroidCPP-SDK-Manual-v2.1.2-zh.md)
-- **SDK Manual (English)**：[docs/CodroidCPP-SDK-Manual-v2.1.2-en.md](docs/CodroidCPP-SDK-Manual-v2.1.2-en.md)
+- **SDK 手册（中文）**：[docs/CodroidCPP-SDK-Manual-v2.1.7-zh.md](docs/CodroidCPP-SDK-Manual-v2.1.7-zh.md)
+- **SDK Manual (English)**：[docs/CodroidCPP-SDK-Manual-v2.1.7-en.md](docs/CodroidCPP-SDK-Manual-v2.1.7-en.md)
 
 ## 1. 准备控制器网络
 
@@ -292,6 +292,26 @@ robot.StopDrag();
 ```cpp
 auto fk_result = robot.ForwardKinematics(Codroid::FKParams({0, 0, 90, 0, 90, 0}));
 auto ik_result = robot.InverseKinematics(Codroid::IKParams({400, 200, 500, 180, 0, 90}));
+```
+
+### 坐标系转换（v2.1.7+）
+
+```cpp
+// 将 TCP 位姿从坐标系1+工具1 转换到坐标系2+工具2
+auto result = robot.CposToCpos({400,200,500,180,0,90},
+                               {0,0,0,0,0,0}, {0,0,0,0,0,0},  // 源坐标系+工具
+                               {100,0,0,0,0,0}, {0,0,100,0,0,0}); // 目标坐标系+工具
+// 或返回 CartesianPoint
+auto pose = robot.CposToCposPose(CartesianPoint::MmDeg({400,200,500,180,0,90}), ...);
+```
+
+### RS485 通信（v2.1.7+）
+
+```cpp
+robot.Rs485Init(115200, Codroid::RS485StopBits::One, Codroid::RS485Parity::None);
+robot.Rs485Flush();
+auto data = robot.Rs485Read(7, 1000);  // 读 7 字节，超时 1 秒
+robot.Rs485Write({0x01, 0x03, 0x00, 0x00, 0x00, 0x01, 0x84, 0x0A});
 ```
 
 ### 运动控制

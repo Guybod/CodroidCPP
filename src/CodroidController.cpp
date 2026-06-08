@@ -1269,6 +1269,28 @@ std::vector<double> CodroidController::calculateRelativePose(const RelativePoseP
     }
 }
 
+std::vector<double> CodroidController::cposToCpos(const std::vector<double>& cp,
+                                                   const std::vector<double>& coor1, const std::vector<double>& tool1,
+                                                   const std::vector<double>& coor2, const std::vector<double>& tool2,
+                                                   int id) {
+    json db;
+    db["cp"] = cp;
+    db["coor1"] = coor1;
+    db["tool1"] = tool1;
+    db["coor2"] = coor2;
+    db["tool2"] = tool2;
+
+    Response resp = sendCommand("Robot/cpostocpos", db, id);
+    if (!resp.error_msg.empty()) {
+        throw CodroidException("CposToCpos Failed: " + resp.error_msg);
+    }
+    try {
+        return resp.db.get<std::vector<double>>();
+    } catch (const std::exception& e) {
+        throw CodroidException("CposToCpos Parse Error: " + std::string(e.what()));
+    }
+}
+
 // --- 11.1 点动 ---
 /** 
  * @brief Jog the robot with specified parameters / 使用指定参数点动机器人
@@ -2435,6 +2457,15 @@ Response CodroidController::setUserCoordinateFrame(int frame_id, const RobotFram
 
     nlohmann::json db;
     db["Coordinate"] = frames_to_json(params.coordinate);
+    return saveRobotParameter(db, id);
+}
+
+Response CodroidController::saveUserCoordinateFrames(const std::vector<RobotFrameEntry>& frames, int id) {
+    std::string err;
+    if (!validate_direct_tool_frames(frames, err))
+        return make_local_error(id, err);
+    nlohmann::json db;
+    db["Coordinate"] = frames_to_json(frames);
     return saveRobotParameter(db, id);
 }
 

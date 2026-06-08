@@ -865,4 +865,100 @@ std::vector<double> CodroidClient::CalculateRelativePose(const RelativePoseParam
     return impl_->controller.calculateRelativePose(params, id);
 }
 
+// --- 2.13/2.14 启动行 ---
+
+CommandResult CodroidClient::SetStartLine(int line, int id) {
+    return to_client_result(impl_->controller.setStartLine(line, id));
+}
+
+CommandResult CodroidClient::ClearStartLine(int id) {
+    return to_client_result(impl_->controller.clearStartLine(id));
+}
+
+// --- 3. 全局变量目录 ---
+
+nlohmann::json CodroidClient::GetGlobalVarsCatalog(int id) {
+    return GetGlobalVars(id);
+}
+
+// --- 4.1 工程变量 ---
+
+nlohmann::json CodroidClient::GetProjectVar(int id) {
+    Response r = impl_->controller.getProjectVar(id);
+    if (throw_on_command_error_ && !r.error_msg.empty()) {
+        throw CodroidCommandException(r.id, "globalVar/GetProjectVarUpdate", r.error_msg, r.raw_json);
+    }
+    return r.db;
+}
+
+// --- 5. RS485 ---
+
+CommandResult CodroidClient::Rs485Init(int baudrate, RS485StopBits stopBit, RS485Parity parity, int id) {
+    return to_client_result(impl_->controller.RS485init(baudrate, stopBit, 8, parity, id));
+}
+
+CommandResult CodroidClient::Rs485Flush(int id) {
+    return to_client_result(impl_->controller.RS485flush(id));
+}
+
+nlohmann::json CodroidClient::Rs485Read(int length, int timeout, int id) {
+    Response r = impl_->controller.RS485read(length, timeout, id);
+    if (throw_on_command_error_ && !r.error_msg.empty()) {
+        throw CodroidCommandException(r.id, "EC2RS485/read", r.error_msg, r.raw_json);
+    }
+    return r.db;
+}
+
+CommandResult CodroidClient::Rs485Write(const std::vector<uint8_t>& data, int id) {
+    return to_client_result(impl_->controller.RS485write(data, id));
+}
+
+// --- 10.4 坐标系转换 ---
+
+std::vector<double> CodroidClient::CposToCpos(const std::vector<double>& cp,
+                                               const std::vector<double>& coor1, const std::vector<double>& tool1,
+                                               const std::vector<double>& coor2, const std::vector<double>& tool2,
+                                               int id) {
+    return impl_->controller.cposToCpos(cp, coor1, tool1, coor2, tool2, id);
+}
+
+CartesianPoint CodroidClient::CposToCposPose(const CartesianPoint& cp,
+                                              const std::vector<double>& coor1, const std::vector<double>& tool1,
+                                              const std::vector<double>& coor2, const std::vector<double>& tool2,
+                                              int id) {
+    auto result = impl_->controller.cposToCpos(cp.cp, coor1, tool1, coor2, tool2, id);
+    CartesianPoint out;
+    out.cp = std::move(result);
+    return out;
+}
+
+// --- 14. 寄存器扩展 ---
+
+CommandResult CodroidClient::SetExtendArrayType(int index, ExtendArrayType type, int id) {
+    return to_client_result(impl_->controller.setExtendArrayType(index, type, id));
+}
+
+CommandResult CodroidClient::RemoveExtendArray(int index, int id) {
+    return to_client_result(impl_->controller.removeExtendArray(index, id));
+}
+
+// --- 19. 用户坐标系批量写入 ---
+
+CommandResult CodroidClient::SaveUserCoordinateFrames(const std::vector<ClientRobotFrame>& frames, int id) {
+    std::vector<RobotFrameEntry> internal;
+    internal.reserve(frames.size());
+    for (const auto& f : frames) {
+        RobotFrameEntry e;
+        e.id = f.id;
+        e.x = f.x;
+        e.y = f.y;
+        e.z = f.z;
+        e.a = f.a;
+        e.b = f.b;
+        e.c = f.c;
+        internal.push_back(std::move(e));
+    }
+    return to_client_result(impl_->controller.saveUserCoordinateFrames(internal, id));
+}
+
 } // namespace Codroid

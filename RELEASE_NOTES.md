@@ -1,5 +1,29 @@
 # Codroid C++ SDK 版本说明
 
+## v2.1.7（2026-06-01）
+
+### 新增
+
+- **`CposToCpos` / `CposToCposPose`**：坐标系转换（协议 `Robot/cpostocpos`），将 TCP 位姿从坐标系1+工具1 转换到坐标系2+工具2，与 C# 对齐
+- **暴露已有 Controller 方法到 Client**：
+  - `SetStartLine` / `ClearStartLine`（工程启动行）
+  - `GetProjectVar`（工程变量）
+  - `Rs485Init` / `Rs485Flush` / `Rs485Read` / `Rs485Write`（RS485 通信）
+  - `SetExtendArrayType` / `RemoveExtendArray`（寄存器扩展）
+- **`GetGlobalVarsCatalog`**：全局变量结构化获取（与 `GetGlobalVars` 同协议，客户端解析）
+- **`SaveUserCoordinateFrames`**：批量下发用户坐标系表（19.6）
+
+### 修复
+
+- **修复 `packInstruction` middlePoint `rj` 死代码 Bug**：提取 `packMovePoint()` 共用函数，targetPoint 和 middlePoint 统一走同一打包逻辑
+- **修复 middlePoint 忽略 `jp`**：现在 `jp` 优先级与 targetPoint 一致
+- **修复 `packInstruction` blend/relativeBlend 互斥逻辑**：同时传入时只发 `blend`
+- **修复空 targetPoint 静默发送**：`jp`/`cp`/`ep` 全空时抛出 `std::invalid_argument`
+- **新增 `ep`（外部轴）字段序列化**
+- **新增 CRI 数据时效性检查**：同步运动轮询循环中新增基于 `steady_clock` 的数据年龄判定
+
+---
+
 ## v2.1.5（2026-05-30）
 
 ### Bug Fixes
