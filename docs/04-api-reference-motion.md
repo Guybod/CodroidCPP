@@ -338,9 +338,6 @@ struct MotionWaitOptions {
     double poll_interval_s = 0.05;                  // CRI 轮询间隔（秒）
     double cri_stale_timeout_s = 0.5;               // CRI 数据过期判定（秒）
     int settled_samples = 3;                        // InMotion=false 连续稳定采样数
-    double joint_tolerance_deg = 0.2;               // 关节目标容差（最大轴误差，度）
-    double cartesian_position_tolerance_mm = 1.0;   // 笛卡尔位置容差（欧氏距离，mm）
-    double cartesian_orientation_tolerance_deg = 1.0; // 笛卡尔姿态容差（最大欧拉角误差，度）
 };
 ```
 
@@ -348,8 +345,6 @@ struct MotionWaitOptions {
 ```cpp
 Codroid::MotionWaitOptions wait;
 wait.timeout_s = 30.0;           // 30 秒超时
-wait.joint_tolerance_deg = 0.1;  // 关节容差 0.1 度
-wait.cartesian_position_tolerance_mm = 0.5;  // 位置容差 0.5mm
 
 robot.MovLSync(target, 150, 500, wait);
 ```

@@ -957,7 +957,6 @@ robot.Move(path);
 
 **Prerequisite:** Call `StartCriDataPush` and wait for the first frame (`WaitForCriData`).
 
-> **v2.1.8 behavior change:** Completion is determined solely by the CRI `InMotion` flag (was moving + consecutive `SettledSamples` stable reads). Joint/TCP position vs target is **no longer checked**. `MotionWaitOptions` tolerance fields (`joint_tolerance_deg`, `cartesian_position_tolerance_mm`, `cartesian_orientation_tolerance_deg`) are `[[deprecated]]` and have no effect.
 
 ### MoveSync
 
@@ -1018,7 +1017,6 @@ bool MovJSync(const ClientCartesianPoint& target, double speed, double acc,
 ```cpp
 Codroid::MotionWaitOptions wait;
 wait.timeout_s = 90.0;
-wait.joint_tolerance_deg = 0.3;
 
 robot.MovJSync(Codroid::JointPoint::Degrees({0, 0, 90, 0, 90, 0}), 40, 100, wait);
 ```
@@ -1061,8 +1059,6 @@ auto target = Codroid::CartesianPoint::MmDegWithRef(
 
 Codroid::MotionWaitOptions wait;
 wait.timeout_s = 60.0;
-wait.cartesian_position_tolerance_mm = 2.0;
-wait.cartesian_orientation_tolerance_deg = 1.5;
 
 robot.MovLSync(target, 150, 500, wait);
 ```
@@ -2148,9 +2144,6 @@ struct MotionWaitOptions {
     double poll_interval_s = 0.05;
     double cri_stale_timeout_s = 0.5;
     int settled_samples = 3;
-    [[deprecated]] double joint_tolerance_deg = 0.2;               // deprecated
-    [[deprecated]] double cartesian_position_tolerance_mm = 1.0;   // deprecated
-    [[deprecated]] double cartesian_orientation_tolerance_deg = 1.0; // deprecated
 };
 ```
 
@@ -2160,9 +2153,6 @@ struct MotionWaitOptions {
 | `poll_interval_s` | `double` | 0.05 | Polling interval for motion status (seconds) |
 | `cri_stale_timeout_s` | `double` | 0.5 | Maximum time before CRI data is considered stale (seconds) |
 | `settled_samples` | `int` | 3 | Number of consecutive stable samples required to confirm completion |
-| `joint_tolerance_deg` | `double` | 0.2 | ⚠️ Deprecated, no longer effective |
-| `cartesian_position_tolerance_mm` | `double` | 1.0 | ⚠️ Deprecated, no longer effective |
-| `cartesian_orientation_tolerance_deg` | `double` | 1.0 | ⚠️ Deprecated, no longer effective |
 
 **Usage:**
 ```cpp
@@ -2174,8 +2164,6 @@ Codroid::MotionWaitOptions wait;
 wait.timeout_s = 120.0;
 wait.poll_interval_s = 0.02;
 wait.settled_samples = 5;
-wait.joint_tolerance_deg = 0.05;
-wait.cartesian_position_tolerance_mm = 0.2;
 robot.MovLSync(target, 50, 200, wait);
 ```
 

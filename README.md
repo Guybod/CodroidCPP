@@ -387,7 +387,6 @@ robot.MovLSync(Codroid::CartesianPoint::MmDeg({400, 200, 500, 180, 0, 90}), 150,
 // 自定义等待参数
 Codroid::MotionWaitOptions opts;
 opts.timeout_s = 30.0;
-opts.joint_tolerance_deg = 0.5;  // 放宽关节容差
 robot.MovJSync(target, 40, 100, opts);
 
 // 阻塞式多段路径
@@ -406,9 +405,6 @@ robot.MoveSync(path);
 | `poll_interval_s` | 0.05 | CRI 轮询间隔（秒） |
 | `cri_stale_timeout_s` | 0.5 | CRI 数据过期判定（秒） |
 | `settled_samples` | 3 | 连续稳定采样数 |
-| `joint_tolerance_deg` | 0.2 | 关节容差（度） |
-| `cartesian_position_tolerance_mm` | 1.0 | 笛卡尔位置容差（mm） |
-| `cartesian_orientation_tolerance_deg` | 1.0 | 笛卡尔姿态容差（度） |
 
 另有一套 **`moveTo` / `moveToHeartbeat`**（RunTo 规划，非 `Robot/move`），目标同样用 `MoveToTarget::Joint` / `Cartesian`，示例见 `examples/07_move_To.cpp`。
 

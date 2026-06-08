@@ -49,9 +49,6 @@ struct MotionWaitOptions {
     double poll_interval_s = 0.05;                  // CRI 轮询间隔（秒）
     double cri_stale_timeout_s = 0.5;               // CRI 数据过期判定（秒）
     int settled_samples = 3;                        // InMotion=false 连续稳定采样数
-    double joint_tolerance_deg = 0.2;               // 关节目标容差（度）
-    double cartesian_position_tolerance_mm = 1.0;   // 笛卡尔位置容差（mm）
-    double cartesian_orientation_tolerance_deg = 1.0; // 笛卡尔姿态容差（度）
 };
 ```
 
@@ -61,9 +58,6 @@ struct MotionWaitOptions {
 | `poll_interval_s` | `double` | 0.05 | CRI 轮询间隔（秒） |
 | `cri_stale_timeout_s` | `double` | 0.5 | CRI 数据过期判定（秒） |
 | `settled_samples` | `int` | 3 | InMotion=false 连续稳定采样数 |
-| `joint_tolerance_deg` | `double` | 0.2 | 关节目标容差（度） |
-| `cartesian_position_tolerance_mm` | `double` | 1.0 | 笛卡尔位置容差（mm） |
-| `cartesian_orientation_tolerance_deg` | `double` | 1.0 | 笛卡尔姿态容差（度） |
 
 ### 异常类型
 
@@ -967,7 +961,6 @@ bool MovJSync(const ClientCartesianPoint& target, double speed, double acc,
 ```cpp
 Codroid::MotionWaitOptions wait;
 wait.timeout_s = 90.0;
-wait.joint_tolerance_deg = 0.3;
 robot.MovJSync(Codroid::JointPoint::Degrees({0, 0, 90, 0, 90, 0}), 40, 100, wait);
 ```
 
@@ -1008,8 +1001,6 @@ bool MovLSync(const ClientJointPoint& target, double speed, double acc,
 auto state = robot.GetRobotRealtimeState();
 Codroid::MotionWaitOptions wait;
 wait.timeout_s = 60.0;
-wait.cartesian_position_tolerance_mm = 2.0;
-wait.cartesian_orientation_tolerance_deg = 1.5;
 robot.MovLSync(
     Codroid::CartesianPoint::MmDegWithRef({400, 0, 300, 180, 0, 0}, state.joint_position),
     150, 500, wait);

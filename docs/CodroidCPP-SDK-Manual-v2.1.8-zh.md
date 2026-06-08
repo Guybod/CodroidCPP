@@ -957,7 +957,6 @@ robot.Move(path);
 
 **必须先调用** `StartCriDataPush` 并等待首帧（`WaitForCriData`）。
 
-> **v2.1.8 行为变更**：完成判定仅依据 CRI `InMotion` 标志（曾经运动 + 连续 `SettledSamples` 次停稳），**不再**比对关节角或 TCP 与目标点误差。`MotionWaitOptions` 的容差字段（`joint_tolerance_deg`、`cartesian_position_tolerance_mm`、`cartesian_orientation_tolerance_deg`）已标记 `[[deprecated]]`，不再生效。
 
 ### MoveSync
 
@@ -1018,7 +1017,6 @@ bool MovJSync(const ClientCartesianPoint& target, double speed, double acc,
 ```cpp
 Codroid::MotionWaitOptions wait;
 wait.timeout_s = 90.0;
-wait.joint_tolerance_deg = 0.3;
 
 robot.MovJSync(Codroid::JointPoint::Degrees({0, 0, 90, 0, 90, 0}), 40, 100, wait);
 ```
@@ -1061,8 +1059,6 @@ auto target = Codroid::CartesianPoint::MmDegWithRef(
 
 Codroid::MotionWaitOptions wait;
 wait.timeout_s = 60.0;
-wait.cartesian_position_tolerance_mm = 2.0;
-wait.cartesian_orientation_tolerance_deg = 1.5;
 
 robot.MovLSync(target, 150, 500, wait);
 ```
@@ -2148,9 +2144,6 @@ struct MotionWaitOptions {
     double poll_interval_s = 0.05;
     double cri_stale_timeout_s = 0.5;
     int settled_samples = 3;
-    [[deprecated]] double joint_tolerance_deg = 0.2;               // 已废弃
-    [[deprecated]] double cartesian_position_tolerance_mm = 1.0;   // 已废弃
-    [[deprecated]] double cartesian_orientation_tolerance_deg = 1.0; // 已废弃
 };
 ```
 
@@ -2160,9 +2153,6 @@ struct MotionWaitOptions {
 | `poll_interval_s` | `double` | 0.05 | 检查运动状态的轮询间隔（秒） |
 | `cri_stale_timeout_s` | `double` | 0.5 | CRI 数据被视为过期的最长时间（秒） |
 | `settled_samples` | `int` | 3 | 确认运动完成所需的连续稳定采样数 |
-| `joint_tolerance_deg` | `double` | 0.2 | ⚠️ 已废弃，不再生效 |
-| `cartesian_position_tolerance_mm` | `double` | 1.0 | ⚠️ 已废弃，不再生效 |
-| `cartesian_orientation_tolerance_deg` | `double` | 1.0 | ⚠️ 已废弃，不再生效 |
 
 **使用示例：**
 ```cpp
@@ -2174,8 +2164,6 @@ Codroid::MotionWaitOptions wait;
 wait.timeout_s = 120.0;
 wait.poll_interval_s = 0.02;
 wait.settled_samples = 5;
-wait.joint_tolerance_deg = 0.05;
-wait.cartesian_position_tolerance_mm = 0.2;
 robot.MovLSync(target, 50, 200, wait);
 ```
 
