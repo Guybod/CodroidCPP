@@ -112,10 +112,9 @@ int main() {
         std::cout << "[6] MovJSync with custom MotionWaitOptions\n";
         Codroid::MotionWaitOptions opts;
         opts.timeout_s = 30.0;
-        opts.joint_tolerance_deg = 0.5;  // 放宽关节容差
         opts.settled_samples = 2;         // 连续 2 次稳定即可
         robot.MovJSync(joint_p1, 40.0, 100.0, opts);
-        std::cout << "  ✓ Reached target (custom tolerance)\n\n";
+        std::cout << "  ✓ Reached target (custom options)\n\n";
 
         // 回 Home
         robot.MovJSync(joint_home, 40.0, 100.0);

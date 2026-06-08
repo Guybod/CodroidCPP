@@ -45,6 +45,10 @@ struct CommandResult {
  * @note 用于 `MoveSync` / `MovJSync` / `MovLSync` / `MovCSync` / `MovCircleSync`。
  * @note v2.1.8：完成判定仅依据 CRI InMotion 标志，容差字段已废弃。
  */
+#ifdef __GNUC__
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
 struct MotionWaitOptions {
     double timeout_s = 60.0;                        ///< 整体等待超时（秒）
     double poll_interval_s = 0.05;                  ///< CRI 轮询间隔（秒）
@@ -57,6 +61,9 @@ struct MotionWaitOptions {
     [[deprecated("v2.1.8: no longer effective, completion only checks InMotion")]]
     double cartesian_orientation_tolerance_deg = 1.0; ///< 已废弃
 };
+#ifdef __GNUC__
+#pragma GCC diagnostic pop
+#endif
 
 /**
  * @brief CRI 实时快照（与 `AGENTS.md` §2.3.4 对齐）：关节 **度**，TCP **mm+度**，速度 mm/s 与 °/s。
