@@ -1,5 +1,17 @@
 # Codroid C++ SDK 版本说明
 
+## v2.1.8（2026-06-03）
+
+### Breaking Change
+
+- **`*Sync` 阻塞运动完成判定逻辑简化**：仅依据 CRI `InMotion` 标志（曾运动 + 连续 `SettledSamples` 次停稳），**不再**比对关节角或 TCP 与目标点误差
+  - 碰撞、急停、报警仍会抛异常（这些场景会触发 `has_alarm` / `emergency_stop`）
+  - 外部 `StopRobotMove` 打断视为正常结束
+  - 移除「运动已停止，但未到达目标点」异常
+- **`MotionWaitOptions` 容差字段废弃**：`joint_tolerance_deg`、`cartesian_position_tolerance_mm`、`cartesian_orientation_tolerance_deg` 标记 `[[deprecated]]`，不再生效
+
+---
+
 ## v2.1.7（2026-06-01）
 
 ### 新增

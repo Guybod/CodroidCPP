@@ -43,15 +43,19 @@ struct CommandResult {
 /**
  * @brief 阻塞运动等待参数（C# `MotionWaitOptions`）。
  * @note 用于 `MoveSync` / `MovJSync` / `MovLSync` / `MovCSync` / `MovCircleSync`。
+ * @note v2.1.8：完成判定仅依据 CRI InMotion 标志，容差字段已废弃。
  */
 struct MotionWaitOptions {
     double timeout_s = 60.0;                        ///< 整体等待超时（秒）
     double poll_interval_s = 0.05;                  ///< CRI 轮询间隔（秒）
     double cri_stale_timeout_s = 0.5;               ///< CRI 数据过期判定（秒）
     int settled_samples = 3;                        ///< InMotion=false 连续稳定采样数
-    double joint_tolerance_deg = 0.2;               ///< 关节目标容差（最大轴误差，度）
-    double cartesian_position_tolerance_mm = 1.0;   ///< 笛卡尔位置容差（欧氏距离，mm）
-    double cartesian_orientation_tolerance_deg = 1.0; ///< 笛卡尔姿态容差（最大欧拉角误差，度）
+    [[deprecated("v2.1.8: no longer effective, completion only checks InMotion")]]
+    double joint_tolerance_deg = 0.2;               ///< 已废弃
+    [[deprecated("v2.1.8: no longer effective, completion only checks InMotion")]]
+    double cartesian_position_tolerance_mm = 1.0;   ///< 已废弃
+    [[deprecated("v2.1.8: no longer effective, completion only checks InMotion")]]
+    double cartesian_orientation_tolerance_deg = 1.0; ///< 已废弃
 };
 
 /**

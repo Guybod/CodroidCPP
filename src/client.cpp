@@ -235,42 +235,9 @@ ClientRealtimeState to_client_state(const RobotRealtimeState& s) {
     return out;
 }
 
-// --- Sync motion helpers ---
+// --- Sync motion helpers (v2.1.8: only check InMotion flag, no position comparison) ---
 
-double max_abs_diff(const std::vector<double>& actual, const std::vector<double>& expected) {
-    if (actual.size() < 6 || expected.size() < 6) return 1e9;
-    double m = 0.0;
-    for (int i = 0; i < 6; ++i) {
-        double d = std::abs(actual[i] - expected[i]);
-        if (d > m) m = d;
-    }
-    return m;
-}
-
-double euclidean_3mm(const std::vector<double>& a, const std::vector<double>& b) {
-    if (a.size() < 3 || b.size() < 3) return 1e9;
-    double dx = a[0] - b[0], dy = a[1] - b[1], dz = a[2] - b[2];
-    return std::sqrt(dx * dx + dy * dy + dz * dz);
-}
-
-double max_abs_euler_diff_deg(const std::vector<double>& a, const std::vector<double>& b) {
-    if (a.size() < 6 || b.size() < 6) return 1e9;
-    double m = 0.0;
-    for (int i = 3; i < 6; ++i) {
-        double d = std::fmod(a[i] - b[i], 360.0);
-        d = std::min(std::abs(d), 360.0 - std::abs(d));
-        if (d > m) m = d;
-    }
-    return m;
-}
-
-bool is_cartesian_reached(const std::vector<double>& actual, const std::vector<double>& target,
-                          const MotionWaitOptions& opts) {
-    return euclidean_3mm(actual, target) <= opts.cartesian_position_tolerance_mm
-           && max_abs_euler_diff_deg(actual, target) <= opts.cartesian_orientation_tolerance_deg;
-}
-
-void wait_until_settled(CodroidController& ctrl, const std::function<bool(const ClientRealtimeState&)>& pred,
+void wait_until_settled(CodroidController& ctrl,
                         const std::string& op_name, const MotionWaitOptions& opts) {
     if (opts.settled_samples <= 0)
         throw std::invalid_argument(op_name + ": MotionWaitOptions.settled_samples must be > 0");
@@ -288,31 +255,17 @@ void wait_until_settled(CodroidController& ctrl, const std::function<bool(const 
             continue;
         }
 
-        ClientRealtimeState cs;
-        cs.joint_position = state.joint_position;
-        cs.tcp_pose = state.tcp_pose;
-        cs.in_motion = state.in_motion;
-        cs.collision_stopped = state.collision_stopped;
-        cs.emergency_stop_pressed = state.emergency_stop_pressed;
-        cs.has_alarm = state.has_alarm;
+        if (state.in_motion) had_motion = true;
 
-        bool reached = pred(cs);
-
-        if (cs.in_motion) had_motion = true;
-
-        if (cs.collision_stopped || cs.emergency_stop_pressed || cs.has_alarm) {
+        if (state.collision_stopped || state.emergency_stop_pressed || state.has_alarm) {
             throw std::runtime_error(op_name + " failed: abnormal state detected (CollisionStopped="
-                                     + std::to_string(cs.collision_stopped)
-                                     + ", EmergencyStopPressed=" + std::to_string(cs.emergency_stop_pressed)
-                                     + ", HasAlarm=" + std::to_string(cs.has_alarm) + ")");
+                                     + std::to_string(state.collision_stopped)
+                                     + ", EmergencyStopPressed=" + std::to_string(state.emergency_stop_pressed)
+                                     + ", HasAlarm=" + std::to_string(state.has_alarm) + ")");
         }
 
-        if (had_motion && !cs.in_motion && !reached) {
-            throw std::runtime_error(op_name + " failed: motion stopped but target not reached.");
-        }
-
-        bool still = !cs.in_motion;
-        if (reached && still) {
+        bool still = !state.in_motion;
+        if (had_motion && still) {
             if (++settled >= opts.settled_samples) return;
         } else {
             settled = 0;
@@ -618,21 +571,7 @@ bool CodroidClient::ThrowOnCommandError() const noexcept {
 bool CodroidClient::MoveSync(const std::vector<ClientMoveInstruction>& path, const MotionWaitOptions& wait) {
     auto r = Move(path);
     if (!r.Ok()) throw std::runtime_error("MoveSync: Move failed: " + r.error_msg);
-    // Build predicate from last instruction
-    if (path.empty()) throw std::invalid_argument("MoveSync: path is empty");
-    const auto& last = path.back();
-    MotionWaitOptions opts = wait;
-    if (last.target.jp.size() >= 6) {
-        auto jp = last.target.jp;
-        wait_until_settled(impl_->controller,
-            [jp, opts](const ClientRealtimeState& s) { return max_abs_diff(s.joint_position, jp) <= opts.joint_tolerance_deg; },
-            "MoveSync", opts);
-    } else if (last.target.cp.size() >= 6) {
-        auto cp = last.target.cp;
-        wait_until_settled(impl_->controller,
-            [cp, opts](const ClientRealtimeState& s) { return is_cartesian_reached(s.tcp_pose, cp, opts); },
-            "MoveSync", opts);
-    }
+    wait_until_settled(impl_->controller, "MoveSync", wait);
     return true;
 }
 
@@ -642,11 +581,7 @@ bool CodroidClient::MovJSync(const ClientJointPoint& target, double speed, doubl
                              const std::vector<double>& coor, const std::vector<double>& tool) {
     auto r = MovJ(target, speed, acc, blend, relativeBlend, coor, tool);
     if (!r.Ok()) throw std::runtime_error("MovJSync: MovJ failed: " + r.error_msg);
-    auto jp = target.jp;
-    MotionWaitOptions opts = wait;
-    wait_until_settled(impl_->controller,
-        [jp, opts](const ClientRealtimeState& s) { return max_abs_diff(s.joint_position, jp) <= opts.joint_tolerance_deg; },
-        "MovJSync(JointPoint)", opts);
+    wait_until_settled(impl_->controller, "MovJSync(JointPoint)", wait);
     return true;
 }
 
@@ -656,11 +591,7 @@ bool CodroidClient::MovJSync(const ClientCartesianPoint& target, double speed, d
                              const std::vector<double>& coor, const std::vector<double>& tool) {
     auto r = MovJ(target, speed, acc, blend, relativeBlend, coor, tool);
     if (!r.Ok()) throw std::runtime_error("MovJSync: MovJ failed: " + r.error_msg);
-    auto cp = target.cp;
-    MotionWaitOptions opts = wait;
-    wait_until_settled(impl_->controller,
-        [cp, opts](const ClientRealtimeState& s) { return is_cartesian_reached(s.tcp_pose, cp, opts); },
-        "MovJSync(CartesianPoint)", opts);
+    wait_until_settled(impl_->controller, "MovJSync(CartesianPoint)", wait);
     return true;
 }
 
@@ -670,11 +601,7 @@ bool CodroidClient::MovLSync(const ClientCartesianPoint& target, double speed, d
                              const std::vector<double>& coor, const std::vector<double>& tool) {
     auto r = MovL(target, speed, acc, blend, relativeBlend, coor, tool);
     if (!r.Ok()) throw std::runtime_error("MovLSync: MovL failed: " + r.error_msg);
-    auto cp = target.cp;
-    MotionWaitOptions opts = wait;
-    wait_until_settled(impl_->controller,
-        [cp, opts](const ClientRealtimeState& s) { return is_cartesian_reached(s.tcp_pose, cp, opts); },
-        "MovLSync(CartesianPoint)", opts);
+    wait_until_settled(impl_->controller, "MovLSync(CartesianPoint)", wait);
     return true;
 }
 
@@ -684,11 +611,7 @@ bool CodroidClient::MovLSync(const ClientJointPoint& target, double speed, doubl
                              const std::vector<double>& coor, const std::vector<double>& tool) {
     auto r = MovL(target, speed, acc, blend, relativeBlend, coor, tool);
     if (!r.Ok()) throw std::runtime_error("MovLSync: MovL failed: " + r.error_msg);
-    auto jp = target.jp;
-    MotionWaitOptions opts = wait;
-    wait_until_settled(impl_->controller,
-        [jp, opts](const ClientRealtimeState& s) { return max_abs_diff(s.joint_position, jp) <= opts.joint_tolerance_deg; },
-        "MovLSync(JointPoint)", opts);
+    wait_until_settled(impl_->controller, "MovLSync(JointPoint)", wait);
     return true;
 }
 
@@ -698,11 +621,7 @@ bool CodroidClient::MovCSync(const ClientCartesianPoint& middle, const ClientCar
                              const std::vector<double>& coor, const std::vector<double>& tool) {
     auto r = MovC(middle, target, speed, acc, blend, relativeBlend, coor, tool);
     if (!r.Ok()) throw std::runtime_error("MovCSync: MovC failed: " + r.error_msg);
-    auto cp = target.cp;
-    MotionWaitOptions opts = wait;
-    wait_until_settled(impl_->controller,
-        [cp, opts](const ClientRealtimeState& s) { return is_cartesian_reached(s.tcp_pose, cp, opts); },
-        "MovCSync", opts);
+    wait_until_settled(impl_->controller, "MovCSync", wait);
     return true;
 }
 
@@ -712,11 +631,7 @@ bool CodroidClient::MovCircleSync(const ClientCartesianPoint& middle, const Clie
                                   const std::vector<double>& coor, const std::vector<double>& tool) {
     auto r = MovCircle(middle, target, circle_num, speed, acc, blend, relativeBlend, coor, tool);
     if (!r.Ok()) throw std::runtime_error("MovCircleSync: MovCircle failed: " + r.error_msg);
-    auto cp = target.cp;
-    MotionWaitOptions opts = wait;
-    wait_until_settled(impl_->controller,
-        [cp, opts](const ClientRealtimeState& s) { return is_cartesian_reached(s.tcp_pose, cp, opts); },
-        "MovCircleSync", opts);
+    wait_until_settled(impl_->controller, "MovCircleSync", wait);
     return true;
 }
 

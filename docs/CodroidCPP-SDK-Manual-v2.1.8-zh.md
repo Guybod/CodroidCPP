@@ -1,6 +1,6 @@
 # CodroidCPP SDK 手册
 
-**版本:** 2.1.7 | **命名空间:** `Codroid`
+**版本:** 2.1.8 | **命名空间:** `Codroid`
 
 ---
 
@@ -953,9 +953,11 @@ robot.Move(path);
 
 ## 阻塞运动（Sync）
 
-`*Sync` 方法发送运动指令后**阻塞直到 CRI 确认机器人到达目标**。成功返回 `true`，错误/超时抛出异常。
+`*Sync` 方法发送运动指令后**阻塞直到 CRI 确认机器人停稳**。成功返回 `true`，错误/超时抛出异常。
 
 **必须先调用** `StartCriDataPush` 并等待首帧（`WaitForCriData`）。
+
+> **v2.1.8 行为变更**：完成判定仅依据 CRI `InMotion` 标志（曾经运动 + 连续 `SettledSamples` 次停稳），**不再**比对关节角或 TCP 与目标点误差。`MotionWaitOptions` 的容差字段（`joint_tolerance_deg`、`cartesian_position_tolerance_mm`、`cartesian_orientation_tolerance_deg`）已标记 `[[deprecated]]`，不再生效。
 
 ### MoveSync
 
@@ -2138,15 +2140,17 @@ enum class ClientMoveType {
 
 配置 SDK 等待运动完成的方式。
 
+> **v2.1.8 变更**：完成判定仅依据 CRI `InMotion` 标志，容差字段已废弃。
+
 ```cpp
 struct MotionWaitOptions {
     double timeout_s = 60.0;
     double poll_interval_s = 0.05;
     double cri_stale_timeout_s = 0.5;
     int settled_samples = 3;
-    double joint_tolerance_deg = 0.2;
-    double cartesian_position_tolerance_mm = 1.0;
-    double cartesian_orientation_tolerance_deg = 1.0;
+    [[deprecated]] double joint_tolerance_deg = 0.2;               // 已废弃
+    [[deprecated]] double cartesian_position_tolerance_mm = 1.0;   // 已废弃
+    [[deprecated]] double cartesian_orientation_tolerance_deg = 1.0; // 已废弃
 };
 ```
 
@@ -2156,9 +2160,9 @@ struct MotionWaitOptions {
 | `poll_interval_s` | `double` | 0.05 | 检查运动状态的轮询间隔（秒） |
 | `cri_stale_timeout_s` | `double` | 0.5 | CRI 数据被视为过期的最长时间（秒） |
 | `settled_samples` | `int` | 3 | 确认运动完成所需的连续稳定采样数 |
-| `joint_tolerance_deg` | `double` | 0.2 | 关节位置容差（度） |
-| `cartesian_position_tolerance_mm` | `double` | 1.0 | 笛卡尔位置容差（mm） |
-| `cartesian_orientation_tolerance_deg` | `double` | 1.0 | 笛卡尔姿态容差（度） |
+| `joint_tolerance_deg` | `double` | 0.2 | ⚠️ 已废弃，不再生效 |
+| `cartesian_position_tolerance_mm` | `double` | 1.0 | ⚠️ 已废弃，不再生效 |
+| `cartesian_orientation_tolerance_deg` | `double` | 1.0 | ⚠️ 已废弃，不再生效 |
 
 **使用示例：**
 ```cpp
@@ -2982,7 +2986,7 @@ std::vector<double> InverseKinematics(const IKParams& params, int id = 1);
 std::vector<double> CalculateRelativePose(const RelativePoseParams& params, int id = 1);
 ```
 
-### CposToCpos / CposToCposPose（v2.1.7+）
+### CposToCpos / CposToCposPose（v2.1.8+）
 
 坐标系转换：将 TCP 位姿从坐标系1+工具1 转换到坐标系2+工具2。协议 `Robot/cpostocpos`。
 
@@ -3016,7 +3020,7 @@ auto result = robot.CposToCpos({400,200,500,180,0,90},
 
 ---
 
-## RS485 通信（v2.1.7+）
+## RS485 通信（v2.1.8+）
 
 ### Rs485Init
 
@@ -3060,7 +3064,7 @@ robot.Rs485Write({0x01, 0x03, 0x00, 0x00, 0x00, 0x01, 0x84, 0x0A});
 
 ---
 
-## 工程控制扩展（v2.1.7+）
+## 工程控制扩展（v2.1.8+）
 
 ### SetStartLine / ClearStartLine
 
@@ -3089,7 +3093,7 @@ nlohmann::json GetGlobalVarsCatalog(int id = 1);
 
 ---
 
-## 寄存器扩展（v2.1.7+）
+## 寄存器扩展（v2.1.8+）
 
 ### SetExtendArrayType / RemoveExtendArray
 
@@ -3102,7 +3106,7 @@ CommandResult RemoveExtendArray(int index, int id = 1);
 
 ---
 
-## 机器人设置扩展（v2.1.7+）
+## 机器人设置扩展（v2.1.8+）
 
 ### SaveUserCoordinateFrames
 
