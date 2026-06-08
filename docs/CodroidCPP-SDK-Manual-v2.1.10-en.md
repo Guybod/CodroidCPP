@@ -1,6 +1,6 @@
 # CodroidCPP SDK Manual
 
-**Version:** 2.1.8 | **Namespace:** `Codroid`
+**Version:** 2.1.10 | **Namespace:** `Codroid`
 
 ---
 
@@ -2136,7 +2136,7 @@ enum class ClientMoveType {
 
 Configures how the SDK waits for motion completion.
 
-> **v2.1.8 change:** Completion is determined solely by the CRI `InMotion` flag. Tolerance fields are deprecated.
+> **v2.1.10 change:** Completion is determined solely by the CRI `InMotion` flag. Tolerance fields are deprecated.
 
 ```cpp
 struct MotionWaitOptions {
@@ -2974,7 +2974,7 @@ std::vector<double> InverseKinematics(const IKParams& params, int id = 1);
 std::vector<double> CalculateRelativePose(const RelativePoseParams& params, int id = 1);
 ```
 
-### CposToCpos / CposToCposPose (v2.1.8+)
+### CposToCpos / CposToCposPose (v2.1.10+)
 
 Coordinate system transformation: convert a TCP pose from coordinate system 1 + tool 1 to coordinate system 2 + tool 2. Protocol `Robot/cpostocpos`.
 
@@ -3008,7 +3008,7 @@ auto result = robot.CposToCpos({400,200,500,180,0,90},
 
 ---
 
-## RS485 Communication (v2.1.8+)
+## RS485 Communication (v2.1.10+)
 
 ### Rs485Init
 
@@ -3052,7 +3052,7 @@ robot.Rs485Write({0x01, 0x03, 0x00, 0x00, 0x00, 0x01, 0x84, 0x0A});
 
 ---
 
-## Project Control Extensions (v2.1.8+)
+## Project Control Extensions (v2.1.10+)
 
 ### SetStartLine / ClearStartLine
 
@@ -3081,7 +3081,7 @@ Get global variables catalog (same protocol as `GetGlobalVars`, parsed into `nam
 
 ---
 
-## Register Extensions (v2.1.8+)
+## Register Extensions (v2.1.10+)
 
 ### SetExtendArrayType / RemoveExtendArray
 
@@ -3094,7 +3094,7 @@ Set/reset extended array element type.
 
 ---
 
-## Robot Settings Extensions (v2.1.8+)
+## Robot Settings Extensions (v2.1.10+)
 
 ### SaveUserCoordinateFrames
 

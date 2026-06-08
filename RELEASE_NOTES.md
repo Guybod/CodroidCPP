@@ -1,5 +1,13 @@
 # Codroid C++ SDK 版本说明
 
+## v2.1.10（2026-06-03）
+
+### Breaking Change
+
+- **`MotionWaitOptions` 容差字段彻底移除**：`joint_tolerance_deg`、`cartesian_position_tolerance_mm`、`cartesian_orientation_tolerance_deg` 已删除，旧代码引用会编译报错
+
+---
+
 ## v2.1.8（2026-06-03）
 
 ### Breaking Change

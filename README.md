@@ -6,8 +6,8 @@ Codroid C++ SDK 提供一套 C++ 接口，用于连接 Codroid 控制器并完�
 
 ## 文档
 
-- **SDK 手册（中文）**：[docs/CodroidCPP-SDK-Manual-v2.1.8-zh.md](docs/CodroidCPP-SDK-Manual-v2.1.8-zh.md)
-- **SDK Manual (English)**：[docs/CodroidCPP-SDK-Manual-v2.1.8-en.md](docs/CodroidCPP-SDK-Manual-v2.1.8-en.md)
+- **SDK 手册（中文）**：[docs/CodroidCPP-SDK-Manual-v2.1.10-zh.md](docs/CodroidCPP-SDK-Manual-v2.1.10-zh.md)
+- **SDK Manual (English)**：[docs/CodroidCPP-SDK-Manual-v2.1.10-en.md](docs/CodroidCPP-SDK-Manual-v2.1.10-en.md)
 
 ## 1. 准备控制器网络
 

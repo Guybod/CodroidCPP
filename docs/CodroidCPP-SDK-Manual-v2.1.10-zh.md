@@ -1,6 +1,6 @@
 # CodroidCPP SDK 手册
 
-**版本:** 2.1.8 | **命名空间:** `Codroid`
+**版本:** 2.1.10 | **命名空间:** `Codroid`
 
 ---
 
@@ -2136,7 +2136,7 @@ enum class ClientMoveType {
 
 配置 SDK 等待运动完成的方式。
 
-> **v2.1.8 变更**：完成判定仅依据 CRI `InMotion` 标志，容差字段已废弃。
+> **v2.1.10 变更**：完成判定仅依据 CRI `InMotion` 标志，容差字段已废弃。
 
 ```cpp
 struct MotionWaitOptions {
@@ -2974,7 +2974,7 @@ std::vector<double> InverseKinematics(const IKParams& params, int id = 1);
 std::vector<double> CalculateRelativePose(const RelativePoseParams& params, int id = 1);
 ```
 
-### CposToCpos / CposToCposPose（v2.1.8+）
+### CposToCpos / CposToCposPose（v2.1.10+）
 
 坐标系转换：将 TCP 位姿从坐标系1+工具1 转换到坐标系2+工具2。协议 `Robot/cpostocpos`。
 
@@ -3008,7 +3008,7 @@ auto result = robot.CposToCpos({400,200,500,180,0,90},
 
 ---
 
-## RS485 通信（v2.1.8+）
+## RS485 通信（v2.1.10+）
 
 ### Rs485Init
 
@@ -3052,7 +3052,7 @@ robot.Rs485Write({0x01, 0x03, 0x00, 0x00, 0x00, 0x01, 0x84, 0x0A});
 
 ---
 
-## 工程控制扩展（v2.1.8+）
+## 工程控制扩展（v2.1.10+）
 
 ### SetStartLine / ClearStartLine
 
@@ -3081,7 +3081,7 @@ nlohmann::json GetGlobalVarsCatalog(int id = 1);
 
 ---
 
-## 寄存器扩展（v2.1.8+）
+## 寄存器扩展（v2.1.10+）
 
 ### SetExtendArrayType / RemoveExtendArray
 
@@ -3094,7 +3094,7 @@ CommandResult RemoveExtendArray(int index, int id = 1);
 
 ---
 
-## 机器人设置扩展（v2.1.8+）
+## 机器人设置扩展（v2.1.10+）
 
 ### SaveUserCoordinateFrames
 
