@@ -53,6 +53,10 @@ set(LIB_SOURCES
 add_library(Codroid SHARED ${LIB_SOURCES})
 target_compile_definitions(Codroid PRIVATE CODROID_EXPORTS)
 
+if (WIN32)
+    add_compile_definitions(NOMINMAX WIN32_LEAN_AND_MEAN)
+endif()
+
 # ===============================
 # 平台相关链接
 # ===============================

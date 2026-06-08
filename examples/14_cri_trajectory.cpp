@@ -171,7 +171,7 @@ std::vector<std::array<double, 6>> rectangle_cart_waypoints_mm_deg(const std::ar
 }
 
 void sleep_cycles(int duration_ms, int cycles) {
-    std::this_thread::sleep_for(std::chrono::milliseconds(std::max(1, duration_ms * cycles)));
+    std::this_thread::sleep_for(std::chrono::milliseconds((std::max)(1, duration_ms * cycles)));
 }
 
 void log_send_begin(const char* tag, size_t points, int period_ms) {
