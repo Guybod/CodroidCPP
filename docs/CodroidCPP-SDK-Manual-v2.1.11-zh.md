@@ -1,6 +1,6 @@
 # CodroidCPP SDK 手册
 
-**版本:** 2.1.10 | **命名空间:** `Codroid`
+**版本:** 2.1.11 | **命名空间:** `Codroid`
 
 ---
 
@@ -3103,6 +3103,126 @@ CommandResult SaveUserCoordinateFrames(const std::vector<ClientRobotFrame>& fram
 ```
 
 直接下发完整用户坐标系表（19.6），与 `SaveToolFrames` / `SavePayloadFrames` 对齐。
+
+---
+
+## 力控接口（v2.1.11+）
+
+当前 C++ SDK 与 Python 力控接口对齐。`InitForceControl` 固定下发导纳算法 `algo=1`，不开放算法参数；旧 `FTSensorDriftCalibration` 已移除。
+
+### 枚举与状态类型
+
+```cpp
+enum class ForceControlAlgo { Impedance = 0, Admittance = 1, PdForce = 2 };
+enum class ForceFrame { Tcp = 0, User = 1, World = 2 };
+enum class ForceAxisMode { Position = 0, Force = 1, Compliant = 2 };
+enum class ForceHealth { Ok = 0, Invalid = 1, Timeout = 2, Saturated = 3, PacketLoss = 4 };
+
+struct ClientForceControlState {
+    bool enabled;
+    bool pending;
+    int algo;
+    bool valid;
+    bool is_contact;
+    bool is_overforce;
+    int health;
+    std::vector<double> wrench_tcp;
+    std::vector<double> wrench_base;
+    std::vector<double> desired_wrench;
+    std::vector<double> track_error;
+    std::vector<int> axis_mode;
+};
+```
+
+### 初始化、启动与停止
+
+```cpp
+CommandResult ZeroForceCalibration(int calibrationTimeMs = 1000, int id = 1);
+CommandResult InitForceControl(
+    ForceFrame frame,
+    const std::vector<ForceAxisMode>& axisMode,
+    const nlohmann::json& compliance = {},
+    const nlohmann::json& constantForce = {},
+    const std::vector<double>& userFrameRpy = {},
+    const std::vector<double>& desiredWrench = {},
+    const nlohmann::json& forceLimit = {},
+    int id = 1);
+CommandResult StartForceControl(int id = 1);
+CommandResult StopForceControl(int smoothTimeMs = 500, int id = 1);
+```
+
+`axisMode` 必须为 6 个轴。`ZeroForceCalibration` 的 `calibrationTimeMs` 为零力校准时长。
+
+### 在线调参与安全接口
+
+```cpp
+CommandResult TuneForceParams(
+    const std::vector<double>& stiffness = {},
+    const std::vector<double>& damping = {},
+    const std::vector<double>& mass = {},
+    const std::vector<double>& desiredForce = {},
+    const std::vector<double>& kp = {},
+    const std::vector<double>& kd = {},
+    double rampTime = -1,
+    int id = 1);
+
+CommandResult StartContactDetection(
+    const std::vector<double>& direction,
+    double feedVelocity = -1,
+    double contactForceThreshold = -1,
+    double velDropRatio = -1,
+    double maxTravel = -1,
+    double timeoutMs = -1,
+    int id = 1);
+
+CommandResult SetOverforceProtection(
+    bool enable,
+    const std::vector<double>& forceThreshold = {},
+    double holdMs = -1,
+    int id = 1);
+
+CommandResult SetForceDataHealth(
+    bool enable,
+    double timeoutMs = -1,
+    double maxPacketLossRatio = -1,
+    int packetLossWindow = -1,
+    double forceSaturation = -1,
+    double torqueSaturation = -1,
+    int id = 1);
+```
+
+`direction` 与 `forceThreshold` 均为 6 维数组。`TuneForceParams` 可在线更新期望力、刚度、阻尼、质量等参数。
+
+### 状态读取
+
+```cpp
+ClientForceControlState GetForceState(int id = 1);
+bool GetForceStateEnabled(int id = 1);
+bool GetForceStatePending(int id = 1);
+int GetForceStateAlgo(int id = 1);
+bool GetForceStateValid(int id = 1);
+bool GetForceStateIsContact(int id = 1);
+bool GetForceStateIsOverforce(int id = 1);
+int GetForceStateHealth(int id = 1);
+std::vector<double> GetForceStateWrenchTcp(int id = 1);
+std::vector<double> GetForceStateWrenchBase(int id = 1);
+std::vector<double> GetForceStateDesiredWrench(int id = 1);
+std::vector<double> GetForceStateTrackError(int id = 1);
+std::vector<int> GetForceStateAxisMode(int id = 1);
+```
+
+单字段 getter 返回对应字段类型，例如 `GetForceStateEnabled()` 返回 `bool`，`GetForceStateWrenchTcp()` 返回 `std::vector<double>`。
+
+### 测试示例
+
+```bash
+./build_linux/client_08_force_control state
+./build_linux/client_08_force_control calibration
+./build_linux/client_08_force_control constant
+./build_linux/client_08_force_control contact --allow-motion
+```
+
+示例代码见 `examples_client/08_force_control.cpp`，运行前请按现场修改控制器 IP。
 
 ---
 

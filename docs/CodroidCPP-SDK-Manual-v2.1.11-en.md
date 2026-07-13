@@ -1,6 +1,6 @@
 # CodroidCPP SDK Manual
 
-**Version:** 2.1.10 | **Namespace:** `Codroid`
+**Version:** 2.1.11 | **Namespace:** `Codroid`
 
 ---
 
@@ -3103,6 +3103,126 @@ CommandResult SaveUserCoordinateFrames(const std::vector<ClientRobotFrame>& fram
 ```
 
 Directly save the complete user coordinate frame table (19.6), aligned with `SaveToolFrames` / `SavePayloadFrames`.
+
+---
+
+## Force Control APIs (v2.1.11+)
+
+The C++ SDK force-control surface is aligned with Python. `InitForceControl` always sends admittance control `algo=1`; callers cannot pass an algorithm parameter. The old `FTSensorDriftCalibration` API has been removed.
+
+### Enums and State Type
+
+```cpp
+enum class ForceControlAlgo { Impedance = 0, Admittance = 1, PdForce = 2 };
+enum class ForceFrame { Tcp = 0, User = 1, World = 2 };
+enum class ForceAxisMode { Position = 0, Force = 1, Compliant = 2 };
+enum class ForceHealth { Ok = 0, Invalid = 1, Timeout = 2, Saturated = 3, PacketLoss = 4 };
+
+struct ClientForceControlState {
+    bool enabled;
+    bool pending;
+    int algo;
+    bool valid;
+    bool is_contact;
+    bool is_overforce;
+    int health;
+    std::vector<double> wrench_tcp;
+    std::vector<double> wrench_base;
+    std::vector<double> desired_wrench;
+    std::vector<double> track_error;
+    std::vector<int> axis_mode;
+};
+```
+
+### Initialize, Start, Stop
+
+```cpp
+CommandResult ZeroForceCalibration(int calibrationTimeMs = 1000, int id = 1);
+CommandResult InitForceControl(
+    ForceFrame frame,
+    const std::vector<ForceAxisMode>& axisMode,
+    const nlohmann::json& compliance = {},
+    const nlohmann::json& constantForce = {},
+    const std::vector<double>& userFrameRpy = {},
+    const std::vector<double>& desiredWrench = {},
+    const nlohmann::json& forceLimit = {},
+    int id = 1);
+CommandResult StartForceControl(int id = 1);
+CommandResult StopForceControl(int smoothTimeMs = 500, int id = 1);
+```
+
+`axisMode` must contain 6 axes. `ZeroForceCalibration` uses `calibrationTimeMs` as the zero-force calibration duration.
+
+### Online Tuning and Safety
+
+```cpp
+CommandResult TuneForceParams(
+    const std::vector<double>& stiffness = {},
+    const std::vector<double>& damping = {},
+    const std::vector<double>& mass = {},
+    const std::vector<double>& desiredForce = {},
+    const std::vector<double>& kp = {},
+    const std::vector<double>& kd = {},
+    double rampTime = -1,
+    int id = 1);
+
+CommandResult StartContactDetection(
+    const std::vector<double>& direction,
+    double feedVelocity = -1,
+    double contactForceThreshold = -1,
+    double velDropRatio = -1,
+    double maxTravel = -1,
+    double timeoutMs = -1,
+    int id = 1);
+
+CommandResult SetOverforceProtection(
+    bool enable,
+    const std::vector<double>& forceThreshold = {},
+    double holdMs = -1,
+    int id = 1);
+
+CommandResult SetForceDataHealth(
+    bool enable,
+    double timeoutMs = -1,
+    double maxPacketLossRatio = -1,
+    int packetLossWindow = -1,
+    double forceSaturation = -1,
+    double torqueSaturation = -1,
+    int id = 1);
+```
+
+`direction` and `forceThreshold` are 6D arrays. `TuneForceParams` can update desired force, stiffness, damping, mass, and related parameters online.
+
+### State Reading
+
+```cpp
+ClientForceControlState GetForceState(int id = 1);
+bool GetForceStateEnabled(int id = 1);
+bool GetForceStatePending(int id = 1);
+int GetForceStateAlgo(int id = 1);
+bool GetForceStateValid(int id = 1);
+bool GetForceStateIsContact(int id = 1);
+bool GetForceStateIsOverforce(int id = 1);
+int GetForceStateHealth(int id = 1);
+std::vector<double> GetForceStateWrenchTcp(int id = 1);
+std::vector<double> GetForceStateWrenchBase(int id = 1);
+std::vector<double> GetForceStateDesiredWrench(int id = 1);
+std::vector<double> GetForceStateTrackError(int id = 1);
+std::vector<int> GetForceStateAxisMode(int id = 1);
+```
+
+Each single-field getter returns the field's concrete type. For example, `GetForceStateEnabled()` returns `bool`, and `GetForceStateWrenchTcp()` returns `std::vector<double>`.
+
+### Test Example
+
+```bash
+./build_linux/client_08_force_control state
+./build_linux/client_08_force_control calibration
+./build_linux/client_08_force_control constant
+./build_linux/client_08_force_control contact --allow-motion
+```
+
+The example source is `examples_client/08_force_control.cpp`. Update the controller IP before running it on site.
 
 ---
 
