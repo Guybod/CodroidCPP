@@ -772,8 +772,48 @@ public:
      * @param id 请求 ID。
      * @return @~english  Response object containing the result of the command execution.
      *         @~chinese  包含指令执行结果的响应对象。
-     */
+    */
     Response clearError(int id = 1);
+
+    // --- 20. 力控接口 / Force Control ---
+    Response zeroForceCalibration(int calibrationTimeMs = 1000, int id = 1);
+    Response initForceControl(ForceFrame frame,
+                              const std::vector<ForceAxisMode>& axisMode,
+                              const json& compliance = json::object(),
+                              const json& constantForce = json::object(),
+                              const std::vector<double>& userFrameRpy = {},
+                              const std::vector<double>& desiredWrench = {},
+                              const json& forceLimit = json::object(),
+                              int id = 1);
+    Response startForceControl(int id = 1);
+    Response stopForceControl(int smoothTimeMs = 500, int id = 1);
+    Response tuneForceParams(const std::vector<double>& stiffness = {},
+                             const std::vector<double>& damping = {},
+                             const std::vector<double>& mass = {},
+                             const std::vector<double>& desiredForce = {},
+                             const std::vector<double>& kp = {},
+                             const std::vector<double>& kd = {},
+                             double rampTime = -1.0,
+                             int id = 1);
+    Response startContactDetection(const std::vector<double>& direction,
+                                   double feedVelocity = -1.0,
+                                   double contactForceThreshold = -1.0,
+                                   double velDropRatio = -1.0,
+                                   double maxTravel = -1.0,
+                                   double timeoutMs = -1.0,
+                                   int id = 1);
+    Response setOverforceProtection(int enable = -1,
+                                    const std::vector<double>& forceThreshold = {},
+                                    double holdMs = -1.0,
+                                    int id = 1);
+    Response setForceDataHealth(int enable = -1,
+                                double timeoutMs = -1.0,
+                                double maxPacketLossRatio = -1.0,
+                                int packetLossWindow = -1,
+                                double forceSaturation = -1.0,
+                                double torqueSaturation = -1.0,
+                                int id = 1);
+    ForceControlState getForceState(int id = 1);
 
     // --- 13.1 获取IO状态 ---
     /** @brief @~english Get the status of IO ports on the robot @~chinese 获取机器人上IO端口的状态

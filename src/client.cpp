@@ -702,6 +702,123 @@ CommandResult CodroidClient::StopDrag(int id) {
     return to_client_result(impl_->controller.stopDrag(id));
 }
 
+CommandResult CodroidClient::ZeroForceCalibration(int calibrationTimeMs, int id) {
+    return to_client_result(impl_->controller.zeroForceCalibration(calibrationTimeMs, id));
+}
+
+CommandResult CodroidClient::InitForceControl(ForceFrame frame,
+                                              const std::vector<ForceAxisMode>& axisMode,
+                                              const nlohmann::json& compliance,
+                                              const nlohmann::json& constantForce,
+                                              const std::vector<double>& userFrameRpy,
+                                              const std::vector<double>& desiredWrench,
+                                              const nlohmann::json& forceLimit,
+                                              int id) {
+    return to_client_result(impl_->controller.initForceControl(
+        frame, axisMode, compliance, constantForce, userFrameRpy, desiredWrench, forceLimit, id));
+}
+
+CommandResult CodroidClient::StartForceControl(int id) {
+    return to_client_result(impl_->controller.startForceControl(id));
+}
+
+CommandResult CodroidClient::StopForceControl(int smoothTimeMs, int id) {
+    return to_client_result(impl_->controller.stopForceControl(smoothTimeMs, id));
+}
+
+CommandResult CodroidClient::TuneForceParams(const std::vector<double>& stiffness,
+                                             const std::vector<double>& damping,
+                                             const std::vector<double>& mass,
+                                             const std::vector<double>& desiredForce,
+                                             const std::vector<double>& kp,
+                                             const std::vector<double>& kd,
+                                             double rampTime,
+                                             int id) {
+    return to_client_result(impl_->controller.tuneForceParams(
+        stiffness, damping, mass, desiredForce, kp, kd, rampTime, id));
+}
+
+CommandResult CodroidClient::StartContactDetection(const std::vector<double>& direction,
+                                                   double feedVelocity,
+                                                   double contactForceThreshold,
+                                                   double velDropRatio,
+                                                   double maxTravel,
+                                                   double timeoutMs,
+                                                   int id) {
+    return to_client_result(impl_->controller.startContactDetection(
+        direction, feedVelocity, contactForceThreshold, velDropRatio, maxTravel, timeoutMs, id));
+}
+
+CommandResult CodroidClient::SetOverforceProtection(int enable,
+                                                    const std::vector<double>& forceThreshold,
+                                                    double holdMs,
+                                                    int id) {
+    return to_client_result(impl_->controller.setOverforceProtection(enable, forceThreshold, holdMs, id));
+}
+
+CommandResult CodroidClient::SetForceDataHealth(int enable,
+                                                double timeoutMs,
+                                                double maxPacketLossRatio,
+                                                int packetLossWindow,
+                                                double forceSaturation,
+                                                double torqueSaturation,
+                                                int id) {
+    return to_client_result(impl_->controller.setForceDataHealth(
+        enable, timeoutMs, maxPacketLossRatio, packetLossWindow, forceSaturation, torqueSaturation, id));
+}
+
+ClientForceControlState CodroidClient::GetForceState(int id) {
+    return impl_->controller.getForceState(id);
+}
+
+bool CodroidClient::GetForceStateEnabled(int id) {
+    return GetForceState(id).enabled;
+}
+
+bool CodroidClient::GetForceStatePending(int id) {
+    return GetForceState(id).pending;
+}
+
+int CodroidClient::GetForceStateAlgo(int id) {
+    return GetForceState(id).algo;
+}
+
+bool CodroidClient::GetForceStateValid(int id) {
+    return GetForceState(id).valid;
+}
+
+bool CodroidClient::GetForceStateIsContact(int id) {
+    return GetForceState(id).is_contact;
+}
+
+bool CodroidClient::GetForceStateIsOverforce(int id) {
+    return GetForceState(id).is_overforce;
+}
+
+int CodroidClient::GetForceStateHealth(int id) {
+    return GetForceState(id).health;
+}
+
+std::vector<double> CodroidClient::GetForceStateWrenchTcp(int id) {
+    return GetForceState(id).wrench_tcp;
+}
+
+std::vector<double> CodroidClient::GetForceStateWrenchBase(int id) {
+    return GetForceState(id).wrench_base;
+}
+
+std::vector<double> CodroidClient::GetForceStateDesiredWrench(int id) {
+    return GetForceState(id).desired_wrench;
+}
+
+std::vector<double> CodroidClient::GetForceStateTrackError(int id) {
+    return GetForceState(id).track_error;
+}
+
+std::vector<int> CodroidClient::GetForceStateAxisMode(int id) {
+    return GetForceState(id).axis_mode;
+}
+
 // --- Script & Project ---
 
 CommandResult CodroidClient::RunScript(const std::string& mainScript,

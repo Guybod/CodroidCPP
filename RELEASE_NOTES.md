@@ -1,5 +1,19 @@
 # Codroid C++ SDK 版本说明
 
+## v2.1.11（2026-07-13）
+
+### 新增
+
+- **力控接口更新**：新增 `ZeroForceCalibration`、`InitForceControl`、`StartForceControl`、`StopForceControl`、`TuneForceParams`、`StartContactDetection`、`SetOverforceProtection`、`SetForceDataHealth`、`GetForceState` 及单字段状态 getter
+- **力控测试示例**：新增 `examples_client/08_force_control.cpp`
+
+### Breaking Change
+
+- **移除 `FTSensorDriftCalibration`**：新协议使用 `ZeroForceCalibration(calibrationTimeMs)`
+- **`InitForceControl` 固定导纳**：当前固定下发 `algo=1`，不开放算法参数
+
+---
+
 ## v2.1.10（2026-06-03）
 
 ### Breaking Change

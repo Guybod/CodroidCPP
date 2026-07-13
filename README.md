@@ -507,6 +507,7 @@ robot.SetCriDataReceived([](const Codroid::ClientRealtimeState& state) {
 - `examples_client/05_cri_trajectory.cpp`：CRI 实时控制最小轨迹
 - `examples_client/06_robot_parameters.cpp`：机器人设置（工具/负载/坐标系）
 - `examples_client/07_sync_motion.cpp`：阻塞式运动 API（`*Sync` + `MotionWaitOptions`）
+- `examples_client/08_force_control.cpp`：力控接口测试（零力校准、导纳初始化、在线调参、接触检测、状态读取）
 - `examples/`：SDK 内部/兼容示例，包含旧接口用法
 
 ## 11. 常见问题

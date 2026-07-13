@@ -139,6 +139,52 @@ namespace Codroid {
         {CoorType::Tool, "tool"}, {CoorType::User, "user"}
     })
 
+    /** @brief 力控算法枚举；当前高层 InitForceControl 固定下发 Admittance。 */
+    enum class ForceControlAlgo : int {
+        Impedance = 0,
+        Admittance = 1,
+        PdForce = 2
+    };
+
+    /** @brief 力控坐标系。 */
+    enum class ForceFrame : int {
+        Tcp = 0,
+        User = 1,
+        World = 2
+    };
+
+    /** @brief 力控逐轴模式。 */
+    enum class ForceAxisMode : int {
+        Position = 0,
+        Force = 1,
+        Compliant = 2
+    };
+
+    /** @brief 力控数据健康状态。 */
+    enum class ForceHealth : int {
+        Ok = 0,
+        Invalid = 1,
+        Timeout = 2,
+        Saturated = 3,
+        PacketLoss = 4
+    };
+
+    /** @brief `Robot/getForceState` 返回的力控状态快照。 */
+    struct ForceControlState {
+        bool enabled = false;
+        bool pending = false;
+        int algo = 0;
+        bool valid = false;
+        bool is_contact = false;
+        bool is_overforce = false;
+        int health = 0;
+        std::vector<double> wrench_tcp = std::vector<double>(6, 0.0);
+        std::vector<double> wrench_base = std::vector<double>(6, 0.0);
+        std::vector<double> desired_wrench = std::vector<double>(6, 0.0);
+        std::vector<double> track_error = std::vector<double>(6, 0.0);
+        std::vector<int> axis_mode = std::vector<int>(6, 0);
+    };
+
     /**
      * @brief `Robot/move` 单段插补类型（写入 JSON 字段 `type`）。
      * - movJ：关节空间插补（目标可为 jp 或 cp）

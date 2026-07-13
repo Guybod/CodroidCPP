@@ -91,6 +91,8 @@ struct ClientRealtimeState {
     uint8_t cri_error_code = 0;
 };
 
+using ClientForceControlState = ForceControlState;
+
 /** @brief 单路 IO 读回：`type` 为控制器返回的类型字符串，`value` 为解析后的数值。 */
 struct ClientIoInfo {
     std::string type;
@@ -481,6 +483,58 @@ public:
     CommandResult StartDrag(int id = 1);
     /** @brief 退出拖拽示教模式。 */
     CommandResult StopDrag(int id = 1);
+
+    // --- 20. 力控接口（当前 InitForceControl 固定导纳 algo=1）---
+    CommandResult ZeroForceCalibration(int calibrationTimeMs = 1000, int id = 1);
+    CommandResult InitForceControl(ForceFrame frame,
+                                   const std::vector<ForceAxisMode>& axisMode,
+                                   const nlohmann::json& compliance = nlohmann::json::object(),
+                                   const nlohmann::json& constantForce = nlohmann::json::object(),
+                                   const std::vector<double>& userFrameRpy = {},
+                                   const std::vector<double>& desiredWrench = {},
+                                   const nlohmann::json& forceLimit = nlohmann::json::object(),
+                                   int id = 1);
+    CommandResult StartForceControl(int id = 1);
+    CommandResult StopForceControl(int smoothTimeMs = 500, int id = 1);
+    CommandResult TuneForceParams(const std::vector<double>& stiffness = {},
+                                  const std::vector<double>& damping = {},
+                                  const std::vector<double>& mass = {},
+                                  const std::vector<double>& desiredForce = {},
+                                  const std::vector<double>& kp = {},
+                                  const std::vector<double>& kd = {},
+                                  double rampTime = -1.0,
+                                  int id = 1);
+    CommandResult StartContactDetection(const std::vector<double>& direction,
+                                        double feedVelocity = -1.0,
+                                        double contactForceThreshold = -1.0,
+                                        double velDropRatio = -1.0,
+                                        double maxTravel = -1.0,
+                                        double timeoutMs = -1.0,
+                                        int id = 1);
+    CommandResult SetOverforceProtection(int enable = -1,
+                                         const std::vector<double>& forceThreshold = {},
+                                         double holdMs = -1.0,
+                                         int id = 1);
+    CommandResult SetForceDataHealth(int enable = -1,
+                                     double timeoutMs = -1.0,
+                                     double maxPacketLossRatio = -1.0,
+                                     int packetLossWindow = -1,
+                                     double forceSaturation = -1.0,
+                                     double torqueSaturation = -1.0,
+                                     int id = 1);
+    ClientForceControlState GetForceState(int id = 1);
+    bool GetForceStateEnabled(int id = 1);
+    bool GetForceStatePending(int id = 1);
+    int GetForceStateAlgo(int id = 1);
+    bool GetForceStateValid(int id = 1);
+    bool GetForceStateIsContact(int id = 1);
+    bool GetForceStateIsOverforce(int id = 1);
+    int GetForceStateHealth(int id = 1);
+    std::vector<double> GetForceStateWrenchTcp(int id = 1);
+    std::vector<double> GetForceStateWrenchBase(int id = 1);
+    std::vector<double> GetForceStateDesiredWrench(int id = 1);
+    std::vector<double> GetForceStateTrackError(int id = 1);
+    std::vector<int> GetForceStateAxisMode(int id = 1);
 
     // --- 2. 工程/脚本（对齐 C#）---
 

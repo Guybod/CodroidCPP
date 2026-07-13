@@ -1770,6 +1770,182 @@ Response CodroidController::clearError(int id) {
     return sendCommand("System/clearError", json(""), id);
 }
 
+Response CodroidController::zeroForceCalibration(int calibrationTimeMs, int id) {
+    json db;
+    db["calibrationTimeMs"] = calibrationTimeMs;
+    return sendCommand("Robot/ZeroForceCalibration", db, id);
+}
+
+Response CodroidController::initForceControl(ForceFrame frame,
+                                             const std::vector<ForceAxisMode>& axisMode,
+                                             const json& compliance,
+                                             const json& constantForce,
+                                             const std::vector<double>& userFrameRpy,
+                                             const std::vector<double>& desiredWrench,
+                                             const json& forceLimit,
+                                             int id) {
+    if (axisMode.size() != 6) {
+        Response r;
+        r.id = id;
+        r.ty = "Robot/initForceControl";
+        r.error_msg = "axisMode must contain exactly 6 elements";
+        return r;
+    }
+    json db;
+    db["algo"] = static_cast<int>(ForceControlAlgo::Admittance);
+    db["frame"] = static_cast<int>(frame);
+    db["axisMode"] = json::array();
+    for (ForceAxisMode mode : axisMode) {
+        db["axisMode"].push_back(static_cast<int>(mode));
+    }
+    if (!compliance.empty())
+        db["compliance"] = compliance;
+    if (!constantForce.empty())
+        db["constantForce"] = constantForce;
+    if (!userFrameRpy.empty())
+        db["userFrameRpy"] = userFrameRpy;
+    if (!desiredWrench.empty())
+        db["desiredWrench"] = desiredWrench;
+    if (!forceLimit.empty())
+        db["forceLimit"] = forceLimit;
+    return sendCommand("Robot/initForceControl", db, id);
+}
+
+Response CodroidController::startForceControl(int id) {
+    return sendCommand("Robot/startForceControl", json::object(), id);
+}
+
+Response CodroidController::stopForceControl(int smoothTimeMs, int id) {
+    json db;
+    db["smoothTimeMs"] = smoothTimeMs;
+    return sendCommand("Robot/stopForceControl", db, id);
+}
+
+Response CodroidController::tuneForceParams(const std::vector<double>& stiffness,
+                                            const std::vector<double>& damping,
+                                            const std::vector<double>& mass,
+                                            const std::vector<double>& desiredForce,
+                                            const std::vector<double>& kp,
+                                            const std::vector<double>& kd,
+                                            double rampTime,
+                                            int id) {
+    json db = json::object();
+    if (!stiffness.empty())
+        db["stiffness"] = stiffness;
+    if (!damping.empty())
+        db["damping"] = damping;
+    if (!mass.empty())
+        db["mass"] = mass;
+    if (!desiredForce.empty())
+        db["desiredForce"] = desiredForce;
+    if (!kp.empty())
+        db["kp"] = kp;
+    if (!kd.empty())
+        db["kd"] = kd;
+    if (rampTime >= 0.0)
+        db["rampTime"] = rampTime;
+    return sendCommand("Robot/tuneForceParams", db, id);
+}
+
+Response CodroidController::startContactDetection(const std::vector<double>& direction,
+                                                  double feedVelocity,
+                                                  double contactForceThreshold,
+                                                  double velDropRatio,
+                                                  double maxTravel,
+                                                  double timeoutMs,
+                                                  int id) {
+    if (direction.size() != 6) {
+        Response r;
+        r.id = id;
+        r.ty = "Robot/startContactDetection";
+        r.error_msg = "direction must contain exactly 6 elements";
+        return r;
+    }
+    json db;
+    db["direction"] = direction;
+    if (feedVelocity >= 0.0)
+        db["feedVelocity"] = feedVelocity;
+    if (contactForceThreshold >= 0.0)
+        db["contactForceThreshold"] = contactForceThreshold;
+    if (velDropRatio >= 0.0)
+        db["velDropRatio"] = velDropRatio;
+    if (maxTravel >= 0.0)
+        db["maxTravel"] = maxTravel;
+    if (timeoutMs >= 0.0)
+        db["timeoutMs"] = timeoutMs;
+    return sendCommand("Robot/startContactDetection", db, id);
+}
+
+Response CodroidController::setOverforceProtection(int enable,
+                                                   const std::vector<double>& forceThreshold,
+                                                   double holdMs,
+                                                   int id) {
+    if (!forceThreshold.empty() && forceThreshold.size() != 6) {
+        Response r;
+        r.id = id;
+        r.ty = "Robot/setOverforceProtection";
+        r.error_msg = "forceThreshold must contain exactly 6 elements";
+        return r;
+    }
+    json db = json::object();
+    if (enable >= 0)
+        db["enable"] = (enable != 0);
+    if (!forceThreshold.empty())
+        db["forceThreshold"] = forceThreshold;
+    if (holdMs >= 0.0)
+        db["holdMs"] = holdMs;
+    return sendCommand("Robot/setOverforceProtection", db, id);
+}
+
+Response CodroidController::setForceDataHealth(int enable,
+                                               double timeoutMs,
+                                               double maxPacketLossRatio,
+                                               int packetLossWindow,
+                                               double forceSaturation,
+                                               double torqueSaturation,
+                                               int id) {
+    json db = json::object();
+    if (enable >= 0)
+        db["enable"] = (enable != 0);
+    if (timeoutMs >= 0.0)
+        db["timeoutMs"] = timeoutMs;
+    if (maxPacketLossRatio >= 0.0)
+        db["maxPacketLossRatio"] = maxPacketLossRatio;
+    if (packetLossWindow >= 0)
+        db["packetLossWindow"] = packetLossWindow;
+    if (forceSaturation >= 0.0)
+        db["forceSaturation"] = forceSaturation;
+    if (torqueSaturation >= 0.0)
+        db["torqueSaturation"] = torqueSaturation;
+    return sendCommand("Robot/setForceDataHealth", db, id);
+}
+
+ForceControlState CodroidController::getForceState(int id) {
+    ForceControlState out;
+    Response resp = sendCommand("Robot/getForceState", json(""), id);
+    if (!resp.error_msg.empty() || !resp.db.is_object())
+        return out;
+    const auto& db = resp.db;
+    out.enabled = db.value("enabled", false);
+    out.pending = db.value("pending", false);
+    out.algo = db.value("algo", 0);
+    out.valid = db.value("valid", false);
+    out.is_contact = db.value("isContact", false);
+    out.is_overforce = db.value("isOverforce", false);
+    out.health = db.value("health", 0);
+    if (db.contains("wrenchTcp") && db["wrenchTcp"].is_array())
+        out.wrench_tcp = db["wrenchTcp"].get<std::vector<double>>();
+    if (db.contains("wrenchBase") && db["wrenchBase"].is_array())
+        out.wrench_base = db["wrenchBase"].get<std::vector<double>>();
+    if (db.contains("desiredWrench") && db["desiredWrench"].is_array())
+        out.desired_wrench = db["desiredWrench"].get<std::vector<double>>();
+    if (db.contains("trackError") && db["trackError"].is_array())
+        out.track_error = db["trackError"].get<std::vector<double>>();
+    if (db.contains("axisMode") && db["axisMode"].is_array())
+        out.axis_mode = db["axisMode"].get<std::vector<int>>();
+    return out;
+}
+
 // --- 13.1 获取IO状态 ---
 
 /** 
