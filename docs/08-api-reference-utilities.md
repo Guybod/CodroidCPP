@@ -359,41 +359,25 @@ std::cout << std::endl;
 
 ## 控制台 UTF-8
 
-### ConsoleUtf8
+### InitConsoleUtf8
 
-Windows 控制台 UTF-8 支持。
-
-```cpp
-#include "Codroid/console_utf8.hpp"
-```
-
-#### InitConsoleUtf8
+由 `#include "Codroid/client.hpp"` 间接提供（也可单独 include `console_utf8.hpp`）。
 
 ```cpp
-static void InitConsoleUtf8();
+void InitConsoleUtf8();
 ```
 
-初始化 Windows 控制台 UTF-8 编码。
-
-**使用场景：** 在 Windows 上输出中文时调用。
+将当前进程的控制台输入/输出代码页设为 UTF-8（**仅 Windows 生效**；Linux 为空操作）。
 
 **使用示例：**
 ```cpp
 #include "Codroid/client.hpp"
-#include "Codroid/console_utf8.hpp"
 #include <iostream>
 
 int main() {
-    // Windows 控制台 UTF-8 支持
-    #ifdef _WIN32
-    Codroid::ConsoleUtf8::InitConsoleUtf8();
-    #endif
-
+    Codroid::InitConsoleUtf8();
     std::cout << "中文输出测试" << std::endl;
-
-    Codroid::CodroidClient robot;
     // ...
-
     return 0;
 }
 ```
@@ -517,7 +501,7 @@ robot.StopProject();
 int main() {
     Codroid::CodroidClient robot;
 
-    if (!robot.ConnectRemoteAndSwitchOn("192.168.8.136", 9001, "192.168.8.150")) {
+    if (!robot.ConnectRemoteAndSwitchOn("192.168.1.136", 9001, "192.168.1.150")) {
         std::cerr << "连接失败" << std::endl;
         return 1;
     }
@@ -574,7 +558,7 @@ int main() {
 int main() {
     Codroid::CodroidClient robot;
 
-    if (!robot.ConnectRemoteAndSwitchOn("192.168.8.136", 9001, "192.168.8.150")) {
+    if (!robot.ConnectRemoteAndSwitchOn("192.168.1.136", 9001, "192.168.1.150")) {
         std::cerr << "连接失败" << std::endl;
         return 1;
     }
@@ -661,7 +645,7 @@ auto joints = robot.InverseKinematics(ik);
 ```cpp
 // 在 main 函数开头调用
 #ifdef _WIN32
-Codroid::ConsoleUtf8::InitConsoleUtf8();
+Codroid::InitConsoleUtf8();
 #endif
 ```
 
@@ -689,6 +673,6 @@ Codroid::ConsoleUtf8::InitConsoleUtf8();
 
 ### Q4: Windows 控制台中文乱码
 
-1. 确保调用 `ConsoleUtf8::InitConsoleUtf8()`
+1. 确保调用 `Codroid::InitConsoleUtf8()`
 2. 确保源文件使用 UTF-8 编码
 3. 确保控制台字体支持中文

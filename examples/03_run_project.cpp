@@ -1,54 +1,58 @@
+/**
+ * @file 03_run_project.cpp
+ * @brief 工程控制：按索引运行、暂停、恢复、停止。
+ *
+ * 仅需：#include "Codroid/client.hpp"
+ * 运行前修改 robot_ip，并将 RunByIndex 参数改为现场存在的工程索引。
+ */
+#include "Codroid/client.hpp"
+
 #include <chrono>
 #include <iostream>
+#include <string>
 #include <thread>
 
-#include "../include/Codroid/CodroidController.h"
-#include "Codroid/console_utf8.hpp"
+namespace {
+
+void print_result(const char* action, const Codroid::CommandResult& r) {
+    if (r.Ok()) {
+        std::cout << action << " 成功\n";
+    } else {
+        std::cerr << action << " 失败: " << r.error_msg << "\n";
+    }
+}
+
+}  // namespace
 
 int main() {
     Codroid::InitConsoleUtf8();
-    Codroid::CodroidController robot;
 
-    std::string robot_ip = "192.168.1.136";
-    int robot_port = 9001;
+    const std::string robot_ip = "192.168.1.136";
 
-    std::cout << "Connecting to robot at " << robot_ip << ":" << robot_port << "..." << std::endl;
-
-    if (!robot.connect(robot_ip, robot_port)) {
-        std::cerr << "Critical Error: Could not connect to the robot!" << std::endl;
-        return -1;
+    Codroid::CodroidClient robot;
+    if (!robot.Connect(robot_ip)) {
+        std::cerr << "连接失败\n";
+        return 1;
     }
 
-    std::cout << "Connected successfully!" << std::endl << std::endl;
-
-    std::this_thread::sleep_for(std::chrono::milliseconds(500));
-    std::cout << "Sending SwitchOn command..." << std::endl;
-    auto resOn = robot.switchOn(101);
-    Codroid::CodroidController::printResponse(resOn);
-
+    print_result("切远程(经自动)", robot.EnterRemoteModeViaAuto(robot.NextRequestId()));
+    print_result("上电", robot.SwitchOn(robot.NextRequestId()));
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
-    auto res = robot.runProjectByIndex(0);
-    Codroid::CodroidController::printResponse(res);
+    // 按控制器工程列表的索引运行（0 仅为演示，请改成实际索引）
+    print_result("按索引运行工程(0)", robot.RunByIndex(0, robot.NextRequestId()));
     std::this_thread::sleep_for(std::chrono::seconds(5));
 
-    auto pauseres = robot.pauseProject();
-    Codroid::CodroidController::printResponse(pauseres);
-    std::this_thread::sleep_for(std::chrono::seconds(5));
+    print_result("暂停工程", robot.PauseProject(robot.NextRequestId()));
+    std::this_thread::sleep_for(std::chrono::seconds(2));
 
-    auto resumeres = robot.resumeProject();
-    Codroid::CodroidController::printResponse(resumeres);
-    std::this_thread::sleep_for(std::chrono::seconds(5));
+    print_result("恢复工程", robot.ResumeProject(robot.NextRequestId()));
+    std::this_thread::sleep_for(std::chrono::seconds(2));
 
-    auto stopres = robot.stopProject();
-    Codroid::CodroidController::printResponse(stopres);
+    print_result("停止工程", robot.StopProject(robot.NextRequestId()));
 
-    std::cout << "Sending SwitchOff command..." << std::endl;
-    auto resOff = robot.switchOff(102);
-    Codroid::CodroidController::printResponse(resOff);
-
-    robot.disconnect();
-    std::cout << "Connection closed." << std::endl;
-
+    print_result("下电", robot.SwitchOff(robot.NextRequestId()));
+    robot.Disconnect();
+    std::cout << "完成。\n";
     return 0;
 }

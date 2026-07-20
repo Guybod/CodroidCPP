@@ -5,12 +5,14 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+option(CODROID_BUILD_KINEMATICS_TOOLS "Build standalone kinematics/ tools (not part of SDK lib)" OFF)
+
 # ===============================
 # 通用编译选项
 # ===============================
 if(MSVC)
     add_compile_options(
-        /w          # 关闭警告（或按需打开）
+        /w
         /source-charset:utf-8
         /execution-charset:utf-8
     )
@@ -26,7 +28,7 @@ elseif(MINGW OR CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     )
 endif()
 
-# ASIO 独立模式
+# ASIO 独立模式（仅 SDK 实现编译单元需要）
 add_definitions(-DASIO_STANDALONE)
 
 # ===============================
@@ -52,16 +54,22 @@ set(LIB_SOURCES
 
 add_library(Codroid SHARED ${LIB_SOURCES})
 target_compile_definitions(Codroid PRIVATE CODROID_EXPORTS)
+target_include_directories(Codroid
+    PUBLIC
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        $<INSTALL_INTERFACE:include>
+    PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/internal
+)
 
 if (WIN32)
     add_compile_definitions(NOMINMAX WIN32_LEAN_AND_MEAN)
 endif()
 
 # ===============================
-# 平台相关链接
+# 平台相关链接（客户侧无 KDL / Fk_Ik）
 # ===============================
 if(WIN32)
-    # ✅ Windows 核心依赖
     target_link_libraries(Codroid PRIVATE ws2_32 mswsock)
 
     if(MINGW)
@@ -71,47 +79,26 @@ if(WIN32)
         )
     endif()
 
-    # ✅ 给 examples 用的公共库
     set(CODROID_EXAMPLE_LIBS ws2_32)
-
 else()
-    # ===============================
-    # Linux
-    # ===============================
-    target_link_libraries(Codroid
-        PUBLIC pthread
-        PUBLIC Fk_Ik_so
-        PUBLIC kdl
-    )
-
-    target_include_directories(Codroid PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR}
-        ${CMAKE_CURRENT_SOURCE_DIR}/kinematics
-    )
-
-    target_link_directories(Codroid PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR}/kinematics
-    )
+    target_link_libraries(Codroid PRIVATE pthread)
 
     set_target_properties(Codroid PROPERTIES
-        INSTALL_RPATH "$ORIGIN;${CMAKE_CURRENT_SOURCE_DIR}/kinematics"
+        INSTALL_RPATH "$ORIGIN"
         BUILD_WITH_INSTALL_RPATH TRUE
     )
 
-    # 链接 Codroid 的示例会 PUBLIC 继承 libkdl.so，RUNPATH 须含 kinematics/
-    set(CODROID_RUNTIME_RPATH "$ORIGIN;${CMAKE_CURRENT_SOURCE_DIR}/kinematics")
+    set(CODROID_RUNTIME_RPATH "$ORIGIN")
 endif()
 
 # ===============================
-# 示例程序
+# 示例程序（CodroidClient，仅 #include "Codroid/client.hpp"）
 # ===============================
 if(NOT CMAKE_CROSSCOMPILING)
-    # ---- examples ----
     file(GLOB EXAMPLE_SOURCES "examples/*.cpp")
     foreach(test_file ${EXAMPLE_SOURCES})
         get_filename_component(test_name ${test_file} NAME_WE)
         add_executable(${test_name} ${test_file})
-
         target_link_libraries(${test_name} PRIVATE
             Codroid
             ${CODROID_EXAMPLE_LIBS}
@@ -131,39 +118,12 @@ if(NOT CMAKE_CROSSCOMPILING)
 
         message(STATUS "Adding Example: ${test_name}")
     endforeach()
-
-    # ---- client examples ----
-    file(GLOB CLIENT_EXAMPLE_SOURCES "examples_client/*.cpp")
-    foreach(test_file ${CLIENT_EXAMPLE_SOURCES})
-        get_filename_component(test_name ${test_file} NAME_WE)
-        set(target_name "client_${test_name}")
-
-        add_executable(${target_name} ${test_file})
-        target_link_libraries(${target_name} PRIVATE
-            Codroid
-            ${CODROID_EXAMPLE_LIBS}
-        )
-
-        if(NOT WIN32)
-            set_target_properties(${target_name} PROPERTIES
-                BUILD_WITH_INSTALL_RPATH TRUE
-                INSTALL_RPATH "${CODROID_RUNTIME_RPATH}"
-            )
-        else()
-            set_target_properties(${target_name} PROPERTIES
-                BUILD_WITH_INSTALL_RPATH TRUE
-                INSTALL_RPATH "$ORIGIN"
-            )
-        endif()
-
-        message(STATUS "Adding Client Example: ${target_name}")
-    endforeach()
 endif()
 
 # ===============================
-# Linux 运动学测试程序
+# 可选：独立运动学工具（不链入 libCodroid）
 # ===============================
-if(NOT WIN32)
+if(NOT WIN32 AND CODROID_BUILD_KINEMATICS_TOOLS)
     add_executable(kinematics_test kinematics/kinematics.cpp)
 
     target_include_directories(kinematics_test PRIVATE

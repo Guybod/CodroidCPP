@@ -1,5 +1,20 @@
 # Codroid C++ SDK 版本说明
 
+## v3.0.0（2026-07-20）
+
+### Breaking Change
+
+- **唯对外入口**：客户代码只需 `#include "Codroid/client.hpp"`（聚合 DTO、轨迹、CRI 下发、`nlohmann::json`）。`CodroidController` / 内部 `CodroidDefine` 在 `src/internal/`，**不进发布包**。
+- **JSON 用 nlohmann**：力控 / 脚本 vars / 全局变量 / RS485 等公开 API 使用 **`nlohmann::json`**；`Variable` 模板构造会自动 `dump()`。发布包附带 `include/nlohmann/`，用户**不必**再单独 `#include <nlohmann/json.hpp>`。
+- **Asio / KDL 不对客户暴露**：Asio 仅实现侧；本地 `kinematicsInit/Fk/Ik` 已删除，`libCodroid` 不链 `libkdl`。正逆解用 TCP `ForwardKinematics` / `InverseKinematics`。
+- **示例**：统一在 `examples/`（仅 `CodroidClient` / `client.hpp`）；已删除 `examples_client/`。
+
+### 公开头白名单
+
+`client.hpp`（入口）、`types.hpp`、`CodroidExport.h`、`console_utf8.hpp`、`cri_realtime_dispatcher.hpp`、`trajectory_*.hpp`，以及随包 `nlohmann/`。
+
+---
+
 ## v2.1.11（2026-07-13）
 
 ### 新增
@@ -190,7 +205,7 @@
 #include "Codroid/client.hpp"
 
 Codroid::CodroidClient robot;
-robot.ConnectRemoteAndSwitchOn("192.168.8.136", 9001, "192.168.8.150");
+robot.ConnectRemoteAndSwitchOn("192.168.1.136", 9001, "192.168.1.150");
 
 // 读取
 auto params = robot.GetRobotParameters();

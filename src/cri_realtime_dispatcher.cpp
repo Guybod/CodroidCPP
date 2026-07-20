@@ -1,6 +1,5 @@
 #include "Codroid/cri_realtime_dispatcher.hpp"
-
-#include "Codroid/CodroidDefine.h"
+#include "Codroid/types.hpp"
 
 #include <asio.hpp>
 #include <chrono>

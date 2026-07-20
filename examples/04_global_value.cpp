@@ -1,89 +1,76 @@
-#include <iostream>
-#include <iomanip> // 用于美化输出
-#include <thread>
+/**
+ * @file 04_global_value.cpp
+ * @brief 全局变量：读取 / 保存 / 删除。
+ *
+ * Variable 模板构造会用 nlohmann 把值序列化进 val；字符串类型按协议原样写入。
+ * 仅需：#include "Codroid/client.hpp"
+ */
+#include "Codroid/client.hpp"
+
 #include <chrono>
-#include "Codroid/CodroidController.h"
-#include "Codroid/console_utf8.hpp"
+#include <iostream>
+#include <map>
+#include <string>
+#include <thread>
+#include <vector>
 
-void globalVal_test(Codroid::CodroidController& robot) {
-    // 测试获取全局变量列表接口
-    std::cout << "Getting Global Variables..." << std::endl;
-    auto resVars = robot.getGlobalVars(103);
-    Codroid::CodroidController::printResponse(resVars);
+namespace {
 
-    // 测试保存全局变量接口
-    std::map<std::string, Codroid::Variable> myVars;
-    std::map<std::string, Codroid::Variable> myfailedVars1; // 用于测试非法变量名
-    std::map<std::string, Codroid::Variable> myfailedVars2; // 用于测试非法变量名
-
-    // 1. 保存整数
-    myVars["v991"] = Codroid::Variable(100, "这是一个整数");
-
-    // 2. 保存浮点数
-    myVars["v992"] = Codroid::Variable(90.4, "这是一个浮点数");
-
-    // 3. 保存字符串 (注意：根据协议示例，字符串可能需要带转义引号)
-    myVars["Test_str"] = Codroid::Variable("Hello Codroid!", "这是一个字符串");
-
-    // 4. 保存列表/数组 (直接使用 nlohmann::json 语法)
-    myVars["v993"] = Codroid::Variable(nlohmann::json::array({1, 2, 3, 4, 5}), "这是一个列表");
-
-    // 5. 保存键值对/对象
-    nlohmann::json obj = {{"aaa", 100}};
-    myVars["v994"] = Codroid::Variable(obj, "这是一个键值对");
-
-    // 6. 测试变量命名规则 (以下是非法的示例，非法的示例会被 SDK 内部拦截并返回错误)
-    myfailedVars1["__v991"] = Codroid::Variable(100, "");
-    myfailedVars2["movJ"] = Codroid::Variable(100, "");
-
-    // 发送请求保存全局变量
-
-    // 注意：非法变量会被 SDK 内部拦截并返回错误，合法变量会成功保存
-    auto res1 = robot.saveGlobalVars(myfailedVars1, 123);
-    Codroid::CodroidController::printResponse(res1); // 预期失败，返回错误信息
-    auto res2 = robot.saveGlobalVars(myfailedVars2, 123);
-    Codroid::CodroidController::printResponse(res2); // 预期失败，返回错误信息
-
-    auto res = robot.saveGlobalVars(myVars, 123);
-    
-    if (res.error_msg.empty()) {
-        std::cout << "Global variables saved successfully!" << std::endl;
+void print_result(const char* action, const Codroid::CommandResult& r) {
+    if (r.Ok()) {
+        std::cout << action << " 成功\n";
+    } else {
+        std::cerr << action << " 失败: " << r.error_msg << "\n";
     }
-    Codroid::CodroidController::printResponse(res);   
-    // 等待一段时间再获取变量
-    std::this_thread::sleep_for(std::chrono::milliseconds(500));
-    // 测试获取全局变量列表接口
-    std::cout << "Getting Global Variables..." << std::endl;
-    auto resVars2 = robot.getGlobalVars(103);
-    Codroid::CodroidController::printResponse(resVars2);
-
-    // 删除全局变量
-    std::vector<std::string> varsToDelete = {"v991", "v992", "v993", "v994"};
-    auto resDel = robot.removeGlobalVars(varsToDelete, 124);
-    Codroid::CodroidController::printResponse(resDel);
-    // 等待一段时间再获取变量
-    std::this_thread::sleep_for(std::chrono::milliseconds(500));
-    // 测试获取全局变量列表接口
-    std::cout << "Getting Global Variables..." << std::endl;
-    auto resVars3 = robot.getGlobalVars(103);
-    Codroid::CodroidController::printResponse( resVars3);
 }
+
+/** 美化打印控制器返回的 db JSON */
+void print_json(const char* label, const nlohmann::json& j) {
+    std::cout << label << ":\n" << j.dump(2) << "\n";
+}
+
+}  // namespace
 
 int main() {
     Codroid::InitConsoleUtf8();
-    Codroid::CodroidController robot;
-    std::string robot_ip = "192.168.1.136"; // 替换为实际的机器人 IP 地址
-    const int robot_port = 9001;
 
-    if (!robot.connect(robot_ip, robot_port)) {
-        std::cerr << "Failed to connect to robot." << std::endl;
-        return -1;
+    const std::string robot_ip = "192.168.1.136";
+
+    Codroid::CodroidClient robot;
+    if (!robot.Connect(robot_ip)) {
+        std::cerr << "连接失败\n";
+        return 1;
     }
-    std::cout << "Connected to robot successfully!" << std::endl;
+
+    // 保存前先看一眼当前全局变量
+    print_json("保存前 GetGlobalVars", robot.GetGlobalVars(robot.NextRequestId()));
+
+    // 合法变量：整型 / 浮点 / 字符串 / 数组 / 对象
+    std::map<std::string, Codroid::Variable> vars;
+    vars["v991"] = Codroid::Variable(100, "这是一个整数");
+    vars["v992"] = Codroid::Variable(90.4, "这是一个浮点数");
+    vars["Test_str"] = Codroid::Variable("Hello Codroid!", "这是一个字符串");
+    vars["v993"] = Codroid::Variable(nlohmann::json::array({1, 2, 3, 4, 5}), "这是一个列表");
+    vars["v994"] = Codroid::Variable(nlohmann::json{{"aaa", 100}}, "这是一个键值对");
+
+    // 非法变量名应由 SDK 拦截（双下划线前缀、与关键字冲突等）
+    std::map<std::string, Codroid::Variable> bad1{{"__v991", Codroid::Variable(100, "")}};
+    std::map<std::string, Codroid::Variable> bad2{{"movJ", Codroid::Variable(100, "")}};
+    print_result("保存非法名(__前缀)", robot.SaveGlobalVars(bad1, robot.NextRequestId()));
+    print_result("保存非法名(关键字)", robot.SaveGlobalVars(bad2, robot.NextRequestId()));
+
+    print_result("保存合法变量", robot.SaveGlobalVars(vars, robot.NextRequestId()));
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
-    std::cout << "Starting global variable test..." << std::endl;
-    globalVal_test(robot);
+    print_json("保存后 GetGlobalVars", robot.GetGlobalVars(robot.NextRequestId()));
+
+    // 清理本示例写入的变量
+    print_result("删除变量",
+                 robot.RemoveGlobalVars({"v991", "v992", "v993", "v994", "Test_str"},
+                                        robot.NextRequestId()));
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
-    robot.disconnect();
+    print_json("删除后 GetGlobalVars", robot.GetGlobalVars(robot.NextRequestId()));
+
+    robot.Disconnect();
+    std::cout << "完成。\n";
     return 0;
 }

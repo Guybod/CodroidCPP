@@ -34,19 +34,9 @@ if (result.Ok()) {
 
 ---
 
-### Response
+### Response（内部类型）
 
-TCP JSON 指令的解析结果（内部使用）。
-
-```cpp
-struct Response {
-    int id;
-    std::string ty;
-    json db;
-    std::string error_msg;
-    std::string raw_json;
-};
-```
+`Response`（含 `nlohmann::json db`）仅用于 SDK 内部 TCP 解析，**不在公开头中**。客户侧请使用 `CommandResult`（成功/失败 + `raw_json` 字符串）。
 
 ---
 

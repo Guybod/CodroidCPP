@@ -27,7 +27,6 @@
 #include <atomic>
 #include <cstdint>
 #include <mutex>
-#include "../../kinematics/robotModel.h"
 
 namespace Codroid {
 
@@ -1128,47 +1127,6 @@ public:
     /** @brief 直接下发完整用户坐标系表（19.6）。 */
     Response saveUserCoordinateFrames(const std::vector<RobotFrameEntry>& frames, int id = 1);
 
-    // ==========================================
-    // 运动学 (Kinematics) 接口
-    // ==========================================
-
-    /**
-     * @brief @~english Initialize the kinematics model with DH parameters.
-     *        @~chinese 使用 DH 参数初始化运动学模型。
-     * @param dh_matrix @~english A 6x4 matrix containing DH parameters [a, alpha, d, theta].
-     *                  @~chinese 一个 6x4 的矩阵，包含 DH 参数 [a, alpha, d, theta]。
-     * @return @~english True if initialization is successful, False if invalid parameters.
-     *         @~chinese 成功返回 true，参数格式错误返回 false。
-     */
-    static bool kinematicsInit(const std::vector<std::vector<double>>& dh_matrix);
-    static bool kinematicsInit_mm_deg(const std::vector<std::vector<double>>& dh_matrix);
-
-    /**
-     * @brief @~english Forward Kinematics (FK): Calculate TCP pose from joint angles.
-     *        @~chinese 正向运动学 (FK)：根据关节角度计算 TCP 位姿。
-     * @param qIn       @~english 6 joint angles in radians. @~chinese 6个关节的角度 (单位: rad)。
-     * @param toolParam @~english 6 tool offset parameters [x, y, z, r, p, y]. @~chinese 6个工具坐标偏移量。
-     * @param tcpPosOut @~english (Output) Calculated TCP pose [x, y, z, r, p, y]. @~chinese (输出) 计算出的 TCP 位姿。
-     * @return int      @~english Error code (0 for success). @~chinese 错误码 (0 代表成功)。
-     */
-    static int kinematicsFk(const std::vector<double>& qIn, 
-                     const std::vector<double>& toolParam, 
-                     std::vector<double>& tcpPosOut);
-
-    /**
-     * @brief @~english Inverse Kinematics (IK): Calculate joint angles from TCP pose.
-     *        @~chinese 逆向运动学 (IK)：根据 TCP 位姿计算关节角度。
-     * @param tcpPosIn  @~english Target TCP pose [x, y, z, r, p, y]. @~chinese 目标 TCP 位姿。
-     * @param toolParam @~english 6 tool offset parameters [x, y, z, r, p, y]. @~chinese 6个工具坐标偏移量。
-     * @param qRef      @~english 6 reference joint angles (for multiple solutions). @~chinese 6个参考关节角度。
-     * @param qOut      @~english (Output) Calculated joint angles in radians. @~chinese (输出) 计算出的关节角度。
-     * @return int      @~english Error code (0 for success). @~chinese 错误码 (0 代表成功)。
-     */
-    static int kinematicsIk(const std::vector<double>& tcpPosIn, 
-                     const std::vector<double>& toolParam, 
-                     const std::vector<double>& qRef, 
-                     std::vector<double>& qOut);
-
 private:
     /** 内部：CRI 原始帧缓存（308 字节布局解析结果） */
     struct CriInternalCache {
@@ -1186,8 +1144,6 @@ private:
 
     static RobotRealtimeState buildRobotRealtimeState_(const CriInternalCache& c, bool data_valid);
 
-    // 用于记录模型是否已经初始化（防止未初始化就调用正逆解导致崩溃）
-    static bool isKinematicsModelInited_;
 
     asio::io_context io_context_;
 

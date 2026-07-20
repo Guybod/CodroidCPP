@@ -2,7 +2,7 @@
 
 **类:** `CodroidClient`
 **命名空间:** `Codroid`
-**头文件:** `#include "Codroid/client.hpp"`
+**头文件:** `#include "Codroid/client.hpp"`（客户侧唯一入口；版本 2.1.11）
 
 `CodroidClient` 是 SDK 的主入口类，提供连接、IO、寄存器、运动、CRI、主题订阅等功能。
 
@@ -138,7 +138,7 @@ bool Connect(const std::string& ip, int port = 9001);
 **异常：** 无（失败时返回 `false`）
 
 ```cpp
-if (!robot.Connect("192.168.8.136")) {
+if (!robot.Connect("192.168.1.136")) {
     std::cerr << "连接失败" << std::endl;
 }
 ```
@@ -164,7 +164,7 @@ bool ConnectRemoteAndSwitchOn(const std::string& ip, int port = 9001, std::strin
 **异常：** 无（失败时返回 `false`）
 
 ```cpp
-robot.ConnectRemoteAndSwitchOn("192.168.8.136", 9001, "192.168.8.150");
+robot.ConnectRemoteAndSwitchOn("192.168.1.136", 9001, "192.168.1.150");
 ```
 
 ---
@@ -187,7 +187,7 @@ void Disconnect();
 
 ```cpp
 try {
-    robot.ConnectRemoteAndSwitchOn("192.168.8.136");
+    robot.ConnectRemoteAndSwitchOn("192.168.1.136");
     // ... 操作 ...
 } catch (...) {
     robot.Disconnect();
@@ -1269,7 +1269,7 @@ CommandResult StartCriDataPush(const std::string& udpIp, int udpPort, int id = 1
 **异常：** 当 `SetThrowOnCommandError(true)` 时，失败抛 `CodroidCommandException`
 
 ```cpp
-robot.StartCriDataPush("192.168.8.150", 18888);
+robot.StartCriDataPush("192.168.1.150", 18888);
 robot.WaitForCriData(5.0); // 等待首帧
 ```
 
@@ -1295,7 +1295,7 @@ CommandResult StopCriDataPush(const std::string& udpIp, int udpPort, int id = 1)
 **异常：** 当 `SetThrowOnCommandError(true)` 时，失败抛 `CodroidCommandException`
 
 ```cpp
-robot.StopCriDataPush("192.168.8.150", 18888);
+robot.StopCriDataPush("192.168.1.150", 18888);
 ```
 
 ---
@@ -1453,7 +1453,7 @@ void WaitForCriData(double timeout_s = 5.0);
 **异常：** `std::runtime_error` -- 超时未收到数据
 
 ```cpp
-robot.StartCriDataPush("192.168.8.150", 18888);
+robot.StartCriDataPush("192.168.1.150", 18888);
 robot.WaitForCriData(5.0); // 等待首帧
 // 现在可以安全调用 *Sync 方法
 ```
@@ -2279,7 +2279,7 @@ int main() {
 
     try {
         // 1. 连接、切换远程、上电
-        if (!robot.ConnectRemoteAndSwitchOn("192.168.8.136", 9001, "192.168.8.150")) {
+        if (!robot.ConnectRemoteAndSwitchOn("192.168.1.136", 9001, "192.168.1.150")) {
             std::cerr << "连接失败" << std::endl;
             return 1;
         }

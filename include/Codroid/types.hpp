@@ -1,53 +1,31 @@
 /**
- * @file CodroidDefine.h
- * @brief Codroid TCP SDK 共用数据类型（DTO）、枚举与异常定义。
- *
- * 主要内容：
- * - 通信：`Response`、主题推送 `PublishNotification`
- * - 实时：`RobotRealtimeState`（CRI UDP 解析后，mm+度）
- * - 运动：`JointPoint` / `CartesianPoint`（业务点位）→ `MovePoint`（协议路点）→ `MoveInstruction`（路径段）
- * - 规划：`MoveToParams`（RunTo，需心跳）
- * - 运动学：`FKParams` / `IKParams`
- * - 机器人设置：`RobotParameters`（固件 ≥ MinControllerFirmware）
- *
- * @note 客户程序通常只 `#include "Codroid/client.hpp"`；本头由 client 间接包含。
- *       业务层点位请用 `JointPoint` / `CartesianPoint`，不要与裸 `vector<double>` 混用。
+ * @file types.hpp
+ * @brief 客户侧公开 DTO / 枚举。Asio 不得出现在本头；JSON 使用 nlohmann（随包提供）。
  */
 
-#ifndef CODROID_DEFINE_H
-#define CODROID_DEFINE_H
+#ifndef CODROID_SDK_TYPES_HPP
+#define CODROID_SDK_TYPES_HPP
 
-#include <string>
-#include <vector>
-#include <map>
-#include <cstdint>
+#include "Codroid/CodroidExport.h"
+
 #include <nlohmann/json.hpp>
-#include "CodroidExport.h"
+
+#include <cstdint>
+#include <map>
 #include <stdexcept>
-#include <functional>
+#include <string>
+#include <type_traits>
+#include <unordered_map>
+#include <vector>
 
 namespace Codroid {
-    using json = nlohmann::json;
 
-    /**
-     * @brief 单条 TCP JSON 指令的解析结果（与控制器下行帧字段对应）。
-     *
-     * - 成功：`error_msg` 为空，业务数据在 `db`（可能为 null / 对象 / 数组）。
-     * - 失败：`error_msg` 为控制器 `err` 文本；`raw_json` 保留整帧便于现场排查。
-     */
-    struct Response {
-        int id;                ///< 与请求一致的序号
-        std::string ty;        ///< 路由类型，如 `Robot/move`、`IO/getValues`
-        json db;               ///< 业务载荷 `db` 字段（已解析为 JSON）
-        std::string error_msg; ///< 非空表示失败（来自控制器 `err`）
-        std::string raw_json;  ///< 最近一次完整响应 JSON 字符串
-        Response() : id(0), db(json::object()) {}
-    };
 
-    /**
+
+        /**
      * @brief CRI 实时快照（与 **`AGENTS.md` §2.3.4** / C# `CriRealTimeData`）：关节 **度**，末端 **mm+度**，速度毫米/秒与度/秒；
      *        布尔位语义与 **`CriRealtimePacketParser`**（C#）一致。
-     * @note 需在 CodroidController::connect(ip, port, local_ip) 中传入非空 local_ip 开启 UDP；未收到帧前 data_valid 为 false。
+     * @note 须先 `StartCriDataPush`；首帧到达前 `data_valid` 为 false。
      */
     struct RobotRealtimeState {
         int64_t timestamp_ms = 0;
@@ -104,7 +82,7 @@ namespace Codroid {
 
     /**
      * @brief TCP 指令失败：**err 非空**、超时类错误；对齐 C# **`CodroidCommandException`**。
-     * @note 默认 **`CodroidController::sendCommand`** 返回 **`Response.error_msg`**；调用 **`setThrowOnCommandError(true)`**（经 CodroidClient 暴露）时改为抛异常。
+     * @note 默认经 `CommandResult::error_msg` 返回；`SetThrowOnCommandError(true)` 时改为抛异常。
      */
     class CODROID_API CodroidCommandException : public CodroidException {
     public:
@@ -135,9 +113,6 @@ namespace Codroid {
 
     /** @brief 坐标系类型：工具系 / 用户系（点动、相对位姿等）。 */
     enum class CoorType { Tool, User };
-    NLOHMANN_JSON_SERIALIZE_ENUM(CoorType, {
-        {CoorType::Tool, "tool"}, {CoorType::User, "user"}
-    })
 
     /** @brief 力控算法枚举；当前高层 InitForceControl 固定下发 Admittance。 */
     enum class ForceControlAlgo : int {
@@ -192,10 +167,6 @@ namespace Codroid {
      * - movC / movCircle：圆弧 / 整圆，需 middlePoint + targetPoint（一般为 cp）
      */
     enum class MoveType { movJ, movL, movC, movCircle };
-    NLOHMANN_JSON_SERIALIZE_ENUM(MoveType, {
-        {MoveType::movJ, "movJ"}, {MoveType::movL, "movL"},
-        {MoveType::movC, "movC"}, {MoveType::movCircle, "movCircle"}
-    })
 
     /**
      * @brief `Robot/moveTo` 运动类别（与 C# `MoveToType` 一致）。
@@ -213,29 +184,17 @@ namespace Codroid {
         Line = 5,        ///< 直线规划到 target
         ResumePoint = 6
     };
-    NLOHMANN_JSON_SERIALIZE_ENUM(MoveToType, {
-        {MoveToType::Stop, -1}, {MoveToType::Home, 0}, {MoveToType::Safe, 1}, {MoveToType::Candle, 2},
-        {MoveToType::Packing, 3}, {MoveToType::Joint, 4}, {MoveToType::Line, 5}, {MoveToType::ResumePoint, 6}
-    })
 
     /** @brief 寄存器扩展数组元素类型（`Register/setExtendArrayType`）。 */
     enum class ExtendArrayType {
         Bool,UInt8,Int8,UInt16,
         Int16,UInt32,Int32,Float32
     };
-    NLOHMANN_JSON_SERIALIZE_ENUM(ExtendArrayType, {
-        {ExtendArrayType::Bool, "Bool"}, {ExtendArrayType::UInt8, "UInt8"}, {ExtendArrayType::Int8, "Int8"},
-        {ExtendArrayType::UInt16, "UInt16"}, {ExtendArrayType::Int16, "Int16"}, {ExtendArrayType::UInt32, "UInt32"},
-        {ExtendArrayType::Int32, "Int32"}, {ExtendArrayType::Float32, "Float32"}
-    })
 
     /** @brief 点动模式：1=关节点动，2=直线点动（`JogParams`）。 */
     enum class JogMode {
         Joint = 1, Line = 2
      };
-     NLOHMANN_JSON_SERIALIZE_ENUM(JogMode, {
-        {JogMode::Joint, 1}, {JogMode::Line, 2}
-    })
 
     // ========================================================================
     // 2. 运动控制相关 (Motion Control)
@@ -454,17 +413,22 @@ namespace Codroid {
     };
 
 
-    /** @brief 全局变量一项：`val` 为 JSON 字符串，`nm` 为备注。 */
+    /** @brief 全局变量一项：`val` 为 JSON 文本，`nm` 为备注。 */
     struct Variable {
         std::string val;
         std::string nm;
+        Variable() = default;
+        /** @brief 自动用 nlohmann 将 @p value 序列化为 JSON 文本写入 `val`（字符串类型原样写入）。 */
         template<typename T>
         Variable(const T& value, const std::string& note = "") : nm(note) {
-            if constexpr (std::is_same_v<T, std::string>) {val = value; } 
-            else {nlohmann::json j = value;val = j.dump();}
+            if constexpr (std::is_same_v<T, std::string>) {
+                val = value;
+            } else {
+                val = nlohmann::json(value).dump();
+            }
         }
-        Variable() = default;
     };
+
     
     /**
      * @brief 正解请求（`Robot/apostocpos`）：关节角 → TCP。
@@ -591,56 +555,6 @@ namespace Codroid {
         RegisterInfo() = default;
     };
 
-    /**
-     * @brief 主题推送内容（与 C# PublishNotification 对齐：ty / db / 原始 JSON）。
-     */
-    struct PublishNotification {
-        std::string ty;
-        nlohmann::json db;
-        std::string raw_json;
-    };
-
-    using PublishTopicHandler = std::function<void(const PublishNotification&)>;
-
-    /**
-     * @brief 订阅句柄：析构或 Dispose 时仅移除本地回调，不向控制器发退订（与 C# 一致）。
-     */
-    class PublishTopicSubscription {
-        std::function<void()> dispose_;
-
-    public:
-        PublishTopicSubscription() = default;
-        explicit PublishTopicSubscription(std::function<void()> d) : dispose_(std::move(d)) {}
-
-        ~PublishTopicSubscription() { reset(); }
-
-        PublishTopicSubscription(const PublishTopicSubscription&) = delete;
-        PublishTopicSubscription& operator=(const PublishTopicSubscription&) = delete;
-
-        PublishTopicSubscription(PublishTopicSubscription&& o) noexcept : dispose_(std::move(o.dispose_)) {
-            o.dispose_ = nullptr;
-        }
-
-        PublishTopicSubscription& operator=(PublishTopicSubscription&& o) noexcept {
-            if (this != &o) {
-                reset();
-                dispose_ = std::move(o.dispose_);
-                o.dispose_ = nullptr;
-            }
-            return *this;
-        }
-
-        void Dispose() { reset(); }
-
-    private:
-        void reset() {
-            if (dispose_) {
-                auto f = std::move(dispose_);
-                dispose_ = nullptr;
-                f();
-            }
-        }
-    };
 
     /** @brief 协议 15.x 主题字面量（与 AGENTS.md 完全一致） */
     struct PublishTopics {
@@ -700,22 +614,7 @@ namespace Codroid {
         std::vector<RobotFrameEntry> coordinate;
     };
 
-    // ========================================================================
-    // 6. 脚本参数 (script)
-    // ========================================================================
 
-    /** @brief 远程脚本运行参数（`RunScript` / `runScript`）。 */
-    struct RunScriptParams {
-        std::string mainCode;
-        std::unordered_map<std::string, std::string> subThreads;
-        std::unordered_map<std::string, std::string> subPrograms;
-        std::unordered_map<std::string, std::string> interrupts;
-        json vars = json::object();
-
-        explicit RunScriptParams(const std::string& main) : mainCode(main) {}
-    };
-
-
-}
+} // namespace Codroid
 
 #endif

@@ -1,17 +1,17 @@
 /**
  * @file 14_cri_trajectory.cpp
- * @brief CRI 实时控制完整流程 + `TRAJECTORY_ALGORITHM.md` §9 离线数值自检（同一可执行文件）。
+ * @brief CRI 实时控制完整流程 + 轨迹算法 §9 离线自检（同一可执行文件）。
  *
- * **流程**（与 `SDK_API_AND_DESIGN.md` §7.3 / `AGENTS.md` §6 一致）：
- *  1. （仅 CPU）跑 §9 轨迹发生器回归，失败则直接退出；
- *  2. TCP：`ConnectRemoteAndSwitchOn`（自动→远程、CRI 推送、上电）；
+ * 流程（对齐 AGENTS.md §6 / SDK_API_AND_DESIGN.md §7.3）：
+ *  1. 仅 CPU：跑 TRAJECTORY_ALGORITHM.md §9 回归，失败则退出；
+ *  2. TCP：ConnectRemoteAndSwitchOn（自动→远程、开 CRI 推送、上电）；
  *  3. 等待首帧 CRI（时间戳与关节有效）；
- *  4. `StartCriControl`，轮询 `realtime_control_mode`；
- *  5. 再读一帧状态，按 **`AGENTS.md` §5.2** 规划关节 / 笛卡尔多段轨迹并 UDP 下发。
+ *  4. StartCriControl，轮询 realtime_control_mode；
+ *  5. 再读状态，按 AGENTS.md §5.2 规划关节/笛卡尔多段轨迹并 UDP 周期下发。
  *
- * 三段轨迹与 §5.2 `CodroidCRITest` 常量一致；`SendTrajectory` 每种 `TrajectorySpace` 分次发送。
- *
- * 前置：`durationMs` = `period_ms`（如 4 ↔ 250 Hz）。
+ * 三段轨迹常量与 CodroidCRITest 一致；每种 TrajectorySpace 分次 SendTrajectory。
+ * 前置：StartCriControl.durationMs 必须等于 UDP 下发 period_ms（如 4ms ↔ 250Hz）。
+ * 仅需：#include "Codroid/client.hpp"
  */
 
 #include <array>
@@ -25,9 +25,6 @@
 #include <vector>
 
 #include "Codroid/client.hpp"
-#include "Codroid/console_utf8.hpp"
-#include "Codroid/cri_realtime_dispatcher.hpp"
-#include "Codroid/trajectory_generator.hpp"
 
 namespace {
 
@@ -118,6 +115,7 @@ bool run_trajectory_algorithm_s9() {
     return true;
 }
 
+/** 轮询直到收到首帧有效 CRI（关节 ≥6）或超时 */
 bool wait_for_first_cri(Codroid::CodroidClient& robot, std::chrono::milliseconds timeout) {
     const auto deadline = std::chrono::steady_clock::now() + timeout;
     while (std::chrono::steady_clock::now() < deadline) {
@@ -129,6 +127,7 @@ bool wait_for_first_cri(Codroid::CodroidClient& robot, std::chrono::milliseconds
     return false;
 }
 
+/** 轮询直到进入实时控制模式（StartCriControl 后） */
 bool wait_realtime_control(Codroid::CodroidClient& robot, std::chrono::milliseconds timeout) {
     const auto deadline = std::chrono::steady_clock::now() + timeout;
     while (std::chrono::steady_clock::now() < deadline) {
@@ -153,6 +152,7 @@ std::optional<std::array<double, 6>> tcp_pose_array_mm_deg(const Codroid::Client
     return p;
 }
 
+/** §5.2 cart：YZ 平面矩形，姿态保持起点不变（mm+度） */
 std::vector<std::array<double, 6>> rectangle_cart_waypoints_mm_deg(const std::array<double, 6>& tcp0) {
     std::vector<std::array<double, 6>> w;
     w.reserve(5);
@@ -176,43 +176,43 @@ void sleep_cycles(int duration_ms, int cycles) {
 
 void log_send_begin(const char* tag, size_t points, int period_ms) {
     const double est_sec = (points > 0) ? (static_cast<double>(points - 1) * static_cast<double>(period_ms) / 1000.0) : 0.0;
-    std::cout << "[" << tag << "] send begin: points=" << points << ", period_ms=" << period_ms << ", est=" << est_sec
+    std::cout << "[" << tag << "] 开始下发: 点数=" << points << ", 周期=" << period_ms << " ms, 预计=" << est_sec
               << " s\n"
               << std::flush;
 }
 
 void log_send_end(const char* tag, std::chrono::steady_clock::time_point t0) {
     const auto dt = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - t0).count();
-    std::cout << "[" << tag << "] send done, elapsed_ms=" << dt << '\n' << std::flush;
+    std::cout << "[" << tag << "] 下发结束, 耗时=" << dt << " ms\n" << std::flush;
 }
 
 } // namespace
 
 int main() {
     Codroid::InitConsoleUtf8();
-    std::cout << "TRAJECTORY_ALGORITHM.md §9 (offline)...\n";
+    std::cout << "轨迹算法 §9 离线自检...\n";
     if (!run_trajectory_algorithm_s9()) {
-        std::cerr << "§9 trajectory self-check failed.\n";
+        std::cerr << "§9 自检失败。\n";
         return 1;
     }
-    std::cout << "§9 OK.\n";
+    std::cout << "§9 通过。\n";
 
-    const std::string robot_ip = "192.168.8.136";
-    const std::string local_ip = "192.168.8.150";
+    const std::string robot_ip = "192.168.1.136";
+    const std::string local_ip = "192.168.1.150";
     const int tcp_port = 9001;
     const int duration_ms = 4;
 
     Codroid::CodroidClient robot;
 
-    std::cout << "ConnectRemoteAndSwitchOn (TCP + Auto/Remote + CRI push + SwitchOn)...\n";
+    std::cout << "ConnectRemoteAndSwitchOn（TCP + 自动/远程 + CRI 推送 + 上电）...\n";
     if (!robot.ConnectRemoteAndSwitchOn(robot_ip, tcp_port, local_ip)) {
-        std::cerr << "ConnectRemoteAndSwitchOn failed.\n";
+        std::cerr << "ConnectRemoteAndSwitchOn 失败。\n";
         return 1;
     }
 
-    std::cout << "Wait first CRI frame...\n";
+    std::cout << "等待首帧 CRI...\n";
     if (!wait_for_first_cri(robot, std::chrono::seconds(5))) {
-        std::cerr << "Timeout: no CRI. Check network / local_ip.\n";
+        std::cerr << "超时：未收到 CRI，请检查网络 / local_ip。\n";
         robot.Disconnect();
         return 1;
     }
@@ -225,9 +225,9 @@ int main() {
         return 1;
     }
 
-    std::cout << "Wait realtime_control_mode...\n";
+    std::cout << "等待 realtime_control_mode...\n";
     if (!wait_realtime_control(robot, std::chrono::seconds(3))) {
-        std::cerr << "Timeout: realtime_control_mode.\n";
+        std::cerr << "超时：未进入 realtime_control_mode。\n";
         robot.StopCriControl(robot.NextRequestId());
         robot.Disconnect();
         return 1;
@@ -252,18 +252,18 @@ int main() {
     try {
         path_joint = Codroid::TrajectoryGenerator::GenerateMultiSegment(joint_wp, tr_joint);
     } catch (const std::exception& ex) {
-        std::cerr << "TrajectoryGenerator joint: " << ex.what() << '\n';
+        std::cerr << "TrajectoryGenerator 关节段: " << ex.what() << '\n';
         robot.StopCriControl(robot.NextRequestId());
         robot.Disconnect();
         return 1;
     }
     if (path_joint.empty()) {
-        std::cerr << "Joint path empty.\n";
+        std::cerr << "关节路径为空。\n";
         robot.StopCriControl(robot.NextRequestId());
         robot.Disconnect();
         return 1;
     }
-    std::cout << "[joint] pts=" << path_joint.size() << " T=" << path_joint.back().time_seconds << " s\n";
+    std::cout << "[joint] 点数=" << path_joint.size() << " 时长=" << path_joint.back().time_seconds << " s\n";
 
     Codroid::TrajectoryRequest tr_cart;
     tr_cart.space = Codroid::TrajectorySpace::Cartesian;
@@ -274,7 +274,7 @@ int main() {
 
     try {
         Codroid::CriRealtimeDispatcher dispatcher(robot_ip, 9030, true);
-        std::cout << "UDP 9030 period_ms=" << duration_ms << " [joint]\n";
+        std::cout << "UDP 9030 周期=" << duration_ms << " ms [joint]\n";
         log_send_begin("joint", path_joint.size(), duration_ms);
         const auto t_joint = std::chrono::steady_clock::now();
         dispatcher.SendTrajectory(path_joint, Codroid::TrajectorySpace::Joint, duration_ms);
@@ -283,7 +283,7 @@ int main() {
         sleep_cycles(duration_ms, 2);
         const auto tcp_cart0 = tcp_pose_array_mm_deg(robot.GetRobotRealtimeState());
         if (!tcp_cart0) {
-            std::cerr << "No TcpPose after joint.\n";
+            std::cerr << "关节段结束后无有效 TcpPose。\n";
             dispatcher.Close();
             robot.StopCriControl(robot.NextRequestId());
             robot.Disconnect();
@@ -292,7 +292,7 @@ int main() {
 
         auto path_cart = Codroid::TrajectoryGenerator::GenerateMultiSegment(rectangle_cart_waypoints_mm_deg(*tcp_cart0),
                                                                            tr_cart);
-        std::cout << "[cart] pts=" << path_cart.size() << " T=" << path_cart.back().time_seconds << " s\n";
+        std::cout << "[cart] 点数=" << path_cart.size() << " 时长=" << path_cart.back().time_seconds << " s\n";
         log_send_begin("cart", path_cart.size(), duration_ms);
         const auto t_cart = std::chrono::steady_clock::now();
         dispatcher.SendTrajectory(path_cart, Codroid::TrajectorySpace::Cartesian, duration_ms);
@@ -301,7 +301,7 @@ int main() {
         sleep_cycles(duration_ms, 2);
         const auto tcp_path0 = tcp_pose_array_mm_deg(robot.GetRobotRealtimeState());
         if (!tcp_path0) {
-            std::cerr << "No TcpPose before path.\n";
+            std::cerr << "path 段开始前无有效 TcpPose。\n";
             dispatcher.Close();
             robot.StopCriControl(robot.NextRequestId());
             robot.Disconnect();
@@ -311,7 +311,7 @@ int main() {
         const std::vector<std::array<double, 6>> path_wp{
             *tcp_path0, kAgentPathW1, kAgentPathW2, kAgentPathW3, kAgentPathW4Home};
         auto path_motion = Codroid::TrajectoryGenerator::GenerateMultiSegment(path_wp, tr_cart);
-        std::cout << "[path] pts=" << path_motion.size() << " T=" << path_motion.back().time_seconds << " s\n";
+        std::cout << "[path] 点数=" << path_motion.size() << " 时长=" << path_motion.back().time_seconds << " s\n";
         log_send_begin("path", path_motion.size(), duration_ms);
         const auto t_path = std::chrono::steady_clock::now();
         dispatcher.SendTrajectory(path_motion, Codroid::TrajectorySpace::Cartesian, duration_ms);
@@ -322,24 +322,24 @@ int main() {
         std::cerr << "SendTrajectory: " << ex.what() << '\n';
     }
 
-    std::cout << "[cleanup] StopCriControl begin\n" << std::flush;
+    std::cout << "[清理] StopCriControl 开始\n" << std::flush;
     const int id_stop = robot.NextRequestId();
     auto r_stop = robot.StopCriControl(id_stop);
     print_err("StopCriControl", r_stop);
-    std::cout << "[cleanup] StopCriControl end\n" << std::flush;
+    std::cout << "[清理] StopCriControl 结束\n" << std::flush;
 
     const int udp_listen = robot.GetCriUdpListenPort();
     if (udp_listen > 0) {
-        std::cout << "[cleanup] StopCriDataPush begin, udp_listen=" << udp_listen << '\n' << std::flush;
+        std::cout << "[清理] StopCriDataPush 开始, udp_listen=" << udp_listen << '\n' << std::flush;
         const int id_push = robot.NextRequestId();
         auto r_push = robot.StopCriDataPush(local_ip, udp_listen, id_push);
         print_err("StopCriDataPush", r_push);
-        std::cout << "[cleanup] StopCriDataPush end\n" << std::flush;
+        std::cout << "[清理] StopCriDataPush 结束\n" << std::flush;
     }
 
-    std::cout << "[cleanup] Disconnect begin\n" << std::flush;
+    std::cout << "[清理] Disconnect 开始\n" << std::flush;
     robot.Disconnect();
-    std::cout << "[cleanup] Disconnect end\n" << std::flush;
-    std::cout << "Done.\n" << std::flush;
+    std::cout << "[清理] Disconnect 结束\n" << std::flush;
+    std::cout << "完成。\n" << std::flush;
     return 0;
 }

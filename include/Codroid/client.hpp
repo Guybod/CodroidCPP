@@ -1,23 +1,31 @@
 /**
  * @file client.hpp
- * @brief 客户侧主入口 `CodroidClient`：TCP JSON 指令、IO/寄存器、点到点/路径运动、CRI 推送与实时控制会话。
+ * @brief 客户侧**唯一入口**：`#include "Codroid/client.hpp"` 即可使用全部公开 API。
+ *
+ * 本头聚合：`CodroidClient`、公开 DTO（`types.hpp`）、轨迹生成、CRI UDP 下发、控制台 UTF-8，
+ * 以及 **nlohmann/json**（随 SDK 包提供，用户无需再 `#include <nlohmann/json.hpp>`）。
  *
  * @par 单位与惯例（与 AGENTS.md 一致）
  * - 关节角：**度**；笛卡尔位姿 `[x,y,z,rx,ry,rz]`：**mm + 度**（固定欧拉 XYZ 外旋）。
  * - CRI 上行 UDP（308 字节）线上为 SI；本 SDK 在内部解析后，`ClientRealtimeState` 已为 **mm/度**。
- * - CRI **实时控制**下发（`StartCriControl` + `CriRealtimeDispatcher`）：周期须与 `durationMs` 一致（见 `cri_realtime_dispatcher.hpp`、`AGENTS.md` §6）。
+ * - CRI **实时控制**下发（`StartCriControl` + `CriRealtimeDispatcher`）：周期须与 `durationMs` 一致（见 `AGENTS.md` §6）。
  *
  * @par 固件要求
  * - 本 SDK **所有对外接口**均要求控制器固件 **≥ 2.3.3.43**（见 `MinControllerFirmware`）。
  *
- * @note 本头仅依赖标准库与 `CodroidExport.h`；Asio / nlohmann 留在实现编译单元，客户工程无需引入。
+ * @note Asio 与 `CodroidController` 仅在实现编译单元；客户**不要** include 内部头。
  */
 
 #ifndef CODROID_SDK_CLIENT_HPP
 #define CODROID_SDK_CLIENT_HPP
 
 #include "Codroid/CodroidExport.h"
-#include "Codroid/CodroidDefine.h"
+#include "Codroid/types.hpp"
+#include "Codroid/console_utf8.hpp"
+#include "Codroid/trajectory_generator.hpp"
+#include "Codroid/cri_realtime_dispatcher.hpp"
+
+#include <nlohmann/json.hpp>
 
 #include <cstdint>
 #include <functional>
@@ -538,12 +546,12 @@ public:
 
     // --- 2. 工程/脚本（对齐 C#）---
 
-    /** @brief 运行远程 Lua 脚本。 */
+    /** @brief 运行远程 Lua 脚本；@p vars 为 JSON 对象（由 nlohmann 序列化下发）。 */
     CommandResult RunScript(const std::string& mainScript,
                             const std::unordered_map<std::string, std::string>& subThreads = {},
                             const std::unordered_map<std::string, std::string>& subPrograms = {},
                             const std::unordered_map<std::string, std::string>& interrupts = {},
-                            const nlohmann::json& vars = {},
+                            const nlohmann::json& vars = nlohmann::json::object(),
                             int id = 1);
     /** @brief 进入远程脚本模式。 */
     CommandResult EnterRemoteScriptMode(int id = 1);
@@ -569,9 +577,9 @@ public:
 
     // --- 3. 全局变量（对齐 C#）---
 
-    /** @brief 获取所有全局变量（原始 JSON 响应）。 */
+    /** @brief 获取所有全局变量（返回控制器 `db`，nlohmann::json）。 */
     nlohmann::json GetGlobalVars(int id = 1);
-    /** @brief 获取全局变量目录（结构化解析）。 */
+    /** @brief 获取全局变量目录（与 `GetGlobalVars` 同协议）。 */
     nlohmann::json GetGlobalVarsCatalog(int id = 1);
     /** @brief 保存全局变量。 */
     CommandResult SaveGlobalVars(const std::map<std::string, Variable>& vars, int id = 1);
@@ -580,7 +588,7 @@ public:
 
     // --- 4.1 工程变量（对齐 C#）---
 
-    /** @brief 获取当前工程变量值。 */
+    /** @brief 获取当前工程变量值（返回控制器 `db`，nlohmann::json）。 */
     nlohmann::json GetProjectVar(int id = 1);
 
     // --- 5. RS485（对齐 C#）---
@@ -590,7 +598,7 @@ public:
                             RS485Parity parity = RS485Parity::None, int id = 1);
     /** @brief 清空 RS485 读取缓冲区。 */
     CommandResult Rs485Flush(int id = 1);
-    /** @brief 读取 RS485 数据。 */
+    /** @brief 读取 RS485 数据（返回控制器 `db`，nlohmann::json）。 */
     nlohmann::json Rs485Read(int length, int timeout = 5000, int id = 1);
     /** @brief 写入 RS485 数据。 */
     CommandResult Rs485Write(const std::vector<uint8_t>& data, int id = 1);

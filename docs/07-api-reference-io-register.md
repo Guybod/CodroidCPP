@@ -236,7 +236,7 @@ struct ClientIoInfo {
 int main() {
     Codroid::CodroidClient robot;
 
-    if (!robot.ConnectRemoteAndSwitchOn("192.168.8.136", 9001, "192.168.8.150")) {
+    if (!robot.ConnectRemoteAndSwitchOn("192.168.1.136", 9001, "192.168.1.150")) {
         std::cerr << "连接失败" << std::endl;
         return 1;
     }
@@ -280,7 +280,7 @@ int main() {
 int main() {
     Codroid::CodroidClient robot;
 
-    if (!robot.ConnectRemoteAndSwitchOn("192.168.8.136", 9001, "192.168.8.150")) {
+    if (!robot.ConnectRemoteAndSwitchOn("192.168.1.136", 9001, "192.168.1.150")) {
         std::cerr << "连接失败" << std::endl;
         return 1;
     }
@@ -324,13 +324,13 @@ int main() {
 int main() {
     Codroid::CodroidClient robot;
 
-    if (!robot.ConnectRemoteAndSwitchOn("192.168.8.136", 9001, "192.168.8.150")) {
+    if (!robot.ConnectRemoteAndSwitchOn("192.168.1.136", 9001, "192.168.1.150")) {
         std::cerr << "连接失败" << std::endl;
         return 1;
     }
 
     // 启动 CRI 推送（用于阻塞运动）
-    robot.StartCriDataPush("192.168.8.150", 9030);
+    robot.StartCriDataPush("192.168.1.150", 9030);
     robot.WaitForCriData(5.0);
 
     std::cout << "等待 DI 0 触发..." << std::endl;

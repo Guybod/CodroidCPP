@@ -11,6 +11,7 @@ package/
 bin/
 lib/
 out/
+releases/
 
 # === 编译器产生的中间文件 (Objects & Libraries) ===
 *.o
@@ -26,7 +27,9 @@ out/
 *.tar.gz
 *.zip
 *.7z
-releases/
+
+# kinematics 可选工具链本地 .so（与上方 *.so 重叠，显式写出便于排查）
+kinematics/*.so
 
 # === CMake 产生的中间文件 (CMake Artifacts) ===
 CMakeCache.txt
@@ -36,21 +39,14 @@ cmake_install.cmake
 Makefile
 install_manifest.txt
 compile_commands.json
-# 之前脚本自动生成的交叉编译文件
 mingw-toolchain.cmake
 
-# === IDE 配置文件 (IDE Specific) ===
-# VS Code
+# === IDE / 代理本地配置（勿推送）===
 .vscode/
-.vscode/settings.json
-.vscode/tasks.json
-.vscode/launch.json
-.vscode/c_cpp_properties.json
-# JetBrains / CLion
 .idea/
-
-# Visual Studio (MSVC)
 .vs/
+.claude/
+.cursor/
 *.sln
 *.vcxproj
 *.filters
@@ -59,43 +55,40 @@ mingw-toolchain.cmake
 *.db
 *.opendb
 
-# === 系统与临时文件 (System & Temp) ===
+# === 系统与临时文件 ===
 .DS_Store
 Thumbs.db
 *.tmp
 *.log
 *.bak
 
-# Python 字节码
+# Python
 __pycache__/
 *.py[cod]
 *$py.class
-
-# 虚拟环境
 .venv/
 env/
 venv/
 .hatch/
-
-# 编译输出
 dist/
 *.egg-info/
-
-# 文档输出
 site/
-
-# 单元测试与覆盖率
 .pytest_cache/
 .tox/
 .coverage
 htmlcov/
 
-# 本地环境配置文件
+# 本地环境配置
 .env
 
-# Markdown：仅允许根目录 README.md、RELEASE_NOTES.md 和 docs/ 目录
+# Markdown：默认忽略根目录草稿；显式放行交付/契约文档
 *.md
 !README.md
 !RELEASE_NOTES.md
+!AGENTS.md
+!PROTOCOL_LINE_BY_LINE.md
+!SDK_API_AND_DESIGN.md
+!SDK_GUIDE.md
+!TRAJECTORY_ALGORITHM.md
 !docs/**/*.md
 !docs/**/*.pdf

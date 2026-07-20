@@ -1,5 +1,7 @@
 # CRI 实时控制 API
 
+`TrajectoryGenerator` / `CriRealtimeDispatcher` 已由 `#include "Codroid/client.hpp"` 引入，无需再单独 include。
+
 本章介绍 CRI（Controller Realtime Interface）实时数据接收和轨迹下发。
 
 ---
@@ -19,10 +21,10 @@ CRI 实时控制包括两个部分：
 
 ```cpp
 // 1. 连接
-robot.ConnectRemoteAndSwitchOn("192.168.8.136", 9001, "192.168.8.150");
+robot.ConnectRemoteAndSwitchOn("192.168.1.136", 9001, "192.168.1.150");
 
 // 2. 启动 CRI 数据推送（绑定本机 IP 和端口）
-robot.StartCriDataPush("192.168.8.150", 9030);
+robot.StartCriDataPush("192.168.1.150", 9030);
 
 // 3. 等待首帧数据
 robot.WaitForCriData(5.0);
@@ -143,8 +145,8 @@ int GetCriUdpListenPort() const;
 
 ```cpp
 // 1. 连接并启动 CRI 推送
-robot.ConnectRemoteAndSwitchOn("192.168.8.136", 9001, "192.168.8.150");
-robot.StartCriDataPush("192.168.8.150", 9030);
+robot.ConnectRemoteAndSwitchOn("192.168.1.136", 9001, "192.168.1.150");
+robot.StartCriDataPush("192.168.1.150", 9030);
 robot.WaitForCriData(5.0);
 
 // 2. 启动实时控制
@@ -199,9 +201,8 @@ CommandResult StopCriControl(int id = 1);
 向控制器 CRI 实时控制 UDP 端口发送 64 字节指令帧。
 
 ```cpp
-#include "Codroid/cri_realtime_dispatcher.hpp"
 
-Codroid::CriRealtimeDispatcher dispatcher("192.168.8.136", 9030, true);
+Codroid::CriRealtimeDispatcher dispatcher("192.168.1.136", 9030, true);
 ```
 
 ### 构造函数
@@ -319,7 +320,6 @@ bool IsOpen() const noexcept;
 离线轨迹生成。
 
 ```cpp
-#include "Codroid/trajectory_generator.hpp"
 ```
 
 ### Generate
@@ -431,8 +431,6 @@ enum class TrajectoryProfile {
 
 ```cpp
 #include "Codroid/client.hpp"
-#include "Codroid/cri_realtime_dispatcher.hpp"
-#include "Codroid/trajectory_generator.hpp"
 #include <iostream>
 #include <atomic>
 #include <thread>
@@ -441,13 +439,13 @@ int main() {
     Codroid::CodroidClient robot;
 
     // 1. 连接
-    if (!robot.ConnectRemoteAndSwitchOn("192.168.8.136", 9001, "192.168.8.150")) {
+    if (!robot.ConnectRemoteAndSwitchOn("192.168.1.136", 9001, "192.168.1.150")) {
         std::cerr << "连接失败" << std::endl;
         return 1;
     }
 
     // 2. 启动 CRI 数据推送
-    robot.StartCriDataPush("192.168.8.150", 9030);
+    robot.StartCriDataPush("192.168.1.150", 9030);
     robot.WaitForCriData(5.0);
 
     // 3. 启动实时控制
@@ -477,7 +475,7 @@ int main() {
     std::cout << "轨迹点数: " << trajectory.size() << std::endl;
 
     // 6. 创建 Dispatcher 并下发轨迹
-    Codroid::CriRealtimeDispatcher dispatcher("192.168.8.136", 9030, true);
+    Codroid::CriRealtimeDispatcher dispatcher("192.168.1.136", 9030, true);
 
     std::atomic<bool> cancel{false};
     std::cout << "开始下发轨迹..." << std::endl;

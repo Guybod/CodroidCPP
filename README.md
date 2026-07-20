@@ -2,10 +2,13 @@
 
 Codroid C++ SDK 提供一套 C++ 接口，用于连接 Codroid 控制器并完成上电、运动、IO、寄存器、实时状态读取和 CRI 实时轨迹下发。
 
+**v3.0**：业务代码只需 `#include "Codroid/client.hpp"`。JSON 用随包提供的 `nlohmann::json`；Asio / KDL / `CodroidController` 不对客户暴露。
+
 首页按实际接入顺序组织：准备网络，编译 SDK，跑通第一个示例，再接入业务程序。
 
 ## 文档
 
+- **版本说明**：[RELEASE_NOTES.md](RELEASE_NOTES.md)（含 v3.0 Breaking Changes）
 - **SDK 手册（中文）**：[docs/CodroidCPP-SDK-Manual-v2.1.11-zh.md](docs/CodroidCPP-SDK-Manual-v2.1.11-zh.md)
 - **SDK Manual (English)**：[docs/CodroidCPP-SDK-Manual-v2.1.11-en.md](docs/CodroidCPP-SDK-Manual-v2.1.11-en.md)
 
@@ -15,8 +18,8 @@ Codroid C++ SDK 提供一套 C++ 接口，用于连接 Codroid 控制器并完�
 
 先确认三件事：
 
-- 控制器 IP，例如 `192.168.8.136`
-- 本机网卡 IP，例如 `192.168.8.150`
+- 控制器 IP，例如 `192.168.1.136`
+- 本机网卡 IP，例如 `192.168.1.150`
 - TCP 指令端口，默认 `9001`
 
 示例代码里的 IP 需要按现场网络修改。先从控制器所在网段确认本机能访问控制器，再运行 SDK 示例。
@@ -66,7 +69,7 @@ chmod +x build_linux.sh
 
 **控制台中文乱码**（在 Ubuntu 上写 UTF-8 源码，在 Windows cmd 里运行示例时）：
 
-1. **程序入口**（推荐）：本仓库 **所有** `examples_client/*.cpp` 与 `examples/*.cpp`（除空桩 `05_rs485`）已在 `main` 开头调用 `InitConsoleUtf8()`。业务工程可复制：
+1. **程序入口**（推荐）：本仓库 `examples/*.cpp` 均在 `main` 开头调用 `InitConsoleUtf8()`。业务工程可复制：
 
 ```cpp
 #include "Codroid/console_utf8.hpp"
@@ -174,21 +177,21 @@ package\CodroidSDK-Windows-MinGW-x64\
 
 客户集成时只需要交付包，不需要整个源码仓库。
 
-交付包中的 `Codroid/client.hpp` 使用 PImpl 封装，不暴露 Asio、nlohmann/json 或内部控制器头文件。业务工程只需要配置 SDK 的 `include/` 和库路径。
+交付包中的 `Codroid/client.hpp` 是唯一入口（PImpl）；Asio / `CodroidController` 不暴露。发布包附带 `include/nlohmann/` 供 JSON API 使用。业务工程配置 SDK 的 `include/` 与库路径即可。
 
 ## 4. 跑通第一个 TCP 示例
 
-打开 `examples_client/01_connect.cpp`，修改控制器 IP 和本机 IP：
+打开 `examples/01_connect.cpp`，修改控制器 IP 和本机 IP：
 
 ```cpp
-const std::string robot_ip = "192.168.8.136";
-const std::string local_ip = "192.168.8.150";
+const std::string robot_ip = "192.168.1.136";
+const std::string local_ip = "192.168.1.150";
 ```
 
 Linux 运行：
 
 ```bash
-./build_linux/client_01_connect
+./build_linux/01_connect
 ```
 
 看到连接成功、控制器收到上电/下电命令，说明 TCP 指令通道可用。后续 IO、寄存器、运动指令都基于同一条 TCP 通道。
@@ -210,8 +213,8 @@ Linux 运行：
 #include <string>
 
 int main() {
-    const std::string robot_ip = "192.168.8.136";
-    const std::string local_ip = "192.168.8.150";
+    const std::string robot_ip = "192.168.1.136";
+    const std::string local_ip = "192.168.1.150";
 
     Codroid::CodroidClient robot;
 
@@ -316,7 +319,7 @@ robot.Rs485Write({0x01, 0x03, 0x00, 0x00, 0x00, 0x01, 0x84, 0x0A});
 
 ### 运动控制
 
-运动目标使用 **`JointPoint`（关节，度）** 与 **`CartesianPoint`（TCP，mm+度）** 区分，**不要**传裸 `std::vector<double>`。类型说明见 `include/Codroid/CodroidDefine.h`。
+运动目标使用 **`JointPoint`（关节，度）** 与 **`CartesianPoint`（TCP，mm+度）** 区分，**不要**传裸 `std::vector<double>`。类型说明见 `include/Codroid/types.hpp`。
 
 **笛卡尔工厂**：
 
@@ -406,11 +409,10 @@ robot.MoveSync(path);
 | `cri_stale_timeout_s` | 0.5 | CRI 数据过期判定（秒） |
 | `settled_samples` | 3 | 连续稳定采样数 |
 
-另有一套 **`moveTo` / `moveToHeartbeat`**（RunTo 规划，非 `Robot/move`），目标同样用 `MoveToTarget::Joint` / `Cartesian`，示例见 `examples/07_move_To.cpp`。
+另有一套 **`MoveTo` / `MoveToHeartbeat`**（RunTo 规划，非 `Robot/move`），目标用 `MoveToTarget::Joint` / `Cartesian`，示例见 `examples/07_move_to.cpp`。
 
-- 客户示例：`examples_client/04_move.cpp`（点到点 + 四组合路径）
-- 阻塞运动示例：`examples_client/07_sync_motion.cpp`（Sync 阻塞运动）
-- 底层直连：`examples/08_move.cpp`（`CodroidController`）
+- 多段路径：`examples/08_move.cpp`
+- 阻塞运动：`examples/10_sync_motion.cpp`
 
 ## 7. 跑 CRI 实时轨迹
 
@@ -419,11 +421,11 @@ CRI 实时轨迹使用两条 UDP 路径：
 - 控制器到本机：CRI 状态推送，SDK 解析为 `ClientRealtimeState`
 - 本机到控制器：`CriRealtimeDispatcher` 周期下发实时控制点
 
-修改 `examples_client/05_cri_trajectory.cpp` 中的地址：
+修改 `examples/14_cri_trajectory.cpp` 中的地址：
 
 ```cpp
-const std::string robot_ip = "192.168.8.136";
-const std::string local_ip = "192.168.8.150";
+const std::string robot_ip = "192.168.1.136";
+const std::string local_ip = "192.168.1.150";
 ```
 
 运行：
@@ -500,15 +502,25 @@ robot.SetCriDataReceived([](const Codroid::ClientRealtimeState& state) {
 
 ## 10. 示例目录
 
-- `examples_client/01_connect.cpp`：最小连接与实时状态读取
-- `examples_client/02_io_register.cpp`：IO 与寄存器
-- `examples_client/03_cri_state.cpp`：读取 CRI 状态快照
-- `examples_client/04_move.cpp`：`JointPoint` / `CartesianPoint`、点到点 API 与 `Move` 多段路径
-- `examples_client/05_cri_trajectory.cpp`：CRI 实时控制最小轨迹
-- `examples_client/06_robot_parameters.cpp`：机器人设置（工具/负载/坐标系）
-- `examples_client/07_sync_motion.cpp`：阻塞式运动 API（`*Sync` + `MotionWaitOptions`）
-- `examples_client/08_force_control.cpp`：力控接口测试（零力校准、导纳初始化、在线调参、接触检测、状态读取）
-- `examples/`：SDK 内部/兼容示例，包含旧接口用法
+全部示例仅 `#include "Codroid/client.hpp"`：
+
+| 文件 | 内容 |
+|------|------|
+| `01_connect.cpp` | 连接 / 远程上电 / CRI 首帧 |
+| `02_run_script.cpp` | 远程脚本 `RunScript` |
+| `03_run_project.cpp` | 工程 Run / Pause / Resume / Stop |
+| `04_global_value.cpp` | 全局变量 Get / Save / Remove |
+| `05_rs485.cpp` | RS485 Init / Write / Read |
+| `06_jog_mode.cpp` | 点动 + 心跳 |
+| `07_move_to.cpp` | MoveTo 规划运动 |
+| `08_move.cpp` | 点到点与多段 `Move` |
+| `09_io_register.cpp` | IO / 寄存器 |
+| `10_sync_motion.cpp` | 阻塞 `*Sync` 运动 |
+| `11_robot_parameters.cpp` | 工具 / 负载 / 坐标系参数 |
+| `12_kinematics_tcp.cpp` | TCP 正逆解 |
+| `13_cri_state.cpp` | CRI 状态快照 |
+| `14_cri_trajectory.cpp` | CRI 实时轨迹（joint/cart/path） |
+| `15_force_control.cpp` | 力控 |
 
 ## 11. 常见问题
 

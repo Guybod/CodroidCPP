@@ -274,10 +274,10 @@ robot.Move(path);
 
 ```cpp
 // 1. 连接
-robot.ConnectRemoteAndSwitchOn("192.168.8.136", 9001, "192.168.8.150");
+robot.ConnectRemoteAndSwitchOn("192.168.1.136", 9001, "192.168.1.150");
 
 // 2. 启动 CRI 推送
-robot.StartCriDataPush("192.168.8.150", 9030);
+robot.StartCriDataPush("192.168.1.150", 9030);
 
 // 3. 等待首帧
 robot.WaitForCriData(5.0);

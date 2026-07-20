@@ -35,15 +35,23 @@ mkdir "%PKG_DIR%\lib"
 mkdir "%PKG_DIR%\examples"
 mkdir "%PKG_DIR%\docs"
 
-echo [1/5] Copy headers...
-xcopy /y /i include\Codroid\* "%PKG_DIR%\include\Codroid\" >nul
+echo [1/5] Copy public headers (whitelist)...
+copy /y include\Codroid\client.hpp "%PKG_DIR%\include\Codroid\" >nul
+copy /y include\Codroid\types.hpp "%PKG_DIR%\include\Codroid\" >nul
+copy /y include\Codroid\CodroidExport.h "%PKG_DIR%\include\Codroid\" >nul
+copy /y include\Codroid\console_utf8.hpp "%PKG_DIR%\include\Codroid\" >nul
+copy /y include\Codroid\cri_realtime_dispatcher.hpp "%PKG_DIR%\include\Codroid\" >nul
+copy /y include\Codroid\trajectory_generator.hpp "%PKG_DIR%\include\Codroid\" >nul
+copy /y include\Codroid\trajectory_types.hpp "%PKG_DIR%\include\Codroid\" >nul
+mkdir "%PKG_DIR%\include\nlohmann" >nul 2>nul
+xcopy /y /e /i third_party\nlohmann\* "%PKG_DIR%\include\nlohmann\" >nul
 
 echo [2/5] Copy binaries...
 copy /y "%BUILD_DIR%\libCodroid.dll" "%PKG_DIR%\bin\Codroid.dll" >nul
 copy /y "%BUILD_DIR%\libCodroid.dll.a" "%PKG_DIR%\lib\libCodroid.dll.a" >nul
 
 echo [3/5] Copy examples and docs...
-copy /y examples_client\*.cpp "%PKG_DIR%\examples\" >nul
+copy /y examples\*.cpp "%PKG_DIR%\examples\" >nul
 copy /y README.md "%PKG_DIR%\" >nul
 copy /y SDK_GUIDE.md "%PKG_DIR%\docs\" >nul
 if exist LICENSE copy /y LICENSE "%PKG_DIR%\" >nul

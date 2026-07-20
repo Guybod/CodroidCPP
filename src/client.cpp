@@ -1,6 +1,7 @@
 #include "Codroid/client.hpp"
 
-#include "Codroid/CodroidController.h"
+#include "CodroidController.h"
+#include "CodroidDefine.h"
 
 #include <chrono>
 #include <cmath>
@@ -26,6 +27,7 @@ namespace {
 using ClientRobotFrame = CodroidClient::ClientRobotFrame;
 using ClientRobotPayload = CodroidClient::ClientRobotPayload;
 using ClientRobotParameters = CodroidClient::ClientRobotParameters;
+
 
 MoveType to_internal_move_type(ClientMoveType type) {
     switch (type) {
@@ -831,7 +833,7 @@ CommandResult CodroidClient::RunScript(const std::string& mainScript,
     params.subThreads = subThreads;
     params.subPrograms = subPrograms;
     params.interrupts = interrupts;
-    params.vars = vars;
+    params.vars = vars.is_null() ? nlohmann::json::object() : vars;
     return to_client_result(impl_->controller.runScript(params, id));
 }
 
@@ -920,6 +922,8 @@ nlohmann::json CodroidClient::GetProjectVar(int id) {
     if (impl_->controller.getThrowOnCommandError() && !r.error_msg.empty()) {
         throw CodroidCommandException(r.id, "globalVar/GetProjectVarUpdate", r.error_msg, r.raw_json);
     }
+    if (!r.error_msg.empty())
+        return nullptr;
     return r.db;
 }
 
@@ -938,6 +942,8 @@ nlohmann::json CodroidClient::Rs485Read(int length, int timeout, int id) {
     if (impl_->controller.getThrowOnCommandError() && !r.error_msg.empty()) {
         throw CodroidCommandException(r.id, "EC2RS485/read", r.error_msg, r.raw_json);
     }
+    if (!r.error_msg.empty())
+        return nullptr;
     return r.db;
 }
 

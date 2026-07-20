@@ -2,6 +2,8 @@
 
 **Version:** 2.1.11 | **Namespace:** `Codroid`
 
+> Apps only need `#include "Codroid/client.hpp"`. Asio / `CodroidController` stay internal; `nlohmann/json` ships with the package and is included by `client.hpp`.
+
 ---
 
 ## Table of Contents
@@ -27,11 +29,15 @@
 | Windows | MSVC 2019/2022/2026 | CMake 3.14+ |
 | Windows | MinGW-w64 (MSYS2) | CMake 3.14+ |
 
-### Dependencies
+### Customer dependencies
 
-- **Asio** (standalone, not Boost) — Networking
-- **nlohmann/json** — JSON serialization
-- **GoogleTest** (optional) — Unit testing
+- **Single public header**: `#include "Codroid/client.hpp"`
+- **nlohmann/json**: shipped in the SDK package (`include/nlohmann/`), pulled in by `client.hpp`
+- **Not required by apps**: Asio, KDL, `CodroidController`
+
+### SDK source build (this repository only)
+
+Building `libCodroid` uses Asio + nlohmann in implementation units (`build_linux.sh` syncs them into `third_party/`).
 
 ### Build
 
@@ -73,7 +79,7 @@ All public methods use **PascalCase** naming, consistent with C# and Python SDKs
 
 ```cpp
 // Correct
-robot.ConnectRemoteAndSwitchOn("192.168.8.136");
+robot.ConnectRemoteAndSwitchOn("192.168.1.136");
 int di = robot.GetDi(0);
 robot.MovJ(joints, 40, 100);
 ```
@@ -97,7 +103,7 @@ robot.MovJ(joints, 40, 100);
 
 All SDK interfaces require controller firmware **>= 2.3.3.43**.
 
-See `Codroid::MinControllerFirmware` in `CodroidDefine.h`.
+See `Codroid::MinControllerFirmware` in public header `types.hpp` (included by `client.hpp`).
 
 <div style="page-break-after: always;"></div>
 
@@ -161,7 +167,7 @@ int main() {
     Codroid::CodroidClient robot;
 
     // Connect, enter remote mode, and power on
-    if (!robot.ConnectRemoteAndSwitchOn("192.168.8.136", 9001, "192.168.8.150")) {
+    if (!robot.ConnectRemoteAndSwitchOn("192.168.1.136", 9001, "192.168.1.150")) {
         std::cerr << "Connection failed" << std::endl;
         return 1;
     }
@@ -185,20 +191,18 @@ int main() {
 
 ```cpp
 #include "Codroid/client.hpp"
-#include "Codroid/cri_realtime_dispatcher.hpp"
-#include "Codroid/trajectory_generator.hpp"
 #include <iostream>
 
 int main() {
     // Windows console UTF-8 support
     #ifdef _WIN32
-    Codroid::ConsoleUtf8::InitConsoleUtf8();
+    Codroid::InitConsoleUtf8();
     #endif
 
     Codroid::CodroidClient robot;
 
     // 1. Connect
-    if (!robot.ConnectRemoteAndSwitchOn("192.168.8.136", 9001, "192.168.8.150")) {
+    if (!robot.ConnectRemoteAndSwitchOn("192.168.1.136", 9001, "192.168.1.150")) {
         std::cerr << "Connection failed" << std::endl;
         return 1;
     }
@@ -236,12 +240,23 @@ int main() {
 ```bash
 # Linux
 cd build_linux
-./examples/01_basic_usage 192.168.8.136
+./01_connect 192.168.1.136
 
 # Windows (MSVC)
 cd build_msvc\Release
-01_basic_usage.exe 192.168.8.136
+01_connect.exe 192.168.1.136
 ```
+
+
+Example binaries (under `build_linux/`, names match `examples/*.cpp`):
+
+| Binary | Topic |
+|--------|--------|
+| `01_connect` | Connect / remote / CRI |
+| `08_move` | Point-to-point & path Move |
+| `09_io_register` | IO / registers |
+| `14_cri_trajectory` | CRI realtime trajectory |
+| `15_force_control` | Force control |
 
 ---
 
@@ -253,7 +268,7 @@ TCP command behavior depends on `SetThrowOnCommandError` setting:
 
 ```cpp
 Codroid::CodroidClient robot;
-robot.Connect("192.168.8.136");
+robot.Connect("192.168.1.136");
 
 auto result = robot.SetDo(999, 1); // Invalid port
 if (!result.Ok()) {
@@ -304,7 +319,7 @@ CodroidClient robot;
 Codroid::CodroidClient robot;
 
 try {
-    robot.ConnectRemoteAndSwitchOn("192.168.8.136", 9001, "192.168.8.150");
+    robot.ConnectRemoteAndSwitchOn("192.168.1.136", 9001, "192.168.1.150");
     // ... use robot ...
 } catch (...) {
     robot.Disconnect(); // Always call
@@ -391,7 +406,7 @@ SDK public APIs use **millimeters** and **degrees**. This matches the TCP JSON p
 All public methods use **PascalCase**, consistent with C# and Python SDKs.
 
 ```cpp
-robot.ConnectRemoteAndSwitchOn("192.168.8.136");
+robot.ConnectRemoteAndSwitchOn("192.168.1.136");
 int di = robot.GetDi(0);
 robot.MovJ(joints, 40, 100);
 robot.SetDo(10, 1);
@@ -472,7 +487,7 @@ Establish TCP connection only, no mode switch, no power on.
 **Returns:** `bool` — `true` on success
 
 ```cpp
-if (!robot.Connect("192.168.8.136")) {
+if (!robot.Connect("192.168.1.136")) {
     std::cerr << "Connection failed" << std::endl;
 }
 ```
@@ -496,7 +511,7 @@ Connect and perform remote mode switch + power on. Recommended one-click initial
 **Returns:** `bool` — `true` on success
 
 ```cpp
-if (!robot.ConnectRemoteAndSwitchOn("192.168.8.136", 9001, "192.168.8.150")) {
+if (!robot.ConnectRemoteAndSwitchOn("192.168.1.136", 9001, "192.168.1.150")) {
     std::cerr << "Connection failed" << std::endl;
     return 1;
 }
@@ -516,7 +531,7 @@ Disconnect TCP, stop CRI threads and cache. Always call before program exit.
 
 ```cpp
 try {
-    robot.ConnectRemoteAndSwitchOn("192.168.8.136", 9001, "192.168.8.150");
+    robot.ConnectRemoteAndSwitchOn("192.168.1.136", 9001, "192.168.1.150");
     // ... operations ...
 } catch (...) {
     robot.Disconnect();
@@ -1322,7 +1337,7 @@ Start local UDP listening and request controller to push CRI real-time data.
 **Returns:** `CommandResult` — Controller response
 
 ```cpp
-robot.StartCriDataPush("192.168.8.150", 18888);
+robot.StartCriDataPush("192.168.1.150", 18888);
 robot.WaitForCriData(5.0); // Wait for first frame
 
 robot.SetCriDataReceived([](const Codroid::ClientRealtimeState& data) {
@@ -2632,7 +2647,6 @@ CommandResult StopCriControl(int id = 1);
 Send 64-byte command frames to controller CRI real-time control UDP port.
 
 ```cpp
-#include "Codroid/cri_realtime_dispatcher.hpp"
 ```
 
 ### Constructor
@@ -2660,7 +2674,7 @@ void SendCommand(const std::array<double, 6>& position6, TrajectorySpace space);
 | `space` | `TrajectorySpace` | Coordinate space: `Joint` or `Cartesian` |
 
 ```cpp
-CriRealtimeDispatcher dispatcher("192.168.8.136");
+CriRealtimeDispatcher dispatcher("192.168.1.136");
 dispatcher.SendCommand({0, 0, 90, 0, 90, 0}, TrajectorySpace::Joint);
 ```
 
@@ -2679,7 +2693,7 @@ void SendTrajectory(const std::vector<TrajectoryPoint>& trajectory, TrajectorySp
 | `cancel` | `atomic<bool>*` | Cancellation flag (optional) |
 
 ```cpp
-CriRealtimeDispatcher dispatcher("192.168.8.136", 9030, true);
+CriRealtimeDispatcher dispatcher("192.168.1.136", 9030, true);
 dispatcher.SendTrajectory(trajectory, TrajectorySpace::Joint, 4);
 ```
 
@@ -2697,7 +2711,6 @@ bool IsOpen() const noexcept;
 Offline trajectory generation.
 
 ```cpp
-#include "Codroid/trajectory_generator.hpp"
 ```
 
 ### Generate
@@ -2781,15 +2794,13 @@ enum class TrajectoryProfile { Cubic, Trapezoidal };
 
 ```cpp
 #include "Codroid/client.hpp"
-#include "Codroid/cri_realtime_dispatcher.hpp"
-#include "Codroid/trajectory_generator.hpp"
 
 // 1. Connect
 Codroid::CodroidClient robot;
-robot.ConnectRemoteAndSwitchOn("192.168.8.136", 9001, "192.168.8.150");
+robot.ConnectRemoteAndSwitchOn("192.168.1.136", 9001, "192.168.1.150");
 
 // 2. Start CRI data push
-robot.StartCriDataPush("192.168.8.150", 9030);
+robot.StartCriDataPush("192.168.1.150", 9030);
 robot.WaitForCriData(5.0);
 
 // 3. Start real-time control
@@ -2814,7 +2825,7 @@ auto trajectory = Codroid::TrajectoryGenerator::Generate(
     start, {10, 0, 90, 0, 90, 0}, request);
 
 // 6. Send trajectory
-Codroid::CriRealtimeDispatcher dispatcher("192.168.8.136", 9030, true);
+Codroid::CriRealtimeDispatcher dispatcher("192.168.1.136", 9030, true);
 dispatcher.SendTrajectory(trajectory, Codroid::TrajectorySpace::Joint, 4);
 
 // 7. Cleanup
@@ -2884,7 +2895,7 @@ CommandResult SetRegisterValue(int address, double value, int id = 1);
 #include "Codroid/client.hpp"
 
 Codroid::CodroidClient robot;
-robot.ConnectRemoteAndSwitchOn("192.168.8.136", 9001, "192.168.8.150");
+robot.ConnectRemoteAndSwitchOn("192.168.1.136", 9001, "192.168.1.150");
 
 // IO operations
 int di0 = robot.GetDi(0);
@@ -3216,13 +3227,13 @@ Each single-field getter returns the field's concrete type. For example, `GetFor
 ### Test Example
 
 ```bash
-./build_linux/client_08_force_control state
-./build_linux/client_08_force_control calibration
-./build_linux/client_08_force_control constant
-./build_linux/client_08_force_control contact --allow-motion
+./build_linux/15_force_control state
+./build_linux/15_force_control calibration
+./build_linux/15_force_control constant
+./build_linux/15_force_control contact --allow-motion
 ```
 
-The example source is `examples_client/08_force_control.cpp`. Update the controller IP before running it on site.
+The example source is `examples/15_force_control.cpp`. Update the controller IP before running it on site.
 
 ---
 
@@ -3231,11 +3242,10 @@ The example source is `examples_client/08_force_control.cpp`. Update the control
 ### ConsoleUtf8
 
 ```cpp
-#include "Codroid/console_utf8.hpp"
 
 // Windows console UTF-8 support
 #ifdef _WIN32
-Codroid::ConsoleUtf8::InitConsoleUtf8();
+Codroid::InitConsoleUtf8();
 #endif
 ```
 

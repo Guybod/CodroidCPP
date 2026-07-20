@@ -1,3 +1,21 @@
+/**
+ * @file 15_force_control.cpp
+ * @brief 力控演示：状态查询 / 标定 / 安全参数 / 柔顺 / 恒力 / 接触检测。
+ *
+ * 用法：
+ *   15_force_control [控制器IP] [mode] [--allow-motion]
+ *
+ * mode：
+ *   state        仅打印当前力控状态后退出（默认）
+ *   calibration  零力标定
+ *   safety       过载保护 + 力数据健康度
+ *   compliance   柔顺控制（TCP，Z 轴 Compliant）
+ *   constant     恒力控制（TCP，Z 轴 Force）
+ *   contact      接触探测（需加 --allow-motion，会实际运动）
+ *
+ * 仅需：#include "Codroid/client.hpp"
+ * 现场请先确认力传感器与安全参数，再启用会运动的 mode。
+ */
 #include "Codroid/client.hpp"
 
 #include <chrono>
@@ -11,7 +29,7 @@ using namespace Codroid;
 namespace {
 
 void print_result(const std::string& label, const CommandResult& r) {
-    std::cout << label << ": " << (r.Ok() ? "OK" : ("ERR " + r.error_msg)) << "\n";
+    std::cout << label << ": " << (r.Ok() ? "成功" : ("失败 " + r.error_msg)) << "\n";
 }
 
 std::string fmt6(const std::vector<double>& values) {
@@ -38,6 +56,7 @@ void print_state(CodroidClient& robot) {
     std::cout << "desiredWrench=" << fmt6(s.desired_wrench) << "\n";
 }
 
+/** 周期打印力控状态，便于观察过渡过程 */
 void poll_state(CodroidClient& robot, double seconds) {
     const auto end = std::chrono::steady_clock::now() + std::chrono::milliseconds(static_cast<int>(seconds * 1000));
     while (std::chrono::steady_clock::now() < end) {
@@ -46,20 +65,23 @@ void poll_state(CodroidClient& robot, double seconds) {
     }
 }
 
-} // namespace
+}  // namespace
 
 int main(int argc, char** argv) {
+    Codroid::InitConsoleUtf8();
+
     std::string ip = argc > 1 ? argv[1] : "192.168.1.136";
     std::string mode = argc > 2 ? argv[2] : "state";
     bool allow_motion = argc > 3 && std::string(argv[3]) == "--allow-motion";
 
     CodroidClient robot;
     if (!robot.Connect(ip)) {
-        std::cerr << "Connect failed\n";
+        std::cerr << "连接失败\n";
         return 1;
     }
 
     try {
+        // 只读状态，不动机构
         if (mode == "state") {
             print_state(robot);
             robot.Disconnect();
@@ -72,13 +94,16 @@ int main(int argc, char** argv) {
         std::this_thread::sleep_for(std::chrono::seconds(2));
 
         if (mode == "calibration") {
+            // 零力标定：采样窗口 1000ms
             print_result("ZeroForceCalibration", robot.ZeroForceCalibration(1000));
         } else if (mode == "safety") {
+            // 过载保护阈值 + 力数据健康度阈值
             print_result("SetOverforceProtection",
                          robot.SetOverforceProtection(1, {150, 150, 20, 40, 40, 40}, 20));
             print_result("SetForceDataHealth",
                          robot.SetForceDataHealth(1, 200, 0.9));
         } else if (mode == "compliance") {
+            // 柔顺：Z 轴 Compliant，其余 Position
             nlohmann::json compliance = {
                 {"stiffness", std::vector<double>{0, 0, 0, 0, 0, 0}},
                 {"damping", std::vector<double>{250, 250, 50, 7.5, 7.5, 7.5}},
@@ -94,6 +119,7 @@ int main(int argc, char** argv) {
             poll_state(robot, 5.0);
             print_result("StopForceControl", robot.StopForceControl(500));
         } else if (mode == "constant") {
+            // 恒力：Z 方向期望力，运行中可用 TuneForceParams 改目标
             nlohmann::json constant_force = {
                 {"desiredForce", std::vector<double>{0, 0, 2, 0, 0, 0}},
                 {"damping", std::vector<double>{250, 250, 250, 7.5, 7.5, 7.5}},
@@ -113,8 +139,9 @@ int main(int argc, char** argv) {
             poll_state(robot, 3.0);
             print_result("StopForceControl", robot.StopForceControl(500));
         } else if (mode == "contact") {
+            // 接触探测会驱动机构；必须显式加 --allow-motion
             if (!allow_motion) {
-                throw std::runtime_error("contact mode requires --allow-motion");
+                throw std::runtime_error("contact 模式需要附加参数 --allow-motion");
             }
             nlohmann::json compliance = {
                 {"stiffness", std::vector<double>{0, 0, 0, 0, 0, 0}},
@@ -138,7 +165,7 @@ int main(int argc, char** argv) {
             poll_state(robot, 5.0);
             print_result("StopForceControl", robot.StopForceControl(500));
         } else {
-            throw std::runtime_error("unknown mode: " + mode);
+            throw std::runtime_error("未知 mode: " + mode);
         }
 
         robot.ToAuto();
@@ -147,9 +174,15 @@ int main(int argc, char** argv) {
         robot.Disconnect();
         return 0;
     } catch (const std::exception& e) {
-        std::cerr << "ERROR: " << e.what() << "\n";
-        try { robot.StopForceControl(300); } catch (...) {}
-        try { robot.SwitchOff(); } catch (...) {}
+        std::cerr << "错误: " << e.what() << "\n";
+        try {
+            robot.StopForceControl(300);
+        } catch (...) {
+        }
+        try {
+            robot.SwitchOff();
+        } catch (...) {
+        }
         robot.Disconnect();
         return 2;
     }

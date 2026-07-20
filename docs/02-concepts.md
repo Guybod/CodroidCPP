@@ -1,5 +1,22 @@
 # 核心概念
 
+## 公开面与唯一入口
+
+业务工程**只**需要：
+
+```cpp
+#include "Codroid/client.hpp"
+```
+
+该头聚合：`CodroidClient`、公开 DTO（`types.hpp`）、`TrajectoryGenerator`、`CriRealtimeDispatcher`、`InitConsoleUtf8`，以及随包提供的 `nlohmann::json`。
+
+| 对客户可见 | 不对客户暴露 |
+|------------|----------------|
+| `Codroid/client.hpp` 及由其引入的公开类型 | `CodroidController`、内部 `CodroidDefine`、Asio |
+| 发布包内 `include/nlohmann/` | KDL / 本地 `kinematicsInit` 等 |
+
+---
+
 ## CodroidClient 生命周期
 
 ```
@@ -19,7 +36,7 @@ CodroidClient robot;
 Codroid::CodroidClient robot;
 
 // 连接
-if (!robot.ConnectRemoteAndSwitchOn("192.168.8.136", 9001, "192.168.8.150")) {
+if (!robot.ConnectRemoteAndSwitchOn("192.168.1.136", 9001, "192.168.1.150")) {
     return 1;
 }
 
@@ -117,7 +134,7 @@ SDK 公共 API 使用 **毫米** 和 **度**。这与 TCP JSON 协议一致。
 所有公共方法使用 **PascalCase**，与 C# 和 Python SDK 保持一致。
 
 ```cpp
-robot.ConnectRemoteAndSwitchOn("192.168.8.136");
+robot.ConnectRemoteAndSwitchOn("192.168.1.136");
 int di = robot.GetDi(0);
 robot.MovJ(joints, 40, 100);
 robot.SetDo(10, 1);
@@ -196,10 +213,10 @@ try {
 
 ```cpp
 // 1. 连接
-robot.ConnectRemoteAndSwitchOn("192.168.8.136", 9001, "192.168.8.150");
+robot.ConnectRemoteAndSwitchOn("192.168.1.136", 9001, "192.168.1.150");
 
 // 2. 启动 CRI 数据推送
-robot.StartCriDataPush("192.168.8.150", 9030);
+robot.StartCriDataPush("192.168.1.150", 9030);
 
 // 3. 等待首帧数据
 robot.WaitForCriData(5.0);
