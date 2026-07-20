@@ -1,6 +1,6 @@
 # CodroidCPP SDK 手册
 
-**版本:** 2.1.11 | **命名空间:** `Codroid`
+**版本:** 3.0.0 | **命名空间:** `Codroid`
 
 > 客户侧只需 `#include "Codroid/client.hpp"`。Asio / `CodroidController` 为内部实现，不进发布包；`nlohmann/json` 随包提供并由 `client.hpp` 引入。
 
@@ -67,7 +67,7 @@ build_mingw.bat
 
 # 快速上手
 
-**版本 2.1.11** · 业务代码只需：
+**版本 3.0.0** · 业务代码只需：
 
 ```cpp
 #include "Codroid/client.hpp"
@@ -566,7 +566,7 @@ auto subscription = robot.SubscribePublishTopic(
 
 **类:** `CodroidClient`
 **命名空间:** `Codroid`
-**头文件:** `#include "Codroid/client.hpp"`（客户侧唯一入口；版本 2.1.11）
+**头文件:** `#include "Codroid/client.hpp"`（客户侧唯一入口；版本 3.0.0）
 
 `CodroidClient` 是 SDK 的主入口类，提供连接、IO、寄存器、运动、CRI、主题订阅等功能。
 

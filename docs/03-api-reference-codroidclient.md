@@ -2,7 +2,7 @@
 
 **类:** `CodroidClient`
 **命名空间:** `Codroid`
-**头文件:** `#include "Codroid/client.hpp"`（客户侧唯一入口；版本 2.1.11）
+**头文件:** `#include "Codroid/client.hpp"`（客户侧唯一入口；版本 3.0.0）
 
 `CodroidClient` 是 SDK 的主入口类，提供连接、IO、寄存器、运动、CRI、主题订阅等功能。
 

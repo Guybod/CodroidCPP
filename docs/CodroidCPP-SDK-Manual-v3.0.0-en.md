@@ -1,6 +1,6 @@
 # CodroidCPP SDK Manual
 
-**Version:** 2.1.11 | **Namespace:** `Codroid`
+**Version:** 3.0.0 | **Namespace:** `Codroid`
 
 > Apps only need `#include "Codroid/client.hpp"`. Asio / `CodroidController` stay internal; `nlohmann/json` ships with the package and is included by `client.hpp`.
 
@@ -3117,7 +3117,7 @@ Directly save the complete user coordinate frame table (19.6), aligned with `Sav
 
 ---
 
-## Force Control APIs (v2.1.11+)
+## Force Control APIs (v3.0.0+)
 
 The C++ SDK force-control surface is aligned with Python. `InitForceControl` always sends admittance control `algo=1`; callers cannot pass an algorithm parameter. The old `FTSensorDriftCalibration` API has been removed.
 

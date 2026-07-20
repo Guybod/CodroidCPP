@@ -2,15 +2,15 @@
 
 Codroid C++ SDK 提供一套 C++ 接口，用于连接 Codroid 控制器并完成上电、运动、IO、寄存器、实时状态读取和 CRI 实时轨迹下发。
 
-**v3.0**：业务代码只需 `#include "Codroid/client.hpp"`。JSON 用随包提供的 `nlohmann::json`；Asio / KDL / `CodroidController` 不对客户暴露。
+**v3.0.0**：业务代码只需 `#include "Codroid/client.hpp"`。JSON 用随包提供的 `nlohmann::json`；Asio / KDL / `CodroidController` 不对客户暴露。
 
 首页按实际接入顺序组织：准备网络，编译 SDK，跑通第一个示例，再接入业务程序。
 
 ## 文档
 
-- **版本说明**：[RELEASE_NOTES.md](RELEASE_NOTES.md)（含 v3.0 Breaking Changes）
-- **SDK 手册（中文）**：[docs/CodroidCPP-SDK-Manual-v2.1.11-zh.md](docs/CodroidCPP-SDK-Manual-v2.1.11-zh.md)
-- **SDK Manual (English)**：[docs/CodroidCPP-SDK-Manual-v2.1.11-en.md](docs/CodroidCPP-SDK-Manual-v2.1.11-en.md)
+- **版本说明**：[RELEASE_NOTES.md](RELEASE_NOTES.md)（含 v3.0.0 Breaking Changes）
+- **SDK 手册（中文）**：[docs/CodroidCPP-SDK-Manual-v3.0.0-zh.md](docs/CodroidCPP-SDK-Manual-v3.0.0-zh.md)
+- **SDK Manual (English)**：[docs/CodroidCPP-SDK-Manual-v3.0.0-en.md](docs/CodroidCPP-SDK-Manual-v3.0.0-en.md)
 
 ## 1. 准备控制器网络
 

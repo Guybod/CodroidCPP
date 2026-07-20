@@ -69,7 +69,7 @@ fi
 
 echo "[4/5] Generate package guide..."
 cat > "${PKG_DIR}/README_PACKAGE.md" <<'EOF'
-# Codroid SDK Linux x64 Package (v3)
+# Codroid SDK Linux x64 Package (v3.0.0)
 
 ## Customer usage
 
