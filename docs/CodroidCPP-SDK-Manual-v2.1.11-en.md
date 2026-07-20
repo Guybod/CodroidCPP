@@ -2246,7 +2246,7 @@ struct JogParams {
 | `mode` | `JogMode` | `Line` | Jog mode: joint or linear |
 | `speed` | `double` | 0.0 | Jog speed (-1~1 ratio) |
 | `index` | `int` | 1 | Axis number or direction |
-| `coorType` | `CoorType` | `User` | Coordinate frame type: user or tool |
+| `coorType` | `CoorType` | `User` | Coordinate frame type: user or tool. Jog sends numeric wire values: `User=0`, `Tool=1` |
 | `coorId` | `int` | 1 | Coordinate frame ID |
 
 <div style="page-break-after: always;"></div>

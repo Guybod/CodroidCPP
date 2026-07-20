@@ -2246,7 +2246,7 @@ struct JogParams {
 | `mode` | `JogMode` | `Line` | 点动模式：关节或直线 |
 | `speed` | `double` | 0.0 | 点动速度（-1~1 的比例） |
 | `index` | `int` | 1 | 轴号或方向 |
-| `coorType` | `CoorType` | `User` | 坐标系类型：用户或工具 |
+| `coorType` | `CoorType` | `User` | 坐标系类型：用户或工具；Jog 协议下发数字值，`User=0`、`Tool=1` |
 | `coorId` | `int` | 1 | 坐标系 ID |
 
 <div style="page-break-after: always;"></div>

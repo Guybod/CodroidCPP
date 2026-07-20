@@ -1199,7 +1199,7 @@ struct JogParams {
 | `mode` | `JogMode` | `Line` | 点动模式：`Joint`(1) 或 `Line`(2) |
 | `speed` | `double` | 0.0 | 速度比例（-1~1） |
 | `index` | `int` | 1 | 轴号（Joint 模式 1--6）或方向（Line 模式） |
-| `coorType` | `CoorType` | `User` | 坐标系类型：`User` 或 `Tool` |
+| `coorType` | `CoorType` | `User` | 坐标系类型：`User` 或 `Tool`；Jog 协议下发数字值，`User=0`、`Tool=1` |
 | `coorId` | `int` | 1 | 坐标系 ID |
 
 ```cpp

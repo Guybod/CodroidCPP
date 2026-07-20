@@ -99,6 +99,10 @@ void cri_round_vec_in_place(std::vector<double>& v, int decimals) {
         x = cri_round_to_decimals_away(x, decimals);
 }
 
+int jog_coor_type_to_wire(CoorType coor_type) {
+    return coor_type == CoorType::User ? 0 : 1;
+}
+
 } // namespace
 
 CodroidCommandException::CodroidCommandException(int request_id, std::string command_ty,
@@ -1311,7 +1315,7 @@ Response CodroidController::jog(const JogParams& params, int id) {
     db["mode"] = params.mode;         // 自动转为 int
     db["speed"] = params.speed;
     db["index"] = params.index;
-    db["coorType"] = params.coorType; // 自动转为 int
+    db["coorType"] = jog_coor_type_to_wire(params.coorType);
     db["coorId"] = params.coorId;
 
     return sendCommand("Robot/jog", db, id);

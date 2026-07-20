@@ -444,7 +444,7 @@ struct JogParams {
     JogMode mode = JogMode::Line;
     double speed = 0.0;     // -1~1 的比例
     int index = 1;          // 轴号或方向
-    CoorType coorType = CoorType::User;
+    CoorType coorType = CoorType::User; // Jog 协议下发 User=0, Tool=1
     int coorId = 1;
 
     JogParams() = default;

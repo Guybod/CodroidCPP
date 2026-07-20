@@ -431,7 +431,7 @@ namespace Codroid {
         JogMode mode = JogMode::Line;
         double speed = 0.0;
         int index = 1;
-        CoorType coorType = CoorType::User;
+        CoorType coorType = CoorType::User; ///< Jog 协议下发数字值：User=0, Tool=1
         int coorId = 1;
         JogParams() = default;
         JogParams(JogMode m, double s, int i, CoorType ct = CoorType::User, int cid = 1) 
